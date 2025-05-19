@@ -215,13 +215,17 @@
         .reset-game-button:hover { background-color: #DC2626; }
         .modal-trigger-button { background-color: #6366F1; } 
         .modal-trigger-button:hover { background-color: #4F46E5; }
+        .help-button { background-color: #0EA5E9; } 
+        .help-button:hover { background-color: #0284C7; }
+        .advanced-settings-button { background-color: #F97316; } /* Oranžová pro Pokročilá Nastavení */
+        .advanced-settings-button:hover { background-color: #EA580C; }
 
 
-        .action-button:disabled, .skill-button:disabled, .echo-upgrade-button:disabled, .talent-tree-button:disabled, .echo-button:disabled, .reset-game-button:disabled, .modal-trigger-button:disabled {
+        .action-button:disabled, .skill-button:disabled, .echo-upgrade-button:disabled, .talent-tree-button:disabled, .echo-button:disabled, .reset-game-button:disabled, .modal-trigger-button:disabled, .help-button:disabled, .advanced-settings-button:disabled {
             background-color: #4B5563; color: #9CA3AF;
             cursor: not-allowed; transform: translateY(0); box-shadow: none;
         }
-        .action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text { 
+        .action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text, .help-button-text, .advanced-settings-button-text { 
             flex-grow: 1; text-align: center; 
         }
         .action-cost, .skill-cooldown, .echo-upgrade-cost { 
@@ -351,15 +355,72 @@
         .game-stats-panel .stat-value { font-size: 0.8rem; font-weight: 600; color: #FFFFFF; }
 
         /* Styly pro ovládání zvuku */
-        .sound-controls-panel label {
+        .sound-controls-panel label, .advanced-settings-modal-content label {
             font-size: 0.75rem;
             color: #D1D5DB;
             margin-bottom: 0.25rem;
             display: block;
         }
-        .sound-controls-panel input[type="range"] {
+        .sound-controls-panel input[type="range"], .advanced-settings-modal-content input[type="range"] {
             width: 100%;
             cursor: pointer;
+        }
+         .advanced-settings-modal-content .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+         .advanced-settings-modal-content .setting-item:last-of-type {
+            border-bottom: none;
+        }
+         .advanced-settings-modal-content .setting-item label {
+            margin-bottom: 0; /* Reset margin for labels inside setting-item */
+         }
+        /* Custom Switch Toggle */
+        .switch {
+          position: relative;
+          display: inline-block;
+          width: 40px; /* Zmenšeno */
+          height: 20px; /* Zmenšeno */
+        }
+        .switch input { 
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+        .slider {
+          position: absolute;
+          cursor: pointer;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: #4A5568; /* Tmavší šedá */
+          transition: .4s;
+          border-radius: 20px; /* Zmenšeno */
+        }
+        .slider:before {
+          position: absolute;
+          content: "";
+          height: 14px; /* Zmenšeno */
+          width: 14px; /* Zmenšeno */
+          left: 3px; /* Upraveno */
+          bottom: 3px; /* Upraveno */
+          background-color: white;
+          transition: .4s;
+          border-radius: 50%;
+        }
+        input:checked + .slider {
+          background-color: #10B981; /* Zelená při zapnutí */
+        }
+        input:focus + .slider {
+          box-shadow: 0 0 1px #10B981;
+        }
+        input:checked + .slider:before {
+          transform: translateX(20px); /* Zmenšeno */
         }
         .sound-controls-panel .mute-button {
             background-color: #F59E0B;
@@ -383,6 +444,32 @@
         .sound-controls-panel .mute-button.muted:hover {
             background-color: #DC2626;
         }
+
+        /* Styly pro Nápovědu */
+        .help-modal-section {
+            margin-bottom: 1rem;
+        }
+        .help-modal-section h4 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #A0AEC0;
+            margin-bottom: 0.4rem;
+            border-bottom: 1px solid #4A5568;
+            padding-bottom: 0.2rem;
+        }
+        .help-modal-section p, .help-modal-section ul {
+            font-size: 0.8rem;
+            color: #D1D5DB;
+            margin-bottom: 0.3rem;
+            line-height: 1.5;
+        }
+         .help-modal-section ul {
+            list-style-type: disc;
+            padding-left: 1.2rem;
+         }
+         .help-modal-section strong {
+            color: #FBBF24; 
+         }
 
 
         @media (max-width: 900px) { 
@@ -454,10 +541,7 @@
                             <span class="action-text">Echo (Získat <span id="echoShardsToGain">0</span> EÚ)</span>
                             <span id="echoConditionDisplay" class="action-cost">Připraveno</span>
                         </button>
-                        <button id="resetGameButton" class="reset-game-button w-full mt-2"> 
-                            <span class="reset-game-text">Restartovat Hru</span>
-                        </button>
-                    </div>
+                        </div>
                 </div>
             </div>
 
@@ -534,6 +618,12 @@
                     </div>
                     <button id="muteButton" class="mute-button">Ztlumit</button>
                 </div>
+                <button id="openAdvancedSettingsButton" class="modal-trigger-button advanced-settings-button">
+                    <span class="advanced-settings-button-text">Pokročilá Nastavení</span>
+                </button>
+                <button id="openHelpButton" class="modal-trigger-button help-button"> 
+                    <span class="help-button-text">Nápověda</span>
+                </button>
                 <button id="openDailyQuestsButton" class="modal-trigger-button">
                     <span class="modal-trigger-text">Denní Výzvy</span>
                 </button>
@@ -558,6 +648,111 @@
         </div>
 
         <div id="messageBox" class="text-center text-sm rounded-md hidden"></div>
+
+        <div id="advancedSettingsModal" class="modal hidden">
+            <div class="modal-content advanced-settings-modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Pokročilá Nastavení Hry</h2>
+                    <button id="closeAdvancedSettingsButton" class="modal-close-button">&times;</button>
+                </div>
+                <div class="space-y-3 mt-2">
+                    <div class="setting-item">
+                        <label for="toggleDamageNumbers">Zobrazovat čísla poškození:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleDamageNumbers">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <label for="toggleGoldAnimations">Zobrazovat animace zisku zlata:</label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleGoldAnimations">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="mt-6"> <button id="resetGameButtonAdvanced" class="reset-game-button w-full"> 
+                            <span class="reset-game-text">Restartovat Hru (HARD RESET)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div id="helpModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Nápověda ke Hře</h2>
+                    <button id="closeHelpButton" class="modal-close-button">&times;</button>
+                </div>
+                <div id="helpContentContainer" class="space-y-3 mt-2">
+                    <div class="help-modal-section">
+                        <h4>Vítej ve hře Echoes of Infinity!</h4>
+                        <p>Tvým cílem je porážet stále silnější nepřátele, postupovat světy a zónami a neustále se vylepšovat. Každé <strong>Echo</strong> (prestiž) tě posílí pro další průchod!</p>
+                    </div>
+
+                    <div class="help-modal-section">
+                        <h4>Základní Mechaniky</h4>
+                        <ul>
+                            <li><strong>Klikání:</strong> Klikni na nepřítele, abys mu způsobil poškození. Tvé <strong>poškození kliknutím</strong> se zvyšuje vylepšováním vybavení a talenty.</li>
+                            <li><strong>Zlato:</strong> Získávej zlato porážením nepřátel. Použij ho na vylepšení vybavení, společníků a aktivaci některých akcí.</li>
+                            <li><strong>Nepřátelé:</strong> Existují běžní nepřátelé, silnější <strong>Šampioni</strong> (každý 10. nepřítel v zóně kromě bosse) a velmi silní <strong>Bossové</strong> (poslední nepřítel v zóně). Bossové mají časový limit na poražení.</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-modal-section">
+                        <h4>Postup Hrou</h4>
+                        <ul>
+                            <li><strong>Zóny a Světy:</strong> Každý Svět má 10 Zón. Každá Zóna má 100 nepřátel (včetně Bosse na konci). Po poražení Bosse postupuješ do další Zóny, případně Světa.</li>
+                            <li><strong>Úroveň Hráče (XP):</strong> Získávej zkušenosti (XP) porážením nepřátel. S každou novou úrovní hráče získáš <strong>Talentové Body</strong>.</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-modal-section">
+                        <h4>Vylepšení</h4>
+                        <ul>
+                            <li><strong>Vybavení:</strong> Vylepšuj 6 typů vybavení (Zbraň, Helma, atd.) pro zvýšení poškození kliknutím. Vybavení má úrovně (max 100) a Tiery (např. Plátěné, Dřevěné). Pro postup na další Tier musí být všechno vybavení na aktuálním Tieru na maximální úrovni. Poškození z předchozích tierů se sčítá.</li>
+                            <li><strong>Společníci:</strong> Odemkni a vylepšuj společníky, kteří ti automaticky způsobují pasivní poškození nepřátelům (% jejich maximálního zdraví za sekundu).</li>
+                            <li><strong>Echo Vylepšení:</strong> Za <strong>Echo Úlomky</strong> (EÚ) můžeš trvale vylepšit svůj zisk zlata a celkové poškození.</li>
+                            <li><strong>Talenty (Cesta Věčnosti):</strong> Utrať Talentové Body za různá pasivní vylepšení ve stromu talentů.</li>
+                        </ul>
+                    </div>
+                     <div class="help-modal-section">
+                        <h4>Echo (Prestiž)</h4>
+                        <p>Jakmile dosáhneš maximálního Tieru vybavení a vyleveluješ všechny jeho části na maximum, můžeš provést <strong>Echo</strong>. Tímto procesem:</p>
+                        <ul>
+                            <li>Získáš <strong>Echo Úlomky</strong> (EÚ) na základě tvého postupu (nejvyšší dosažená úroveň nepřítele, nasbírané zlato atd.).</li>
+                            <li>Resetuješ svůj aktuální postup (zlato, tiery vybavení, světy, zóny), ale zachováš si Echo Úlomky, Echo Vylepšení, Talenty, Artefakty a Společníky.</li>
+                            <li>Každé Echo tě celkově posílí pro rychlejší postup v budoucnu.</li>
+                        </ul>
+                    </div>
+
+
+                    <div class="help-modal-section">
+                        <h4>Akce a Schopnosti</h4>
+                        <ul>
+                            <li><strong>Mocný úder:</strong> Na krátkou dobu výrazně zvýší tvé poškození kliknutím. Má cooldown.</li>
+                            <li><strong>Zlatá horečka:</strong> Na krátkou dobu výrazně zvýší tvůj zisk zlata. Má cooldown.</li>
+                            <li><strong>Očistit Parazita:</strong> Pokud tě napadne Parazit (debuff, který ti odsává zlato), můžeš ho za poplatek očistit.</li>
+                        </ul>
+                    </div>
+
+                    <div class="help-modal-section">
+                        <h4>Další Herní Prvky</h4>
+                        <ul>
+                            <li><strong>Buffy a Debuffy:</strong> Během boje můžeš získat dočasné pozitivní efekty (buffy) jako Úlomek Síly (více poškození) nebo Zlatá Horečka (více zlata), nebo negativní efekty (debuffy) jako Parazit.</li>
+                            <li><strong>Artefakty:</strong> Můžeš je získat poražením Bossů. Poskytují různé trvalé bonusy a lze je vylepšovat sbíráním dalších stejných artefaktů.</li>
+                            <li><strong>Denní Výzvy:</strong> Každý den nové úkoly s odměnami.</li>
+                            <li><strong>Milníky:</strong> Trvalé úkoly, které tě odmění za dosažení určitých cílů ve hře. Některé se resetují s každým Echem, jiné jsou trvalé.</li>
+                            <li><strong>Nastavení Zvuku:</strong> Uprav si hlasitost hry nebo ji zcela ztlum.</li>
+                            <li><strong>Restart Hry:</strong> Pokud chceš začít úplně od začátku, můžeš hru restartovat. Pozor, tím ztratíš veškerý postup! (Nyní v Pokročilých Nastaveních)</li>
+                        </ul>
+                    </div>
+                     <p class="text-center font-semibold">Hodně štěstí na tvé cestě nekonečnem!</p>
+                </div>
+            </div>
+        </div>
+
 
         <div id="talentTreeModal" class="modal hidden">
             <div class="modal-content">
@@ -636,7 +831,6 @@
                 if (Tone.context.state !== 'running') {
                     try {
                         await Tone.start();
-                        // console.log("AudioContext started successfully via _startAudioContextAndInitialize.");
                         this.audioContextInitialized = true;
                     } catch (e) {
                         console.error("Error starting AudioContext in _startAudioContextAndInitialize:", e);
@@ -662,7 +856,6 @@
                 if (!this.audioContextInitialized || this.synthsInitialized) {
                     return;
                 }
-                // console.log("Initializing Tone.js synths...");
                 for (const soundName in this.synthConfigs) {
                     const config = this.synthConfigs[soundName];
                     try {
@@ -676,12 +869,10 @@
                     }
                 }
                 this.synthsInitialized = true;
-                // console.log("Synths initialized.");
             },
 
             async playSound(soundName, note = 'C4', duration = '8n') {
                 if (!this.audioContextInitialized || !this.synthsInitialized) {
-                    // console.warn(`playSound(${soundName}) called before audio fully initialized. User gesture might be needed.`);
                     return; 
                 }
                 if (this.isMuted) return;
@@ -758,7 +949,7 @@
             const absNum = Math.abs(num);
             if (absNum < 1000) {
                 if (num !== 0 && absNum < 0.01 && precision === 2) { 
-                     return num.toFixed(4); 
+                    return num.toFixed(4); 
                 }
                 return parseFloat(num.toFixed(precision)).toString(); 
             }
@@ -962,6 +1153,12 @@
         };
         let ownedCompanions = {}; 
 
+        // Pokročilá nastavení
+        let gameSettings = {
+            showDamageNumbers: true,
+            showGoldAnimations: true
+        };
+
 
         const enemySVGs = [ 
             '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#A7F3D0"/><circle cx="40" cy="40" r="5" fill="black"/><circle cx="60" cy="40" r="5" fill="black"/><path d="M 40 60 Q 50 70 60 60" stroke="black" fill="transparent"/></svg>', 
@@ -1016,7 +1213,7 @@
         const zlataHoreckaAktivniCooldownDisplay = document.getElementById('zlataHoreckaAktivniCooldownDisplay');
         const artifactsPanelElement = document.getElementById('artifactsPanel');
         const artifactsListElement = document.getElementById('artifactsList');
-        const resetGameButton = document.getElementById('resetGameButton'); 
+        // const resetGameButton = document.getElementById('resetGameButton'); // Přesunuto
         const dailyQuestsListElement = document.getElementById('dailyQuestsList');
         const gameStatsContainer = document.getElementById('gameStatsContainer');
         const openDailyQuestsButton = document.getElementById('openDailyQuestsButton');
@@ -1030,6 +1227,16 @@
         const companionsContainer = document.getElementById('companionsContainer');
         const volumeSlider = document.getElementById('volumeSlider');
         const muteButton = document.getElementById('muteButton');
+        const openHelpButton = document.getElementById('openHelpButton');
+        const closeHelpButton = document.getElementById('closeHelpButton');
+        const helpModal = document.getElementById('helpModal');
+        // Pokročilá Nastavení Modal Elementy
+        const openAdvancedSettingsButton = document.getElementById('openAdvancedSettingsButton');
+        const closeAdvancedSettingsButton = document.getElementById('closeAdvancedSettingsButton');
+        const advancedSettingsModal = document.getElementById('advancedSettingsModal');
+        const toggleDamageNumbersEl = document.getElementById('toggleDamageNumbers');
+        const toggleGoldAnimationsEl = document.getElementById('toggleGoldAnimations');
+        const resetGameButtonAdvanced = document.getElementById('resetGameButtonAdvanced');
 
 
         // --- Artefakty Funkce ---
@@ -1417,6 +1624,7 @@
         }
 
         function showGoldGainAnimation(amount) {
+            if (!gameSettings.showGoldAnimations) return; // Kontrola nastavení
             const goldText = document.createElement('div');
             goldText.textContent = `+${formatNumber(amount)} Z`;
             goldText.classList.add('gold-gain-animation');
@@ -1602,7 +1810,9 @@
             }
             if (currentDamageDealt > lifetimeStats.highestDamageDealt) lifetimeStats.highestDamageDealt = Math.ceil(currentDamageDealt);
             enemy.currentHealth -= currentDamageDealt;
-            showDamageNumber(currentDamageDealt, event.clientX, event.clientY, isCrit); 
+            if (gameSettings.showDamageNumbers) { // Kontrola nastavení
+                showDamageNumber(currentDamageDealt, event.clientX, event.clientY, isCrit); 
+            }
             if (enemy.currentHealth <= 0) {
                 const goldFromKill = enemy.goldReward * currentGoldMultiplierOnClick;
                 gold += goldFromKill; lifetimeStats.lifetimeGoldEarned += goldFromKill; totalGoldEarnedThisEcho += goldFromKill;
@@ -1645,6 +1855,7 @@
         }
 
         function showDamageNumber(damage, x, y, isCrit) { 
+            if (!gameSettings.showDamageNumbers) return; // Kontrola nastavení
             const damageText = document.createElement('div');
             damageText.textContent = formatNumber(Math.ceil(damage)); 
             damageText.classList.add('damage-number');
@@ -2070,16 +2281,20 @@
             bossFightTimerActive = false; bossFightTimeLeft = 0;
             currentTierIndex = 0; initializeEquipment(); updateCurrentTierBonuses(); 
             dailyQuestData = { quests: [], lastResetDate: null, goldEarnedForQuestToday: 0 };
+            gameSettings = { showDamageNumbers: true, showGoldAnimations: true }; // Reset pokročilých nastavení
             initializeOrResetDailyQuests(); updateCompanionPassivePercentOnUI(); 
         }
 
         function initializeNewGameUI() {
             renderEquipment(); renderArtifactsUI(); renderDailyQuestsUI(); renderMilestonesUI(); renderCompanionsUI(); 
             spawnNewEnemy(); calculateEffectiveStats(); updateUI(); 
+            // Nastavení přepínačů v pokročilých nastaveních
+            if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameSettings.showDamageNumbers;
+            if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameSettings.showGoldAnimations;
             showMessageBox("Hra byla restartována. Začínáte odznovu.", false, 3000);
         }
 
-        const SAVE_KEY = 'echoesOfInfinitySave_v26_sounds_animations'; 
+        const SAVE_KEY = 'echoesOfInfinitySave_v28_advanced_settings'; 
 
         function saveGame() {
             const talentLevels = {}; for (const id in talents) talentLevels[id] = talents[id].currentLevel;
@@ -2097,7 +2312,8 @@
                 zlataHoreckaAktivniCooldownTimeLeft, zlataHoreckaAktivniActive, zlataHoreckaAktivniDurationLeft,
                 ownedArtifactsData, ownedCompanions, totalCompanionPassivePercent, baseCritChance, 
                 bossFightTimerActive, bossFightTimeLeft, dailyQuestData,
-                soundVolume: soundManager.volume, soundMuted: soundManager.isMuted 
+                soundVolume: soundManager.volume, soundMuted: soundManager.isMuted,
+                gameSettings // Uložení pokročilých nastavení
             };
             localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
         }
@@ -2153,11 +2369,15 @@
                 soundManager.volume = gameState.soundVolume !== undefined ? gameState.soundVolume : 0.5;
                 soundManager.isMuted = gameState.soundMuted !== undefined ? gameState.soundMuted : false;
                 
+                gameSettings = gameState.gameSettings || { showDamageNumbers: true, showGoldAnimations: true }; // Načtení pokročilých nastavení
+
                 if (volumeSlider) volumeSlider.value = soundManager.volume;
                 if (muteButton) {
                      muteButton.textContent = soundManager.isMuted ? "Odtlumit" : "Ztlumit";
                      muteButton.classList.toggle('muted', soundManager.isMuted);
                 }
+                if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameSettings.showDamageNumbers;
+                if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameSettings.showGoldAnimations;
 
 
                 const timeSinceLastSave = (Date.now() - (gameState.lastSaveTime || Date.now())) / 1000;
@@ -2186,6 +2406,8 @@
                     muteButton.textContent = soundManager.isMuted ? "Odtlumit" : "Ztlumit";
                     muteButton.classList.toggle('muted', soundManager.isMuted);
                 }
+                 if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameSettings.showDamageNumbers;
+                if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameSettings.showGoldAnimations;
 
             }
             updateUI();
@@ -2203,12 +2425,38 @@
         mocnyUderButton.addEventListener('click', activateMocnyUder);
         zlataHoreckaAktivniButton.addEventListener('click', activateZlataHoreckaAktivni);
         equipmentContainer.addEventListener('click', handleEquipmentUpgradeClick); 
-        resetGameButton.addEventListener('click', confirmAndResetGame); 
+        // resetGameButton.addEventListener('click', confirmAndResetGame); // Přesunuto do pokročilých nastavení
         
         openDailyQuestsButton.addEventListener('click', () => { dailyQuestsModal.classList.remove('hidden'); renderDailyQuestsUI(); soundManager.playSound('openModal', 'D5', '16n'); });
         closeDailyQuestsButton.addEventListener('click', () => { dailyQuestsModal.classList.add('hidden'); soundManager.playSound('closeModal', 'D4', '16n'); });
         openMilestonesButton.addEventListener('click', () => { milestonesModal.classList.remove('hidden'); renderMilestonesUI(); soundManager.playSound('openModal', 'E5', '16n'); });
         closeMilestonesButton.addEventListener('click', () => { milestonesModal.classList.add('hidden'); soundManager.playSound('closeModal', 'E4', '16n'); });
+        openHelpButton.addEventListener('click', () => { helpModal.classList.remove('hidden'); soundManager.playSound('openModal', 'F5', '16n'); });
+        closeHelpButton.addEventListener('click', () => { helpModal.classList.add('hidden'); soundManager.playSound('closeModal', 'F4', '16n'); });
+        
+        // Listeners pro Pokročilá Nastavení
+        openAdvancedSettingsButton.addEventListener('click', () => { 
+            advancedSettingsModal.classList.remove('hidden'); 
+            if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameSettings.showDamageNumbers; // Synchronizace při otevření
+            if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameSettings.showGoldAnimations; // Synchronizace při otevření
+            soundManager.playSound('openModal', 'G5', '16n'); 
+        });
+        closeAdvancedSettingsButton.addEventListener('click', () => { advancedSettingsModal.classList.add('hidden'); soundManager.playSound('closeModal', 'G4', '16n'); });
+        
+        if (toggleDamageNumbersEl) {
+            toggleDamageNumbersEl.addEventListener('change', () => {
+                gameSettings.showDamageNumbers = toggleDamageNumbersEl.checked;
+            });
+        }
+        if (toggleGoldAnimationsEl) {
+            toggleGoldAnimationsEl.addEventListener('change', () => {
+                gameSettings.showGoldAnimations = toggleGoldAnimationsEl.checked;
+            });
+        }
+        if (resetGameButtonAdvanced) {
+            resetGameButtonAdvanced.addEventListener('click', confirmAndResetGame);
+        }
+
 
         dailyQuestsListModalElement.addEventListener('click', (event) => { 
             const button = event.target.closest('.claim-quest-button');
@@ -2239,9 +2487,6 @@
 
         window.onload = () => {
             loadGame(); 
-            // First user gesture listener is already attached to document.body
-            // It will handle starting the audio context and initializing synths.
-            // It will also update the sound control UI elements once the context is ready.
             setInterval(gameTick, 100); 
             setInterval(saveGame, 15000); 
         };
