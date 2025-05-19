@@ -1,0 +1,2252 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Echoes of Infinity - Clicker Prototyp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            touch-action: manipulation; 
+            background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); 
+            color: #F3F4F6; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+        }
+        .game-container {
+            min-height: 100vh; 
+            display: flex;
+            flex-direction: column; 
+            align-items: center;
+            padding: 12px; 
+        }
+        .main-content-area {
+            display: flex;
+            flex-direction: row; 
+            gap: 12px; 
+            width: 100%;
+            max-width: 1024px; 
+            align-items: flex-start; 
+        }
+        .left-column, .middle-column, .right-column { 
+            display: flex;
+            flex-direction: column;
+            gap: 12px; 
+        }
+        .left-column { flex: 1; max-width: 280px; } 
+        .middle-column { flex: 2; max-width: 400px; } 
+        .right-column { flex: 1; max-width: 260px; } 
+
+        .game-title { color: #FFFFFF; }
+        .game-subtitle { color: #D1D5DB; }
+        .enemy {
+            width: 170px; height: 170px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; user-select: none; 
+            transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 0 20px rgba(255,255,255,0.1); 
+            position: relative; overflow: hidden; 
+            margin-left: auto; margin-right: auto; 
+            border: 4px solid transparent; 
+        }
+        .enemy.champion { border-color: #FBBF24; box-shadow: 0 6px 12px rgba(251, 191, 36, 0.4), 0 0 30px rgba(251, 191, 36, 0.3); }
+        .enemy.boss { border-color: #EF4444; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.4); }
+        .enemy:active { transform: scale(0.95); box-shadow: 0 2px 3px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.05); }
+        #enemyArt { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        #enemyArt svg { width: 90%; height: 90%; } 
+        .enemy-name {
+            font-size: 1.05rem; font-weight: 600; color: white;
+            position: absolute; bottom: 1.6rem; left: 0; right: 0;
+            text-align: center; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); 
+        }
+        .enemy-health-text {
+            font-size: 0.8rem; color: white;
+            position: absolute; bottom: 0.4rem; left: 0; right: 0;
+            text-align: center; pointer-events: none; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
+        }
+        .health-bar-container {
+            width: 100%; max-width: 170px; background-color: #374151; 
+            border-radius: 0.25rem; margin-top: 0.4rem; height: 8px;
+            overflow: hidden; border: 1px solid #4B5563; 
+            margin-left: auto; margin-right: auto; 
+        }
+        .health-bar { height: 100%; background-color: #10B981; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
+        #bossTimerDisplay {
+            font-size: 0.9rem; font-weight: 600; color: #EF4444; 
+            margin-top: 0.5rem; text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        .panel { 
+            background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%; 
+        }
+        .panel h3 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; text-align:center; } 
+
+        .stats-panel p.text-xs, .game-stats-panel p.text-xs { color: #D1D5DB; font-size: 0.7rem; }
+        .stats-panel p.text-value, .game-stats-panel p.text-value { color: #FFFFFF; font-size: 0.9rem; font-weight: 600;}
+        #goldDisplayContainer { position: relative; } 
+        .gold-gain-animation {
+            position: absolute;
+            top: -20px; 
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #FBBF24; 
+            animation: floatUpAndFade 1s ease-out forwards;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        @keyframes floatUpAndFade {
+            0% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, -30px); }
+        }
+
+        #goldDisplay { color: #FBBF24; } 
+        #clickDamageDisplay { color: #60A5FA; } 
+        #passiveDamageDisplay { color: #F87171; } 
+        #echoShardsDisplay { color: #A78BFA; } 
+        #playerLevelDisplay { color: #34D399; } 
+        #playerXPBarContainer { width: 100%; background-color: #374151; border-radius: 0.25rem; height: 6px; overflow: hidden; margin-top: 2px;}
+        #playerXPBar { height: 100%; background-color: #34D399; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
+
+        .equipment-item, .companion-item { 
+            background-color: rgba(255,255,255,0.05);
+            padding: 0.6rem; border-radius: 0.375rem; margin-bottom: 0.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            display: grid; grid-template-columns: auto 1fr; gap-x-3; align-items: center;
+        }
+        .equipment-item-icon { font-size: 1.5rem; }
+        .companion-icon { 
+            font-size: 1.5rem; 
+            animation: pulseCompanion 3s infinite ease-in-out;
+        }
+        @keyframes pulseCompanion {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .equipment-info, .companion-info { display: flex; flex-direction: column; grid-column: span 2; } 
+        .equipment-name, .companion-name { font-weight: 600; color: #CBD5E0; font-size: 0.8rem; }
+        .equipment-tier-level, .companion-level { font-size: 0.7rem; color: #A0AEC0; }
+        .equipment-bonus, .companion-dps { font-size: 0.7rem; color: #60A5FA; } 
+        
+        .equipment-upgrade-options, .companion-upgrade-options {
+            grid-column: span 2; 
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr)); 
+            gap: 0.25rem; 
+            margin-top: 0.5rem;
+        }
+
+        .equipment-level-button, .companion-button {
+            background-color: #4A5568; 
+            color: white;
+            font-weight: 500;
+            padding: 0.3rem; 
+            border-radius: 0.25rem;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 0.7rem; 
+            text-align: center;
+            line-height: 1.2; 
+        }
+        .equipment-level-button.affordable { 
+            background-color: #10B981; 
+        }
+        .equipment-level-button.affordable:hover {
+            background-color: #059669; 
+        }
+        .equipment-level-button:hover, .companion-button:hover { background-color: #5A6578; transform: translateY(-1px); } 
+        .equipment-level-button:disabled, .companion-button:disabled {
+            background-color: #2D3748; 
+            color: #718096;
+            cursor: not-allowed; transform: translateY(0);
+        }
+        .equipment-level-button .cost-text, .companion-button .cost-text { 
+            font-size: 0.6rem; 
+            display: block; 
+            opacity: 0.8;
+        }
+        .companion-button.unlock { background-color: #10B981; }
+        .companion-button.unlock:hover { background-color: #059669; }
+        
+        #advanceTierButton {
+            background-color: #10B981; color: white;
+             grid-column: span 2; 
+            margin-top: 0.5rem; 
+            padding: 0.3rem 0.5rem; border-radius: 0.375rem; 
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            font-size: 0.75rem; 
+            display: flex; justify-content: center; align-items: center;
+        }
+        #advanceTierButton:hover { background-color: #059669; }
+        #advanceTierButton:disabled { background-color: #4B5563; }
+
+
+        .action-button, .skill-button, .echo-upgrade-button, .talent-tree-button, .echo-button, .reset-game-button, .modal-trigger-button { 
+            background-color: #3B82F6; color: white; font-weight: 500; 
+            padding: 0.4rem 0.6rem; border-radius: 0.375rem; 
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            display: flex; justify-content: space-between; align-items: center; 
+            font-size: 0.8rem; 
+            width: 100%; 
+            margin-bottom: 0.5rem; 
+        }
+        .action-button { background-color: #F59E0B; } 
+        .action-button:hover { background-color: #D97706; }
+        .skill-button { background-color: #EC4899; } 
+        .skill-button:hover { background-color: #DB2777; }
+        .echo-button { background-color: #8B5CF6; } 
+        .echo-button:hover { background-color: #7C3AED; }
+        .echo-upgrade-button { background-color: #6D28D9; } 
+        .echo-upgrade-button:hover { background-color: #5B21B6; }
+        .talent-tree-button { background-color: #10B981; } 
+        .talent-tree-button:hover { background-color: #059669; }
+        .reset-game-button { background-color: #EF4444; } 
+        .reset-game-button:hover { background-color: #DC2626; }
+        .modal-trigger-button { background-color: #6366F1; } 
+        .modal-trigger-button:hover { background-color: #4F46E5; }
+
+
+        .action-button:disabled, .skill-button:disabled, .echo-upgrade-button:disabled, .talent-tree-button:disabled, .echo-button:disabled, .reset-game-button:disabled, .modal-trigger-button:disabled {
+            background-color: #4B5563; color: #9CA3AF;
+            cursor: not-allowed; transform: translateY(0); box-shadow: none;
+        }
+        .action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text { 
+            flex-grow: 1; text-align: center; 
+        }
+        .action-cost, .skill-cooldown, .echo-upgrade-cost { 
+            font-size: 0.65rem; opacity: 0.9; margin-left: 4px; white-space: nowrap; 
+        }
+        .echo-upgrade-level { font-size: 0.6rem; opacity: 0.7; margin-left: 6px; }
+
+        .damage-number {
+            position: absolute; font-size: 1.15rem; font-weight: bold; color: #FBBF24; 
+            animation: floatUp 1s ease-out forwards; pointer-events: none; 
+            text-shadow: 1px 1px 0px black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black; 
+        }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(0.8); } }
+        .crit { color: #EF4444; font-size: 1.5rem; font-weight: bold; } 
+        #messageBox { 
+            border-radius: 0.5rem; font-weight: 500; width: 100%; max-width: 1000px; 
+            margin-top: 1rem; position: fixed; bottom: 10px; left: 50%;
+            transform: translateX(-50%); z-index: 1000; 
+        }
+        .buff-display, .debuff-display, .skill-active-display { 
+            margin-top: 0.3rem; padding: 0.3rem; background-color: rgba(75, 85, 99, 0.5); 
+            border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500;
+            animation: effectFlash 0.5s ease-in-out;
+        }
+        @keyframes effectFlash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .buff-display { color: #FBBF24; } 
+        .debuff-display { color: #FCA5A5; } 
+        .skill-active-display { color: #EC4899; } 
+        .gold-rush-buff { color: #FDE047; background-color: rgba(250, 204, 21, 0.2); border: 1px solid #FBBF24;} 
+
+        .milestone, .artifact-item-display { 
+            padding: 0.3rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.375rem; 
+            font-size: 0.7rem; text-align: left;
+        }
+        .milestone.achieved, .artifact-item-display { background-color: rgba(16, 185, 129, 0.2); color: #A7F3D0; border: 1px solid rgba(16, 185, 129, 0.4); }
+        .milestone.pending { background-color: rgba(75, 85, 99, 0.2); color: #9CA3AF; border: 1px solid rgba(107, 114, 128, 0.4); }
+        .milestone .description { font-weight: 600; }
+        .milestone .reward { font-style: italic; font-size: 0.65rem; }
+        
+        .artifact-item-display .name { font-weight: 600; }
+        .artifact-item-display .level { font-size: 0.65rem; color: #A0AEC0; margin-left: 0.3rem; }
+        .artifact-item-display .description { font-style: italic; font-size: 0.65rem; display: block; margin-top: 2px;}
+        .artifact-item-display .icon { margin-right: 0.25rem;}
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7); display: flex; 
+            align-items: center; justify-content: center; z-index: 2000;
+        }
+        .modal-content {
+            background-color: #2d3748; padding: 1.2rem; border-radius: 0.5rem;
+            width: 90%; max-width: 550px;
+            max-height: 80vh; overflow-y: auto; border: 1px solid #4A5568;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
+        .modal-title { font-size: 1.1rem; font-weight: 600; color: #E2E8F0; }
+        .modal-close-button { background: none; border: none; color: #A0AEC0; font-size: 1.3rem; cursor: pointer; }
+        .modal-close-button:hover { color: #FFFFFF; }
+        
+        .talent-branch-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #A0AEC0; 
+            margin-top: 0.8rem;
+            margin-bottom: 0.4rem;
+            border-bottom: 1px solid #4A5568;
+            padding-bottom: 0.2rem;
+        }
+        .talent-item {
+            background-color: rgba(255,255,255,0.05); padding: 0.6rem;
+            border-radius: 0.375rem; margin-bottom: 0.6rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .talent-item.is-ultimate { 
+            border-color: #FBBF24; 
+        }
+        .talent-name { font-weight: 600; color: #CBD5E0; font-size: 0.85rem;}
+        .talent-description { font-size: 0.75rem; color: #A0AEC0; margin: 0.2rem 0; }
+        .talent-level-cost { font-size: 0.7rem; color: #718096; }
+        .talent-upgrade-button {
+            background-color: #2563eb; color: white; font-size: 0.75rem;
+            padding: 0.3rem 0.6rem; border-radius: 0.25rem; margin-top: 0.4rem;
+        }
+        .talent-upgrade-button:disabled { background-color: #4A5568; cursor: not-allowed; }
+
+        /* Styly pro Denní Výzvy */
+        .daily-quest-item {
+            background-color: rgba(255, 255, 255, 0.04); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            margin-bottom: 0.5rem; 
+        }
+        .daily-quest-item.completed {
+            background-color: rgba(16, 185, 129, 0.15); 
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+        .daily-quest-item .description { font-weight: 600; color: #E5E7EB; font-size: 0.8rem; }
+        .daily-quest-item .progress { font-size: 0.7rem; color: #9CA3AF; margin: 0.1rem 0; }
+        .daily-quest-item .reward { font-size: 0.7rem; color: #FBBF24; font-style: italic;}
+        .claim-quest-button {
+            background-color: #10B981; color: white;
+            font-size: 0.7rem; padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem; margin-top: 0.25rem;
+            width: 100%;
+        }
+        .claim-quest-button:disabled {
+            background-color: #4B5563; color: #9CA3AF; cursor: not-allowed;
+        }
+        .claim-quest-button.claimed {
+            background-color: #374151; color: #6B7280; cursor: default;
+        }
+        /* Styly pro Herní Statistiky */
+        .game-stats-panel .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.2rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .game-stats-panel .stat-item:last-child {
+            border-bottom: none;
+        }
+        .game-stats-panel .stat-label { font-size: 0.75rem; color: #D1D5DB; }
+        .game-stats-panel .stat-value { font-size: 0.8rem; font-weight: 600; color: #FFFFFF; }
+
+        /* Styly pro ovládání zvuku */
+        .sound-controls-panel label {
+            font-size: 0.75rem;
+            color: #D1D5DB;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+        .sound-controls-panel input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+        .sound-controls-panel .mute-button {
+            background-color: #F59E0B;
+            color: white;
+            font-weight: 500;
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s ease;
+            cursor: pointer;
+            border: none;
+            font-size: 0.75rem;
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        .sound-controls-panel .mute-button:hover {
+            background-color: #D97706;
+        }
+        .sound-controls-panel .mute-button.muted {
+            background-color: #EF4444;
+        }
+        .sound-controls-panel .mute-button.muted:hover {
+            background-color: #DC2626;
+        }
+
+
+        @media (max-width: 900px) { 
+             .main-content-area {
+                flex-direction: column; 
+                max-width: 500px; 
+            }
+            .left-column, .middle-column, .right-column {
+                max-width: 100%; 
+            }
+        }
+         @media (max-width: 400px) { 
+            .equipment-upgrade-options {
+                grid-template-columns: repeat(2, minmax(0, 1fr)); 
+            }
+        }
+    </style>
+</head>
+<body> 
+    <div id="gameArea" class="game-container">
+        <div class="mb-4 text-center"> <h1 class="text-2xl font-bold game-title">Echoes of Infinity</h1> <p class="text-xs game-subtitle">Clicker Prototyp</p> </div>
+
+        <div class="main-content-area">
+            <div class="left-column">
+                <div id="enemyDisplayContainer" class="text-center panel"> 
+                    <div id="enemyContainer" class="relative inline-block"> 
+                        <div id="enemy" class="enemy mx-auto">
+                            <div id="enemyArt" class="w-full h-full"></div> <div id="enemyName" class="enemy-name">Slime</div>
+                            <div id="enemyHealthText" class="enemy-health-text">10 / 10</div>
+                        </div>
+                    </div>
+                    <div id="enemyHealthBarContainer" class="health-bar-container">
+                        <div id="enemyHealthBar" class="health-bar" style="width: 100%;"></div>
+                    </div>
+                    <div id="bossTimerDisplay" class="hidden">Čas na bosse: 30s</div> </div>
+
+                <div id="activeEffectsContainer" class="panel text-center hidden"> <h3 class="font-semibold text-gray-100">Aktivní efekty</h3>
+                    </div>
+                
+                <div id="echoUpgradesPanel" class="panel">
+                    <h3 class="font-semibold text-gray-100 text-center">Echo Vylepšení</h3>
+                    <div id="echoUpgradesList" class="space-y-2">
+                        <button id="upgradeEchoGold" class="echo-upgrade-button w-full">
+                            <span class="echo-upgrade-text">+<span id="echoGoldBonusValue">5</span>% Zlato <span id="echoGoldLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
+                            <span class="echo-upgrade-cost">Cena: <span id="echoGoldCostDisplay">10</span> EÚ</span>
+                        </button>
+                        <button id="upgradeEchoDamage" class="echo-upgrade-button w-full">
+                            <span class="echo-upgrade-text">+<span id="echoDamageBonusValue">5</span>% Poškození <span id="echoDamageLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
+                            <span class="echo-upgrade-cost">Cena: <span id="echoDamageCostDisplay">10</span> EÚ</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="actionsPanel" class="panel">
+                    <h3 class="font-semibold text-gray-100 text-center">Akce a Schopnosti</h3>
+                    <div class="space-y-2">
+                        <button id="mocnyUderButton" class="skill-button w-full">
+                            <span id="mocnyUderText" class="skill-text">Mocný úder</span>
+                            <span id="mocnyUderCooldownDisplay" class="skill-cooldown">(Připraveno)</span>
+                        </button>
+                        <button id="zlataHoreckaAktivniButton" class="skill-button w-full">
+                            <span id="zlataHoreckaAktivniText" class="skill-text">Zlatá horečka</span>
+                            <span id="zlataHoreckaAktivniCooldownDisplay" class="skill-cooldown">(Připraveno)</span>
+                        </button>
+                        <button id="cleanseDebuffButton" class="action-button w-full hidden mt-2"> <span class="action-text">Očistit Parazita</span>
+                            <span class="action-cost">Cena: <span id="cleanseCostDisplay">30</span> Z</span>
+                        </button>
+                        <button id="echoButton" class="echo-button w-full hidden mt-2">
+                            <span class="action-text">Echo (Získat <span id="echoShardsToGain">0</span> EÚ)</span>
+                            <span id="echoConditionDisplay" class="action-cost">Připraveno</span>
+                        </button>
+                        <button id="resetGameButton" class="reset-game-button w-full mt-2"> 
+                            <span class="reset-game-text">Restartovat Hru</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="middle-column">
+                <div class="stats-panel panel text-center">
+                    <div class="grid grid-cols-2 gap-2 mb-2"> 
+                        <div id="goldDisplayContainer">
+                            <p class="text-xs">Zlato</p> <p id="goldDisplay" class="text-value">0</p> 
+                        </div>
+                        <div>
+                            <p class="text-xs">Poškození kliknutím</p>
+                            <p id="clickDamageDisplay" class="text-value">1</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                            <p class="text-xs">Úroveň Nepř. (Efektivní)</p>
+                            <p id="enemyEffectiveLevelDisplay" class="text-value text-orange-400">1</p> 
+                        </div>
+                        <div> <p class="text-xs">Pasivní Poškození</p> <p id="passiveDamageDisplay" class="text-value text-red-400">0% HP/s</p> </div>
+                    </div>
+                     <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                            <p class="text-xs">Svět</p>
+                            <p id="currentWorldDisplay" class="text-value">1</p>
+                        </div>
+                        <div>
+                            <p class="text-xs">Zóna</p>
+                            <p id="currentZoneDisplay" class="text-value">1</p>
+                        </div>
+                    </div>
+                    <p id="zoneProgressDisplay" class="text-xs text-gray-400">Postup v zóně: 0/100</p>
+
+                    <div class="grid grid-cols-2 gap-2 mt-2">
+                        <div>
+                            <p class="text-xs">Úroveň Hráče</p>
+                            <p id="playerLevelDisplay" class="text-value">1</p>
+                        </div>
+                        <div>
+                            <p class="text-xs">Talentové Body</p>
+                            <p id="talentPointsDisplay" class="text-value text-indigo-400">0</p>
+                        </div>
+                    </div>
+                    <div id="playerXPBarContainer" class="mt-1">
+                        <div id="playerXPBar" style="width: 0%;"></div>
+                    </div>
+                    <p id="playerXPText" class="text-xs mt-1 text-gray-400">XP: 0 / 100</p>
+
+                    <div class="mt-2"> <p class="text-xs">Echo Úlomky</p>
+                        <p id="echoShardsDisplay" class="text-value">0</p>
+                    </div>
+                    <div class="mt-1"> <p class="text-xs">Počet Ech</p>
+                        <p id="echoCountDisplay" class="text-value text-purple-400">0</p>
+                    </div>
+                </div>
+                <button id="openTalentTreeButton" class="talent-tree-button w-full">
+                    <span class="talent-tree-text">Cesta Věčnosti (Talenty)</span>
+                </button>
+                <div id="equipmentPanel" class="panel">
+                    <h3>Vybavení (<span id="currentTierDisplay">T0 Plátěné</span>)</h3>
+                    <div id="equipmentContainer" class="space-y-2">
+                        </div>
+                    <button id="advanceTierButton" class="w-full"> Postoupit na další Tier (<span id="nextTierCostDisplay">N/A</span>)
+                    </button>
+                </div>
+            </div>
+            
+            <div class="right-column">
+                <div id="soundControlsPanel" class="panel sound-controls-panel">
+                    <h3>Nastavení Zvuku</h3>
+                    <div>
+                        <label for="volumeSlider">Hlasitost:</label>
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+                    </div>
+                    <button id="muteButton" class="mute-button">Ztlumit</button>
+                </div>
+                <button id="openDailyQuestsButton" class="modal-trigger-button">
+                    <span class="modal-trigger-text">Denní Výzvy</span>
+                </button>
+                <button id="openMilestonesButton" class="modal-trigger-button">
+                    <span class="modal-trigger-text">Milníky</span>
+                </button>
+
+                <div id="artifactsPanel" class="panel hidden"> <h3 class="font-semibold text-gray-100 text-center">Artefakty</h3>
+                    <div id="artifactsList" class="space-y-1 max-h-40 overflow-y-auto">
+                        </div>
+                </div>
+                 <div id="companionsPanel" class="panel">
+                    <h3>Společníci</h3>
+                    <div id="companionsContainer" class="space-y-2">
+                        </div>
+                </div>
+                <div id="gameStatsPanel" class="panel game-stats-panel"> <h3>Herní Statistiky</h3>
+                    <div id="gameStatsContainer">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="messageBox" class="text-center text-sm rounded-md hidden"></div>
+
+        <div id="talentTreeModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Cesta Věčnosti - Strom Talentů</h2>
+                    <button id="closeTalentTreeButton" class="modal-close-button">&times;</button>
+                </div>
+                <div class="mb-4 text-center">
+                    <p class="text-sm">Úroveň hráče: <span id="modalPlayerLevel" class="font-bold text-green-400">1</span></p>
+                    <p class="text-sm">Dostupné talentové body: <span id="modalTalentPoints" class="font-bold text-indigo-400">0</span></p>
+                </div>
+                <div id="talentsContainer" class="space-y-3">
+                    </div>
+            </div>
+        </div>
+
+        <div id="dailyQuestsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Denní Výzvy</h2>
+                    <button id="closeDailyQuestsButton" class="modal-close-button">&times;</button>
+                </div>
+                <div id="dailyQuestsListModal" class="space-y-2 mt-2"> 
+                    </div>
+            </div>
+        </div>
+
+        <div id="milestonesModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Milníky</h2>
+                    <button id="closeMilestonesButton" class="modal-close-button">&times;</button>
+                </div>
+                <div id="milestonesListModal" class="space-y-1 mt-2 max-h-72 overflow-y-auto"> 
+                    </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // --- Sound Manager ---
+        const soundManager = {
+            isMuted: false,
+            volume: 0.5,
+            audioContextInitialized: false, 
+            synthsInitialized: false, 
+            synthConfigs: { 
+                click: { type: 'Synth', options: { oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.1 }, volume: -18 } },
+                critClick: { type: 'Synth', options: { oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2 }, volume: -12 } },
+                enemyDefeat: { type: 'NoiseSynth', options: { noise: { type: "white" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }, volume: -20 } },
+                championDefeat: { type: 'NoiseSynth', options: { noise: { type: "pink" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.2 }, volume: -15 } },
+                bossDefeat: { type: 'MetalSynth', options: { frequency: 50, envelope: { attack: 0.01, decay: 0.4, release: 0.2 }, harmonicity: 3.1, modulationIndex: 16, resonance: 2000, octaves: 1.5, volume: -10 } },
+                skillActivate: { type: 'Synth', options: { oscillator: { type: "pulse", width: 0.3 }, envelope: { attack: 0.01, decay: 0.2, sustain: 0.1, release: 0.3 }, volume: -10 } },
+                buffGain: { type: 'Synth', options: { oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.1, sustain: 0.05, release: 0.1 }, volume: -15 } },
+                debuffApply: { type: 'Synth', options: { oscillator: { type: "square" }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 0.1 }, filter: { type: "lowpass", frequency: 800 }, volume: -18 } },
+                tierAdvance: { type: 'Synth', options: { oscillator: {type: "fmsquare", modulationType : "sine", harmonicity : 0.5, modulationIndex: 10}, envelope: {attack: 0.1, decay: 0.2, sustain: 0.3, release: 0.5}, volume: -8 } },
+                echo: { type: 'MembraneSynth', options: { pitchDecay: 0.08, octaves: 5, oscillator: { type: "sine" }, envelope: { attack: 0.001, decay: 0.5, sustain: 0.01, release: 0.8, attackCurve: "exponential"}, volume: -5 } },
+                milestone: { type: 'PluckSynth', options: { attackNoise: 0.5, dampening: 2000, resonance: 0.9, volume: -12 } },
+                upgrade: { type: 'Synth', options: { oscillator: { type: "triangle" }, envelope: { attack: 0.001, decay: 0.02, sustain: 0, release: 0.05 }, volume: -22 } },
+                openModal: { type: 'Synth', options: { oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.1 }, volume: -20 } },
+                closeModal: { type: 'Synth', options: { oscillator: { type: "sine" }, envelope: { attack: 0.005, decay: 0.03, sustain: 0, release: 0.08 }, volume: -22 } }
+            },
+            sounds: {},
+
+            init() { 
+                this.loadSettings(); 
+            },
+
+            async _startAudioContextAndInitialize() {
+                if (this.audioContextInitialized) {
+                    if (!this.synthsInitialized) this._initializeSynthsInternal();
+                    return;
+                }
+                if (Tone.context.state !== 'running') {
+                    try {
+                        await Tone.start();
+                        // console.log("AudioContext started successfully via _startAudioContextAndInitialize.");
+                        this.audioContextInitialized = true;
+                    } catch (e) {
+                        console.error("Error starting AudioContext in _startAudioContextAndInitialize:", e);
+                        this.audioContextInitialized = false; 
+                        return; 
+                    }
+                } else {
+                    this.audioContextInitialized = true;
+                }
+
+                this._initializeSynthsInternal();
+                this.setVolume(this.volume, true); 
+                this.applyMuteState();      
+
+                if (typeof volumeSlider !== 'undefined' && volumeSlider && typeof muteButton !== 'undefined' && muteButton) {
+                    volumeSlider.value = this.volume;
+                    muteButton.textContent = this.isMuted ? "Odtlumit" : "Ztlumit";
+                    muteButton.classList.toggle('muted', this.isMuted);
+                }
+            },
+
+            _initializeSynthsInternal() {
+                if (!this.audioContextInitialized || this.synthsInitialized) {
+                    return;
+                }
+                // console.log("Initializing Tone.js synths...");
+                for (const soundName in this.synthConfigs) {
+                    const config = this.synthConfigs[soundName];
+                    try {
+                        if (Tone[config.type]) {
+                            this.sounds[soundName] = new Tone[config.type](config.options).toDestination();
+                        } else {
+                            console.error(`Unknown Tone synth type: ${config.type} for sound: ${soundName}`);
+                        }
+                    } catch (e) {
+                        console.error(`Error initializing synth ${soundName}:`, e);
+                    }
+                }
+                this.synthsInitialized = true;
+                // console.log("Synths initialized.");
+            },
+
+            async playSound(soundName, note = 'C4', duration = '8n') {
+                if (!this.audioContextInitialized || !this.synthsInitialized) {
+                    // console.warn(`playSound(${soundName}) called before audio fully initialized. User gesture might be needed.`);
+                    return; 
+                }
+                if (this.isMuted) return;
+
+                if (!this.sounds[soundName]) {
+                    console.warn(`Sound object for "${soundName}" not found. Synths might not be initialized correctly.`);
+                    return;
+                }
+
+                try {
+                    if (this.sounds[soundName] instanceof Tone.Synth ||
+                        this.sounds[soundName] instanceof Tone.NoiseSynth ||
+                        this.sounds[soundName] instanceof Tone.MembraneSynth ||
+                        this.sounds[soundName] instanceof Tone.MetalSynth) {
+                        this.sounds[soundName].triggerAttackRelease(note, duration, Tone.now());
+                    } else if (this.sounds[soundName] instanceof Tone.PluckSynth) {
+                        this.sounds[soundName].triggerAttack(note, Tone.now());
+                    }
+                } catch (e) {
+                    console.error(`Error playing sound ${soundName}:`, e, this.sounds[soundName]);
+                }
+            },
+            
+            setVolume(volumeValue, internalCall = false) {
+                this.volume = parseFloat(volumeValue);
+                if (this.audioContextInitialized && !this.isMuted) { 
+                    Tone.Destination.volume.value = Tone.gainToDb(this.volume);
+                }
+                if (!internalCall) {
+                    localStorage.setItem('gameSoundVolume', this.volume);
+                }
+            },
+            
+            applyMuteState() {
+                if (this.audioContextInitialized) {
+                     Tone.Destination.mute = this.isMuted;
+                }
+            },
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                 if (this.audioContextInitialized) { 
+                    Tone.Destination.mute = this.isMuted;
+                    if (!this.isMuted) { 
+                         Tone.Destination.volume.value = Tone.gainToDb(this.volume);
+                    }
+                }
+                localStorage.setItem('gameSoundMuted', this.isMuted);
+                return this.isMuted;
+            },
+
+            loadSettings() {
+                const savedVolume = localStorage.getItem('gameSoundVolume');
+                const savedMuted = localStorage.getItem('gameSoundMuted');
+                if (savedVolume !== null) this.volume = parseFloat(savedVolume);
+                if (savedMuted !== null) this.isMuted = JSON.parse(savedMuted);
+            }
+        };
+        soundManager.init(); 
+
+        let firstGestureMade = false;
+        async function firstUserGestureHandler() { 
+            if (firstGestureMade) return;
+            firstGestureMade = true;
+            await soundManager._startAudioContextAndInitialize(); 
+        }
+        document.body.addEventListener('click', firstUserGestureHandler, { capture: true, once: true });
+        document.body.addEventListener('touchstart', firstUserGestureHandler, { capture: true, once: true });
+        document.body.addEventListener('keydown', firstUserGestureHandler, { capture: true, once: true });
+
+
+        // --- Utility Function ---
+        function formatNumber(num, precision = 2) {
+            const absNum = Math.abs(num);
+            if (absNum < 1000) {
+                if (num !== 0 && absNum < 0.01 && precision === 2) { 
+                     return num.toFixed(4); 
+                }
+                return parseFloat(num.toFixed(precision)).toString(); 
+            }
+            const si = [
+                { value: 1, symbol: "" }, { value: 1E3, symbol: "K" }, { value: 1E6, symbol: "M" },
+                { value: 1E9, symbol: "B" }, { value: 1E12, symbol: "T" }, { value: 1E15, symbol: "P" },
+                { value: 1E18, symbol: "E" }
+            ];
+            const rx = /\.0+$|(\.[0-9]*[1-9])0+$/;
+            let i;
+            for (i = si.length - 1; i > 0; i--) {
+                if (absNum >= si[i].value) {
+                    break;
+                }
+            }
+            let formattedNum = (num / si[i].value).toFixed(precision);
+            formattedNum = formattedNum.replace(rx, "$1");
+            return formattedNum + si[i].symbol;
+        }
+
+
+        // --- Herní stavové proměnné ---
+        let gold = 0;
+        let baseClickDamage = 10; 
+        let effectiveClickDamage = baseClickDamage; 
+        let passivePercentFromTiers = 0; 
+        let currentGlobalTierClickDamageBonus = 0; 
+        let totalCompanionPassivePercent = 0; 
+
+        let enemy = { 
+            name: "Slime", currentHealth: 10, maxHealth: 10, goldReward: 5, 
+            effectiveLevel: 1, isChampion: false, isBoss: false 
+        };
+        
+        let currentWorld = 1;
+        let currentZoneInWorld = 1;
+        let enemiesDefeatedInZone = 0;
+        const ENEMIES_PER_ZONE = 100; 
+        const ZONES_PER_WORLD = 10; 
+        const MAX_WORLDS = 30; 
+
+        let playerLevel = 1;
+        let playerXP = 0;
+        let xpToNextLevel = 70; 
+        let talentPoints = 0;
+        let talentPointGainPerLevel = 1; 
+
+        const equipmentSlots = ['weapon', 'helmet', 'gloves', 'armor', 'pants', 'boots'];
+        const itemNamesCzech = {
+            weapon: 'Zbraň', helmet: 'Helma', gloves: 'Rukavice',
+            armor: 'Brnění', pants: 'Kalhoty', boots: 'Boty'
+        };
+        const itemIcons = { 
+            weapon: '⚔️', helmet: '🛡️', gloves: '🧤',
+            armor: '👕', pants: '👖', boots: '👢'
+        };
+        const tiers = [ 
+            { name: "Plátěné", passivePercentBonus: 0, costMultiplier: 1, clickDamageBonus: 0 }, 
+            { name: "Dřevěné", passivePercentBonus: 0.0001, costMultiplier: 1.5, clickDamageBonus: 500 },
+            { name: "Kamenné", passivePercentBonus: 0.0002, costMultiplier: 2.2, clickDamageBonus: 1500 },
+            { name: "Bronzové", passivePercentBonus: 0.0003, costMultiplier: 3.5, clickDamageBonus: 4000 },
+            { name: "Železné", passivePercentBonus: 0.0005, costMultiplier: 5, clickDamageBonus: 10000 },
+            { name: "Platinové", passivePercentBonus: 0.0008, costMultiplier: 7.5, clickDamageBonus: 25000 },
+            { name: "Diamantové", passivePercentBonus: 0.0012, costMultiplier: 12, clickDamageBonus: 60000 }
+        ];
+        let currentTierIndex = 0; 
+        let equipment = {}; 
+
+        const MAX_ITEM_LEVEL = 100; 
+
+        const BUFF_TYPE_POWER_SHARD = 'powerShard'; const BUFF_TYPE_GOLD_RUSH = 'goldRush'; 
+        const DEBUFF_TYPE_PARASITE = 'parasite';
+        let activeBuffs = {}; let activeDebuffs = {}; 
+        const POWER_SHARD_DROP_CHANCE = 0.03; 
+        const POWER_SHARD_DURATION = 10; const POWER_SHARD_MULTIPLIER = 2; 
+        const GOLD_RUSH_DROP_CHANCE = 0.05; const GOLD_RUSH_DURATION = 15; const GOLD_RUSH_MULTIPLIER = 3; 
+        const PARASITE_APPLY_CHANCE = 0.05; const PARASITE_DURATION = 15; 
+        const PARASITE_GOLD_DRAIN_PER_SECOND = 2; const PARASITE_CLEANSE_COST = 30;
+
+        let mocnyUderCooldownTimeLeft = 0; 
+        let mocnyUderActive = false;
+        let mocnyUderDurationLeft = 0; 
+        const MOCNY_UDER_COOLDOWN = 300; 
+        const MOCNY_UDER_DURATION = 10; 
+        const MOCNY_UDER_DAMAGE_MULTIPLIER = 7; 
+
+        let zlataHoreckaAktivniCooldownTimeLeft = 0;
+        let zlataHoreckaAktivniActive = false;
+        let zlataHoreckaAktivniDurationLeft = 0;
+        const ZLATA_HORECKA_AKTIVNI_COOLDOWN = 300; 
+        const ZLATA_HORECKA_AKTIVNI_DURATION = 15; 
+        const ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER = 4; 
+
+        let echoShards = 0; let echoCount = 0;
+        let highestEffectiveLevelReachedThisEcho = 1; 
+        let lastSaveTime = Date.now(); 
+        let echoPermanentGoldBonus = 1.0; let echoPermanentDamageBonus = 1.0; 
+        let echoGoldLevelCount = 0; let echoDamageLevelCount = 0; 
+        let echoGoldUpgradeCost = 5; const initialEchoGoldUpgradeCost = 5; const echoGoldUpgradeValue = 0.05; 
+        let echoDamageUpgradeCost = 5; const initialEchoDamageUpgradeCost = 5; const echoDamageUpgradeValue = 0.10; 
+        
+        let bossFightTimerActive = false;
+        let bossFightTimeLeft = 0; 
+        const BOSS_FIGHT_DURATION = 30; 
+
+        let lifetimeStats = {
+            totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0,
+            totalChampionsKilled: 0, totalEnemiesKilled: 0, lifetimeGoldEarned: 0,
+            lifetimeEchoShardsEarned: 0, lifetimePlayerLevelsGained: 0, lifetimeTiersAdvanced: 0
+        };
+        
+        const milestones = [
+            { id: 'zone_5_world_1', description: 'Dosáhni Zóny 5 ve Světě 1', condition: () => currentWorld >= 1 && currentZoneInWorld >= 5, rewardText: '+5 EÚ', applyReward: () => { echoShards += 5; soundManager.playSound('milestone', 'G5', '4n'); }, achieved: false, perEcho: true },
+            { id: 'player_level_5', description: 'Dosáhni úrovně hráče 5', condition: () => playerLevel >= 5, rewardText: '+1 Talentový Bod', applyReward: () => { talentPoints += 1; soundManager.playSound('milestone', 'A5', '4n'); }, achieved: false, perEcho: false },
+            { id: 'total_gold_1000_echo', description: 'Nasbírej 1000 zlata v tomto Echu', condition: () => totalGoldEarnedThisEcho >= 1000, rewardText: '+10 EÚ', applyReward: () => { echoShards += 10; soundManager.playSound('milestone', 'B5', '4n'); }, achieved: false, perEcho: true },
+            { id: 'enemies_killed_100_echo', description: 'Poraz 100 nepřátel v tomto Echu', condition: () => enemiesKilledThisEcho >= 100, rewardText: '+10 EÚ', applyReward: () => { echoShards += 10; soundManager.playSound('milestone', 'C6', '4n'); }, achieved: false, perEcho: true },
+            { id: 'first_echo', description: 'Proveď své první Echo', condition: () => echoCount >= 1, rewardText: 'Odemkni Zlatou Horečku (pasivní)', applyReward: () => {soundManager.playSound('milestone', 'D6', '2n');}, achieved: false, perEcho: false }, 
+            { id: 'total_echo_shards_50', description: 'Nasbírej celkem 50 Echo Úlomků', condition: () => lifetimeStats.lifetimeEchoShardsEarned >= 50, rewardText: '+5% k pasivnímu příjmu zlata (trvale)', applyReward: () => { echoPermanentGoldBonus += 0.05; soundManager.playSound('milestone', 'E6', '2n'); }, achieved: false, perEcho: false },
+            { id: 'echo_count_3', description: 'Proveď 3 Echa', condition: () => echoCount >= 3, rewardText: '+10% k poškození kliknutím (trvale)', applyReward: () => { echoPermanentDamageBonus += 0.10; soundManager.playSound('milestone', 'F#6', '2n'); }, achieved: false, perEcho: false },
+            { id: 'player_level_10', description: 'Dosáhni úrovně hráče 10', condition: () => playerLevel >= 10, rewardText: '+2 Talentové Body', applyReward: () => { talentPoints += 2; soundManager.playSound('milestone', 'G6', '2n'); }, achieved: false, perEcho: false },
+            { id: 'reach_world_2', description: 'Dosáhni Světa 2', condition: () => currentWorld >= 2, rewardText: '+25 EÚ', applyReward: () => { echoShards += 25; soundManager.playSound('milestone', 'A6', '1n'); }, achieved: false, perEcho: true },
+            { id: 'reach_tier_1', description: 'Dosáhni Tieru 1 (Dřevěné)', condition: () => currentTierIndex >= 1, rewardText: '+10 EÚ', applyReward: () => { echoShards += 10; soundManager.playSound('milestone', 'B6', '1n'); }, achieved: false, perEcho: false }, 
+        ];
+        let totalGoldEarnedThisEcho = 0; let enemiesKilledThisEcho = 0; 
+
+        const talents = {
+            increasedClickDamage: { name: "Základní Síla", description: "Zvyšuje základní poškození kliknutím o 10% za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 1 + level, effectType: 'base_click_damage_multiplier_percent', effectValue: 0.10, branch: 'basic' },
+            goldVeins: { name: "Zlaté Žíly", description: "Zvyšuje veškeré získané zlato o 3% za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 1 + Math.floor(level/2), effectType: 'gold_multiplier_all_percent', effectValue: 0.03, branch: 'basic', requires: 'increasedClickDamage' },
+            echoAffinity: { name: "Echo Příbuznost", description: "Zvyšuje množství získaných Echo Úlomků z Echa o 5% za úroveň.", maxLevel: 5, currentLevel: 0, cost: (level) => 2 + level, effectType: 'echo_shard_multiplier_percent', effectValue: 0.05, branch: 'basic', requires: 'goldVeins' },
+            critChanceBoost: { name: "Ostříží Zrak", description: "Zvyšuje šanci na kritický zásah o 0.5% za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 2 + level, effectType: 'crit_chance_bonus_percent', effectValue: 0.005, branch: 'crit' },
+            critDamageBoost: { name: "Brutální Síla", description: "Zvyšuje poškození kritickým zásahem o 10% (multiplikativně) za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 2 + level, effectType: 'crit_damage_multiplier_bonus_percent', effectValue: 0.10, branch: 'crit', requires: 'critChanceBoost' }, 
+            ultimateCritMastery: { name: "Smrtící Přesnost", description: "Každých 20 kliknutí je zaručený kritický zásah.", maxLevel: 1, currentLevel: 0, cost: () => 10, effectType: 'guaranteed_crit_every_x_hits', effectValue: 20, branch: 'crit', requires: 'critDamageBoost', isUltimate: true },
+            passivePercentFlatBoostTalent: { name: "Trvalý Oheň (%HP)", description: "Přidává +0.01% max HP/s k pasivnímu poškození za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 2 + level, effectType: 'passive_percent_flat_boost_talent', effectValue: 0.0001, branch: 'passive_dps' },
+            passivePercentMultiplierTalent: { name: "Síla Aury (%HP)", description: "Zvyšuje veškeré pasivní poškození (%HP/s) o 5% za úroveň.", maxLevel: 10, currentLevel: 0, cost: (level) => 3 + level, effectType: 'all_passive_percent_multiplier_talent', effectValue: 0.05, branch: 'passive_dps', requires: 'passivePercentFlatBoostTalent'},
+            ultimateAuraOfDecay: { name: "Aura Rozkladu", description: "Nepřátelé ztrácí 0.5% svého MAX. zdraví za sekundu (max. 500 DPS).", maxLevel: 1, currentLevel: 0, cost: () => 15, effectType: 'aura_percent_health_damage', effectValue: { percent: 0.005, cap: 500 }, branch: 'passive_dps', requires: 'passivePercentMultiplierTalent', isUltimate: true },
+        };
+        let clicksSinceLastGuaranteedCrit = 0;
+
+
+        const ARTIFACT_DROP_CHANCE_FROM_BOSS = 0.20; 
+        let ownedArtifactsData = {}; 
+
+        const allArtifacts = { 
+            'relic_dmg_01': {
+                id: 'relic_dmg_01', name: "Střípek Prastaré Síly", descriptionFormat: "+{bonusValue}% k veškerému poškození.",
+                baseBonusValue: 0.1, bonusPerLevel: 0.1, valueType: 'percent_direct_for_calc_multiplied_for_display', 
+                bonusType: 'all_damage_percent_additive', icon: '✨', source: 'boss_drop', maxLevel: 20 
+            },
+            'relic_gold_01': {
+                id: 'relic_gold_01', name: "Okem Zlatokopa", descriptionFormat: "+{bonusValue}% zlata navíc z nepřátel.",
+                baseBonusValue: 1, bonusPerLevel: 0.5, valueType: 'percent_direct_for_calc_multiplied_for_display',
+                bonusType: 'gold_bonus_percent_additive', icon: '💰', source: 'boss_drop', maxLevel: 20
+            },
+            'relic_echo_double_01': { 
+                id: 'relic_echo_double_01', name: "Rezonující Krystal", descriptionFormat: "{bonusValue}% šance na dvojnásobný zisk Echo Úlomků.",
+                baseBonusValue: 1, bonusPerLevel: 0.2, valueType: 'percent_direct_for_calc_multiplied_for_display', 
+                bonusType: 'echo_shard_double_chance', icon: '🔮', source: 'boss_drop', maxLevel: 25 
+            },
+            'relic_passive_percent_flat_01': {
+                id: 'relic_passive_percent_flat_01', name: "Šepot Věčnosti (%HP)", descriptionFormat: "+{bonusValue}% max HP/s pasivně.",
+                baseBonusValue: 0.0001, bonusPerLevel: 0.00005, valueType: 'percent_actual_for_calc_multiplied_for_display',
+                bonusType: 'passive_percent_flat_additive', icon: '🌀', source: 'boss_drop', maxLevel: 50
+            },
+            'relic_cooldown_power_strike_01': {
+                id: 'relic_cooldown_power_strike_01', name: "Chronometronové Ozubené Kolečko", descriptionFormat: "-{bonusValue}% k cooldownu Mocného úderu.",
+                baseBonusValue: 2, bonusPerLevel: 0.5, valueType: 'percent_direct_for_calc_multiplied_for_display',
+                bonusType: 'cooldown_reduction_power_strike_percent', icon: '⏱️', source: 'boss_drop', maxLevel: 10
+            },
+            'relic_crit_chance_01': {
+                id: 'relic_crit_chance_01', name: "Oko Predátora", descriptionFormat: "+{bonusValue}% šance na kritický zásah.",
+                baseBonusValue: 0.005, bonusPerLevel: 0.0025, valueType: 'percent_actual_for_calc_multiplied_for_display',
+                bonusType: 'crit_chance_percent_additive', icon: '🎯', source: 'boss_drop', maxLevel: 20
+            }
+        };
+        
+        let baseCritChance = 0.05; 
+        let effectiveCritChance = baseCritChance;
+        const critDamageMultiplier = 2; 
+
+
+        const allPossibleQuests = [
+            { id: 'dq_kill_champions_5', description: "Poraz 5 Šampionů", actionType: 'championKill', target: 5, rewardType: 'echo_shards', rewardAmount: 25, icon: '🏆' },
+            { id: 'dq_earn_gold_10k', description: "Nasbírej 10000 Zlata (v tomto sezení)", actionType: 'goldEarnedQuest', target: 10000, rewardType: 'gold', rewardAmount: 5000, icon: '💰' },
+            { id: 'dq_use_power_strike_3', description: "Použij Mocný úder 3x", actionType: 'powerStrikeUsed', target: 3, rewardType: 'echo_shards', rewardAmount: 15, icon: '💥' },
+            { id: 'dq_defeat_enemies_50', description: "Poraz 50 nepřátel", actionType: 'enemyKill', target: 50, rewardType: 'gold', rewardAmount: 2500, icon: '💀' },
+            { id: 'dq_reach_zone_3', description: "Dosáhni Zóny 3 (v aktuálním světě)", actionType: 'zoneReached', target: 3, rewardType: 'echo_shards', rewardAmount: 10, icon: '🗺️' },
+        ];
+        let dailyQuestData = { quests: [], lastResetDate: null, goldEarnedForQuestToday: 0 };
+
+        const allCompanions = {
+            'bat_companion': {
+                id: 'bat_companion', name: "Věrný Netopýr", icon: '🦇', description: "Malý netopýr, který ti pomáhá útočit.",
+                basePassivePercent: 0.0002, passivePercentPerLevel: 0.0001, maxLevel: 50,
+                unlockCost: 5000,  upgradeBaseCost: 20, upgradeCostMultiplier: 1.15, source: 'shop' 
+            },
+            'wolf_companion': {
+                id: 'wolf_companion', name: "Mystický Vlk", icon: '🐺', description: "Silný vlk, který způsobuje značné poškození.",
+                basePassivePercent: 0.001, passivePercentPerLevel: 0.0004, maxLevel: 30,
+                unlockCost: 25000, upgradeBaseCost: 100, upgradeCostMultiplier: 1.20, source: 'shop'
+            }
+        };
+        let ownedCompanions = {}; 
+
+
+        const enemySVGs = [ 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="40" fill="#A7F3D0"/><circle cx="40" cy="40" r="5" fill="black"/><circle cx="60" cy="40" r="5" fill="black"/><path d="M 40 60 Q 50 70 60 60" stroke="black" fill="transparent"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="25" y="30" width="50" height="60" rx="10" fill="#86EFAC"/><circle cx="40" cy="50" r="5" fill="red"/><circle cx="60" cy="50" r="5" fill="red"/><rect x="35" y="70" width="30" height="10" fill="brown"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M30 90 Q50 70 70 90 Q90 50 70 20 Q50 40 30 20 Q10 50 30 90Z" fill="#E0E7FF"/><circle cx="45" cy="45" r="4" fill="black"/><circle cx="55" cy="45" r="4" fill="black"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M10 30 L50 70 L90 30 L75 50 L50 20 L25 50 Z" fill="#6B7280"/><circle cx="40" cy="35" r="3" fill="red"/><circle cx="60" cy="35" r="3" fill="red"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="20" width="40" height="70" rx="5" fill="#A3A3A3"/><ellipse cx="50" cy="20" rx="25" ry="10" fill="#737373"/><circle cx="40" cy="30" r="3" fill="yellow"/><circle cx="60" cy="30" r="3" fill="yellow"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><rect x="20" y="10" width="60" height="80" rx="15" fill="#78716C"/><circle cx="40" cy="30" r="6" fill="#FBBF24"/><circle cx="60" cy="30" r="6" fill="#FBBF24"/><rect x="30" y="50" width="40" height="10" fill="#57534E"/></svg>', 
+            '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M50 10 C 40 30, 30 30, 20 50 C 30 70, 40 80, 50 90 C 60 80, 70 70, 80 50 C 70 30, 60 30, 50 10 Z" fill="#FB923C"/><circle cx="45" cy="40" r="5" fill="yellow"/><circle cx="55" cy="40" r="5" fill="yellow"/><path d="M40 60 Q50 50 60 60" stroke="red" stroke-width="3" fill="transparent"/></svg>'
+        ];
+        const enemyNames = ["Slizoun", "Goblin", "Duch", "Netopýr", "Skřetí Pařez", "Kamenný Golem", "Ohnivý Skřítek"];
+        
+        const goldDisplayContainer = document.getElementById('goldDisplayContainer');
+        const enemyElement = document.getElementById('enemy'); const enemyArtElement = document.getElementById('enemyArt'); 
+        const enemyNameDisplay = document.getElementById('enemyName'); const enemyHealthTextDisplay = document.getElementById('enemyHealthText');
+        const enemyHealthBar = document.getElementById('enemyHealthBar');
+        const bossTimerDisplay = document.getElementById('bossTimerDisplay'); 
+        const goldDisplay = document.getElementById('goldDisplay'); const clickDamageDisplay = document.getElementById('clickDamageDisplay'); 
+        const enemyEffectiveLevelDisplay = document.getElementById('enemyEffectiveLevelDisplay');
+        const passiveDamageDisplay = document.getElementById('passiveDamageDisplay'); 
+        const currentWorldDisplay = document.getElementById('currentWorldDisplay');
+        const currentZoneDisplay = document.getElementById('currentZoneDisplay');
+        const zoneProgressDisplay = document.getElementById('zoneProgressDisplay');
+        const echoShardsDisplay = document.getElementById('echoShardsDisplay'); const echoCountDisplay = document.getElementById('echoCountDisplay');
+        const playerLevelDisplay = document.getElementById('playerLevelDisplay'); const talentPointsDisplay = document.getElementById('talentPointsDisplay');
+        const playerXPBar = document.getElementById('playerXPBar'); const playerXPText = document.getElementById('playerXPText');
+        const damageNumberContainer = document.getElementById('enemyContainer'); 
+        const activeEffectsContainer = document.getElementById('activeEffectsContainer'); 
+        const cleanseDebuffButton = document.getElementById('cleanseDebuffButton'); const cleanseCostDisplay = document.getElementById('cleanseCostDisplay');
+        const echoButton = document.getElementById('echoButton'); const echoShardsToGain = document.getElementById('echoShardsToGain'); 
+        const echoConditionDisplay = document.getElementById('echoConditionDisplay'); 
+        const milestonesListElement = document.getElementById('milestonesList'); const messageBox = document.getElementById('messageBox');
+        const upgradeEchoGoldButton = document.getElementById('upgradeEchoGold'); const echoGoldBonusValueDisplay = document.getElementById('echoGoldBonusValue');
+        const echoGoldLevelDisplay = document.getElementById('echoGoldLevel'); const echoGoldCostDisplay = document.getElementById('echoGoldCostDisplay');
+        const upgradeEchoDamageButton = document.getElementById('upgradeEchoDamage'); const echoDamageBonusValueDisplay = document.getElementById('echoDamageBonusValue');
+        const echoDamageLevelDisplay = document.getElementById('echoDamageLevel'); const echoDamageCostDisplay = document.getElementById('echoDamageCostDisplay');
+        const openTalentTreeButton = document.getElementById('openTalentTreeButton');
+        const talentTreeModal = document.getElementById('talentTreeModal');
+        const closeTalentTreeButton = document.getElementById('closeTalentTreeButton');
+        const talentsContainer = document.getElementById('talentsContainer');
+        const modalPlayerLevel = document.getElementById('modalPlayerLevel');
+        const modalTalentPoints = document.getElementById('modalTalentPoints');
+        const equipmentContainer = document.getElementById('equipmentContainer');
+        const currentTierDisplay = document.getElementById('currentTierDisplay');
+        const advanceTierButton = document.getElementById('advanceTierButton');
+        const nextTierCostDisplay = document.getElementById('nextTierCostDisplay'); 
+        const mocnyUderButton = document.getElementById('mocnyUderButton');
+        const mocnyUderText = document.getElementById('mocnyUderText');
+        const mocnyUderCooldownDisplay = document.getElementById('mocnyUderCooldownDisplay');
+        const zlataHoreckaAktivniButton = document.getElementById('zlataHoreckaAktivniButton');
+        const zlataHoreckaAktivniText = document.getElementById('zlataHoreckaAktivniText');
+        const zlataHoreckaAktivniCooldownDisplay = document.getElementById('zlataHoreckaAktivniCooldownDisplay');
+        const artifactsPanelElement = document.getElementById('artifactsPanel');
+        const artifactsListElement = document.getElementById('artifactsList');
+        const resetGameButton = document.getElementById('resetGameButton'); 
+        const dailyQuestsListElement = document.getElementById('dailyQuestsList');
+        const gameStatsContainer = document.getElementById('gameStatsContainer');
+        const openDailyQuestsButton = document.getElementById('openDailyQuestsButton');
+        const closeDailyQuestsButton = document.getElementById('closeDailyQuestsButton');
+        const dailyQuestsModal = document.getElementById('dailyQuestsModal');
+        const dailyQuestsListModalElement = document.getElementById('dailyQuestsListModal');
+        const openMilestonesButton = document.getElementById('openMilestonesButton');
+        const closeMilestonesButton = document.getElementById('closeMilestonesButton');
+        const milestonesModal = document.getElementById('milestonesModal');
+        const milestonesListModalElement = document.getElementById('milestonesListModal');
+        const companionsContainer = document.getElementById('companionsContainer');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const muteButton = document.getElementById('muteButton');
+
+
+        // --- Artefakty Funkce ---
+        function getArtifactBonus(bonusType) {
+            let totalBonus = 0;
+            for (const artifactId in ownedArtifactsData) {
+                const artifactDefinition = allArtifacts[artifactId];
+                const artifactInstance = ownedArtifactsData[artifactId];
+                if (artifactDefinition && artifactDefinition.bonusType === bonusType) {
+                    let currentArtifactBonus = artifactDefinition.baseBonusValue;
+                    if (artifactInstance.level > 1) {
+                        currentArtifactBonus += (artifactInstance.level - 1) * artifactDefinition.bonusPerLevel;
+                    }
+                    totalBonus += currentArtifactBonus;
+                }
+            }
+            return totalBonus;
+        }
+        
+        function renderArtifactsUI() {
+            if (Object.keys(ownedArtifactsData).length === 0) {
+                artifactsPanelElement.classList.add('hidden');
+                return;
+            }
+            artifactsPanelElement.classList.remove('hidden');
+            artifactsListElement.innerHTML = ''; 
+            for (const artifactId in ownedArtifactsData) {
+                const artifactDefinition = allArtifacts[artifactId];
+                const artifactInstance = ownedArtifactsData[artifactId];
+                if (artifactDefinition) {
+                    const artifactDiv = document.createElement('div');
+                    artifactDiv.classList.add('artifact-item-display'); 
+
+                    const iconSpan = document.createElement('span');
+                    iconSpan.classList.add('icon');
+                    iconSpan.textContent = artifactDefinition.icon ? `${artifactDefinition.icon} ` : '';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.classList.add('name'); 
+                    nameSpan.textContent = artifactDefinition.name;
+
+                    const levelSpan = document.createElement('span');
+                    levelSpan.classList.add('level');
+                    levelSpan.textContent = `(Úr. ${artifactInstance.level}${artifactDefinition.maxLevel ? '/' + artifactDefinition.maxLevel : ''})`;
+                    
+                    const descSpan = document.createElement('span');
+                    descSpan.classList.add('description'); 
+                    
+                    let rawBonusValue = artifactDefinition.baseBonusValue;
+                    if (artifactInstance.level > 1) {
+                        rawBonusValue += (artifactInstance.level - 1) * artifactDefinition.bonusPerLevel;
+                    }
+
+                    let bonusValueForDisplay;
+                    if (artifactDefinition.valueType === 'percent_direct_for_calc_multiplied_for_display') {
+                        bonusValueForDisplay = formatNumber(rawBonusValue * 100, 2); 
+                    } else if (artifactDefinition.valueType === 'percent_actual_for_calc_multiplied_for_display') {
+                        bonusValueForDisplay = formatNumber(rawBonusValue * 100, 2); 
+                    } else { 
+                        bonusValueForDisplay = formatNumber(rawBonusValue);
+                    }
+                    descSpan.textContent = artifactDefinition.descriptionFormat.replace('{bonusValue}', bonusValueForDisplay);
+
+
+                    artifactDiv.appendChild(iconSpan);
+                    nameSpan.appendChild(levelSpan); 
+                    artifactDiv.appendChild(nameSpan);
+                    artifactDiv.appendChild(descSpan);
+
+                    artifactsListElement.appendChild(artifactDiv);
+                }
+            }
+        }
+
+        function tryDropArtifact() {
+            if (enemy.isBoss && Math.random() < ARTIFACT_DROP_CHANCE_FROM_BOSS) {
+                const availableArtifactsToDrop = Object.values(allArtifacts).filter(art => art.source === 'boss_drop');
+                
+                if (availableArtifactsToDrop.length > 0) {
+                    const droppedArtifactDefinition = availableArtifactsToDrop[Math.floor(Math.random() * availableArtifactsToDrop.length)];
+                    const droppedArtifactId = droppedArtifactDefinition.id;
+
+                    if (ownedArtifactsData[droppedArtifactId]) { 
+                        const artifactInstance = ownedArtifactsData[droppedArtifactId];
+                        if (!droppedArtifactDefinition.maxLevel || artifactInstance.level < droppedArtifactDefinition.maxLevel) {
+                            artifactInstance.level++;
+                            showMessageBox(`Artefakt ${droppedArtifactDefinition.name} vylepšen na úroveň ${artifactInstance.level}!`, false, 3000);
+                            soundManager.playSound('upgrade', 'A5', '16n');
+                        } else {
+                            showMessageBox(`Artefakt ${droppedArtifactDefinition.name} je již na maximální úrovni!`, false, 3000);
+                        }
+                    } else { 
+                        ownedArtifactsData[droppedArtifactId] = { level: 1 };
+                        showMessageBox(`Získal jsi nový artefakt: ${droppedArtifactDefinition.name}!`, false, 3000);
+                        soundManager.playSound('milestone', 'E5', '4n');
+                    }
+                    
+                    renderArtifactsUI(); 
+                    updateCurrentTierBonuses(); 
+                    calculateEffectiveStats(); 
+                    updateUI(); 
+                }
+            }
+        }
+
+        function updateCurrentTierBonuses() {
+            let cumulativeTierPassivePercent = 0;
+            let cumulativeTierClickDmg = 0;
+            for (let i = 0; i <= currentTierIndex; i++) {
+                cumulativeTierPassivePercent += tiers[i].passivePercentBonus || 0;
+                cumulativeTierClickDmg += tiers[i].clickDamageBonus;
+            }
+
+            passivePercentFromTiers = cumulativeTierPassivePercent;
+            passivePercentFromTiers += getArtifactBonus('passive_percent_flat_additive'); 
+
+            if (talents.passivePercentFlatBoostTalent && talents.passivePercentFlatBoostTalent.currentLevel > 0) {
+                passivePercentFromTiers += talents.passivePercentFlatBoostTalent.effectValue * talents.passivePercentFlatBoostTalent.currentLevel;
+            }
+            currentGlobalTierClickDamageBonus = cumulativeTierClickDmg;
+        }
+
+        function initializeEquipment() {
+            equipmentSlots.forEach(slot => {
+                equipment[slot] = {
+                    level: 0,
+                    cost: calculateItemUpgradeCost(slot, 0, currentTierIndex) 
+                };
+            });
+        }
+
+        function calculateItemUpgradeCost(itemSlot, localLevel, tierIndexOfItem) {
+            const baseCost = 10; 
+            const tierCostMultiplier = tiers[tierIndexOfItem].costMultiplier; 
+            const effectiveLevelForCosting = (tierIndexOfItem * MAX_ITEM_LEVEL) + localLevel;
+            return Math.ceil((baseCost * tierCostMultiplier) * Math.pow(1.12 , effectiveLevelForCosting)); 
+        }
+        
+        function getItemDamage(level) {
+            if (level <= 0) return 0;
+            let totalDamage = 0;
+            const levelBlocksDamage = [1, 2, 4, 8, 16, 32, 64, 128, 256, 521]; 
+            const levelsPerBlock = 10;
+            for (let blockIndex = 0; blockIndex < levelBlocksDamage.length; blockIndex++) {
+                const damagePerLevelInThisBlock = levelBlocksDamage[blockIndex];
+                const blockStartLevel = blockIndex * levelsPerBlock + 1;
+                const blockEndLevel = (blockIndex + 1) * levelsPerBlock;
+                if (level < blockStartLevel) break;
+                const levelsInThisBlockToCalculate = Math.min(level, blockEndLevel) - blockStartLevel + 1;
+                totalDamage += levelsInThisBlockToCalculate * damagePerLevelInThisBlock;
+                if (level <= blockEndLevel) break;
+            }
+            return totalDamage;
+        }
+
+        function renderEquipment() {
+            equipmentContainer.innerHTML = ''; 
+            currentTierDisplay.textContent = `T${currentTierIndex} ${tiers[currentTierIndex].name}`;
+            equipmentSlots.forEach(slot => {
+                const item = equipment[slot];
+                const itemDamage = getItemDamage(item.level); 
+                const itemDiv = document.createElement('div');
+                itemDiv.classList.add('equipment-item');
+                const infoDiv = document.createElement('div');
+                infoDiv.classList.add('equipment-info');
+                infoDiv.innerHTML = `
+                    <span class="equipment-item-icon" style="float: left; margin-right: 0.5rem;">${itemIcons[slot]}</span>
+                    <div>
+                        <span class="equipment-name">${itemNamesCzech[slot]}</span>
+                        <span class="equipment-tier-level">T${currentTierIndex} ${tiers[currentTierIndex].name} - Úr. ${item.level}/${MAX_ITEM_LEVEL}</span>
+                        <span class="equipment-bonus">+${formatNumber(itemDamage)} Poškození</span>
+                    </div>`;
+                itemDiv.appendChild(infoDiv);
+                const upgradeOptionsDiv = document.createElement('div');
+                upgradeOptionsDiv.classList.add('equipment-upgrade-options');
+                const costForNextLevel = item.level < MAX_ITEM_LEVEL ? calculateItemUpgradeCost(slot, item.level, currentTierIndex) : 'MAX';
+                const disabledStatus = item.level >= MAX_ITEM_LEVEL ? 'disabled' : '';
+                const isAffordable = gold >= (item.level < MAX_ITEM_LEVEL ? calculateItemUpgradeCost(slot, item.level, currentTierIndex) : Infinity);
+                upgradeOptionsDiv.innerHTML = `
+                    <button data-slot="${slot}" data-amount="1" class="equipment-level-button ${isAffordable && item.level < MAX_ITEM_LEVEL ? 'affordable' : ''}" ${disabledStatus}>
+                        +1 Úr. <span class="cost-text">(${costForNextLevel === 'MAX' ? 'MAX' : formatNumber(costForNextLevel) + ' Z'})</span>
+                    </button>
+                    <button data-slot="${slot}" data-amount="5" class="equipment-level-button" ${disabledStatus}>+5 Úr.</button>
+                    <button data-slot="${slot}" data-amount="10" class="equipment-level-button" ${disabledStatus}>+10 Úr.</button>
+                    <button data-slot="${slot}" data-amount="max" class="equipment-level-button" ${disabledStatus}>Max Úr.</button>`;
+                itemDiv.appendChild(upgradeOptionsDiv);
+                equipmentContainer.appendChild(itemDiv);
+            });
+            checkTierAdvanceReady(); 
+        }
+        
+        function handleEquipmentUpgradeClick(event) {
+            const button = event.target.closest('.equipment-level-button');
+            if (!button || button.disabled) return;
+            const slot = button.dataset.slot;
+            const amount = button.dataset.amount;
+            if (slot && amount) {
+                upgradeEquipmentItem(slot, amount);
+            }
+        }
+
+        function upgradeEquipmentItem(slot, amount) {
+            const item = equipment[slot];
+            let levelsPurchased = 0;
+            if (item.level >= MAX_ITEM_LEVEL) return;
+
+            if (amount === 'max') {
+                while (item.level < MAX_ITEM_LEVEL) {
+                    const costForThisLevel = calculateItemUpgradeCost(slot, item.level, currentTierIndex);
+                    if (gold >= costForThisLevel) {
+                        gold -= costForThisLevel; item.level++; levelsPurchased++;
+                        item.cost = calculateItemUpgradeCost(slot, item.level, currentTierIndex); 
+                    } else break;
+                }
+            } else {
+                const numAmount = parseInt(amount);
+                for (let i = 0; i < numAmount; i++) {
+                    if (item.level >= MAX_ITEM_LEVEL) break;
+                    const costForThisLevel = calculateItemUpgradeCost(slot, item.level, currentTierIndex); 
+                    if (gold >= costForThisLevel) {
+                        gold -= costForThisLevel; item.level++; levelsPurchased++;
+                        item.cost = (item.level < MAX_ITEM_LEVEL) ? calculateItemUpgradeCost(slot, item.level, currentTierIndex) : Infinity;
+                    } else {
+                        if (levelsPurchased === 0) showMessageBox("Nedostatek zlata!", true);
+                        break; 
+                    }
+                }
+            }
+            if (levelsPurchased > 0) {
+                soundManager.playSound('upgrade', 'C5', '16n');
+                renderEquipment(); calculateEffectiveStats(); updateUI(); checkTierAdvanceReady(); 
+            }
+        }
+
+        function checkTierAdvanceReady() {
+            const allMaxLevel = equipmentSlots.every(slot => equipment[slot].level >= MAX_ITEM_LEVEL);
+            advanceTierButton.disabled = !allMaxLevel || currentTierIndex >= tiers.length - 1;
+            if (currentTierIndex >= tiers.length - 1) {
+                 advanceTierButton.textContent = "MAX TIER"; 
+            } else if (allMaxLevel) {
+                advanceTierButton.textContent = `Postoupit na T${currentTierIndex + 1} ${tiers[currentTierIndex+1].name}`;
+            } else {
+                 advanceTierButton.textContent = "Vyleveluj vše na 100";
+            }
+        }
+        
+        function advanceToNextTier() {
+            if (currentTierIndex < tiers.length - 1 && equipmentSlots.every(slot => equipment[slot].level >= MAX_ITEM_LEVEL)) {
+                let itemDamageFromCompletedTier = 0;
+                equipmentSlots.forEach(slot => {
+                    itemDamageFromCompletedTier += getItemDamage(equipment[slot].level);
+                });
+                baseClickDamage += itemDamageFromCompletedTier;
+                currentTierIndex++;
+                lifetimeStats.lifetimeTiersAdvanced++; 
+                updateCurrentTierBonuses(); 
+                equipmentSlots.forEach(slot => {
+                    equipment[slot].level = 0;
+                    equipment[slot].cost = calculateItemUpgradeCost(slot, 0, currentTierIndex); 
+                });
+                showMessageBox(`Postup na Tier ${currentTierIndex}: ${tiers[currentTierIndex].name}! Bonusy aktualizovány. Poškození z předchozího tieru zachováno.`, false);
+                soundManager.playSound('tierAdvance', 'C4', '2n');
+                renderEquipment(); calculateEffectiveStats(); updateUI(); checkMilestones(); 
+            }
+        }
+
+        function calculateXpToNextLevel() { return Math.floor(70 * Math.pow(1.10, playerLevel - 1)); } 
+        
+        function gainXP(amount) {
+            playerXP += amount; let leveledUp = false;
+            while (playerXP >= xpToNextLevel) {
+                playerXP -= xpToNextLevel; playerLevel++; 
+                lifetimeStats.lifetimePlayerLevelsGained++; 
+                talentPoints += talentPointGainPerLevel;
+                xpToNextLevel = calculateXpToNextLevel(); 
+                leveledUp = true;
+                showMessageBox(`Postup na úroveň ${playerLevel}! Získal jsi ${talentPointGainPerLevel} talentový bod.`, false, 3000);
+                soundManager.playSound('milestone', 'D5', '4n');
+            }
+            if (leveledUp) { 
+                renderTalentTree(); updateUI(); 
+            } 
+        }
+        
+        function calculateEffectiveStats() {
+            let currentTierItemDamage = 0;
+            equipmentSlots.forEach(slot => {
+                currentTierItemDamage += getItemDamage(equipment[slot].level); 
+            });
+            let calculatedDamage = baseClickDamage + currentTierItemDamage + currentGlobalTierClickDamageBonus; 
+            calculatedDamage *= echoPermanentDamageBonus; 
+            if (talents.increasedClickDamage.currentLevel > 0) { 
+                calculatedDamage *= (1 + talents.increasedClickDamage.effectValue * talents.increasedClickDamage.currentLevel);
+            }
+            let artifactAllDamageBonus = getArtifactBonus('all_damage_percent_additive'); 
+            calculatedDamage *= (1 + artifactAllDamageBonus); 
+            if (activeBuffs[BUFF_TYPE_POWER_SHARD]) calculatedDamage *= POWER_SHARD_MULTIPLIER;
+            if (mocnyUderActive) calculatedDamage *= MOCNY_UDER_DAMAGE_MULTIPLIER;
+            effectiveClickDamage = Math.ceil(calculatedDamage);
+            effectiveCritChance = baseCritChance + getArtifactBonus('crit_chance_percent_additive');
+            if (talents.critChanceBoost.currentLevel > 0) {
+                effectiveCritChance += talents.critChanceBoost.effectValue * talents.critChanceBoost.currentLevel;
+            }
+            effectiveCritChance = Math.min(1, effectiveCritChance); 
+        }
+
+        function renderGameStatsUI() {
+            gameStatsContainer.innerHTML = ''; 
+            const statsToShow = [
+                { label: "Celkem kliknutí", value: formatNumber(lifetimeStats.totalClicks) },
+                { label: "Kritických zásahů", value: formatNumber(lifetimeStats.totalCrits) },
+                { label: "Nejvyšší poškození", value: formatNumber(lifetimeStats.highestDamageDealt) },
+                { label: "Celkem zabitých nepřátel", value: formatNumber(lifetimeStats.totalEnemiesKilled) }, 
+                { label: "Zabitých Bossů", value: formatNumber(lifetimeStats.totalBossesKilled) },
+                { label: "Zabitých Šampionů", value: formatNumber(lifetimeStats.totalChampionsKilled) },
+                { label: "Celkem zlata", value: formatNumber(Math.floor(lifetimeStats.lifetimeGoldEarned)) },
+                { label: "Celkem Echo Úlomků", value: formatNumber(lifetimeStats.lifetimeEchoShardsEarned) },
+                { label: "Dosažených úrovní", value: formatNumber(lifetimeStats.lifetimePlayerLevelsGained) },
+                { label: "Postoupených Tierů", value: formatNumber(lifetimeStats.lifetimeTiersAdvanced) },
+            ];
+            statsToShow.forEach(stat => {
+                const statDiv = document.createElement('div');
+                statDiv.classList.add('stat-item');
+                statDiv.innerHTML = `<span class="stat-label">${stat.label}:</span> <span class="stat-value">${stat.value}</span>`;
+                gameStatsContainer.appendChild(statDiv);
+            });
+        }
+        
+        function updateEquipmentButtonStates() {
+            equipmentSlots.forEach(slot => {
+                const item = equipment[slot];
+                const upgradeButtons = document.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
+                upgradeButtons.forEach(button => {
+                    const amount = button.dataset.amount;
+                    let cost = 0; let canAfford = false; let isMaxLevel = item.level >= MAX_ITEM_LEVEL;
+                    if (isMaxLevel) {
+                        button.disabled = true;
+                        if (amount === "1") { 
+                             const costSpan = button.querySelector('.cost-text');
+                             if(costSpan) costSpan.textContent = '(MAX)';
+                        }
+                        button.classList.remove('affordable'); return; 
+                    }
+                    button.disabled = false; 
+                    if (amount === "1") {
+                        cost = calculateItemUpgradeCost(slot, item.level, currentTierIndex);
+                        canAfford = gold >= cost;
+                        const costSpan = button.querySelector('.cost-text');
+                        if(costSpan) costSpan.textContent = `(${formatNumber(cost)} Z)`;
+                        button.classList.toggle('affordable', canAfford);
+                    } else { 
+                        cost = calculateItemUpgradeCost(slot, item.level, currentTierIndex);
+                        canAfford = gold >= cost; 
+                        button.classList.remove('affordable'); 
+                    }
+                    button.disabled = !canAfford || isMaxLevel;
+                });
+            });
+        }
+
+        function updateCompanionButtonStates() {
+            const companionButtons = document.querySelectorAll('.companion-button');
+            companionButtons.forEach(button => {
+                const id = button.dataset.id;
+                const companionDef = allCompanions[id];
+                const companionInstance = ownedCompanions[id];
+                if (button.classList.contains('unlock')) {
+                    button.disabled = gold < companionDef.unlockCost || !!companionInstance;
+                    const costSpan = button.querySelector('.cost-text');
+                    if(costSpan) costSpan.textContent = `(${formatNumber(companionDef.unlockCost)} Z)`;
+                } else if (button.classList.contains('upgrade-companion')) {
+                    if (companionInstance && companionInstance.level < companionDef.maxLevel) {
+                        const upgradeCost = Math.ceil(companionDef.upgradeBaseCost * Math.pow(companionDef.upgradeCostMultiplier, companionInstance.level -1));
+                        button.disabled = gold < upgradeCost;
+                        const costSpan = button.querySelector('.cost-text');
+                        if(costSpan) costSpan.textContent = `(${formatNumber(upgradeCost)} Z)`;
+                    } else {
+                        button.disabled = true;
+                        const costSpan = button.querySelector('.cost-text');
+                        if(costSpan && companionInstance && companionInstance.level >= companionDef.maxLevel) costSpan.textContent = '(MAX)';
+                        else if (costSpan) costSpan.textContent = ''; 
+                    }
+                }
+            });
+        }
+
+        function showGoldGainAnimation(amount) {
+            const goldText = document.createElement('div');
+            goldText.textContent = `+${formatNumber(amount)} Z`;
+            goldText.classList.add('gold-gain-animation');
+            goldDisplayContainer.appendChild(goldText);
+            goldText.addEventListener('animationend', () => goldText.remove());
+        }
+
+        function updateUI() {
+            calculateEffectiveStats(); 
+            let totalEffectivePassivePercent = passivePercentFromTiers + totalCompanionPassivePercent;
+            if (talents.passivePercentMultiplierTalent && talents.passivePercentMultiplierTalent.currentLevel > 0) {
+                totalEffectivePassivePercent *= (1 + talents.passivePercentMultiplierTalent.effectValue * talents.passivePercentMultiplierTalent.currentLevel);
+            }
+            passiveDamageDisplay.textContent = formatNumber(totalEffectivePassivePercent * 100, 2) + "% HP/s";
+            goldDisplay.textContent = formatNumber(Math.floor(gold)); 
+            clickDamageDisplay.textContent = formatNumber(effectiveClickDamage); 
+            enemyEffectiveLevelDisplay.textContent = enemy.effectiveLevel;
+            currentWorldDisplay.textContent = currentWorld;
+            currentZoneDisplay.textContent = currentZoneInWorld;
+            zoneProgressDisplay.textContent = `Postup v zóně: ${enemiesDefeatedInZone}/${ENEMIES_PER_ZONE}`;
+            echoShardsDisplay.textContent = formatNumber(echoShards); echoCountDisplay.textContent = formatNumber(echoCount);
+            playerLevelDisplay.textContent = playerLevel; talentPointsDisplay.textContent = formatNumber(talentPoints);
+            playerXPBar.style.width = `${(playerXP / xpToNextLevel) * 100}%`;
+            playerXPText.textContent = `XP: ${formatNumber(Math.floor(playerXP))} / ${formatNumber(xpToNextLevel)}`;
+            enemyNameDisplay.textContent = enemy.name;
+            enemyHealthTextDisplay.textContent = `${formatNumber(Math.max(0, Math.ceil(enemy.currentHealth)))} / ${formatNumber(Math.ceil(enemy.maxHealth))}`;
+            enemyHealthBar.style.width = `${(Math.max(0, enemy.currentHealth) / enemy.maxHealth) * 100}%`;
+            enemyElement.classList.toggle('champion', enemy.isChampion); 
+            enemyElement.classList.toggle('boss', enemy.isBoss); 
+            bossTimerDisplay.classList.toggle('hidden', !bossFightTimerActive);
+            if(bossFightTimerActive) bossTimerDisplay.textContent = `Čas na bosse: ${bossFightTimeLeft.toFixed(1)}s`;
+
+            activeEffectsContainer.innerHTML = '<h3 class="font-semibold text-gray-100">Aktivní efekty</h3>'; 
+            let hasActiveEffects = false;
+            Object.keys(activeBuffs).forEach(buffKey => {
+                hasActiveEffects = true; const buff = activeBuffs[buffKey]; const el = document.createElement('div');
+                if (buffKey === BUFF_TYPE_POWER_SHARD) { el.classList.add('buff-display'); el.textContent = `Úlomek síly: +${((POWER_SHARD_MULTIPLIER -1) * 100).toFixed(0)}% poškození (${buff.duration.toFixed(1)}s)`; }
+                else if (buffKey === BUFF_TYPE_GOLD_RUSH) { el.classList.add('buff-display', 'gold-rush-buff'); el.textContent = `Zlatá horečka (Pasivní): ${GOLD_RUSH_MULTIPLIER}x zlato (${buff.duration.toFixed(1)}s)`;}
+                activeEffectsContainer.appendChild(el);
+            });
+            Object.keys(activeDebuffs).forEach(debuffKey => {
+                hasActiveEffects = true; const debuff = activeDebuffs[debuffKey]; const el = document.createElement('div'); el.classList.add('debuff-display');
+                if (debuffKey === DEBUFF_TYPE_PARASITE) el.textContent = `Parazit: -${formatNumber(debuff.effectValue)} Z/s (${debuff.duration.toFixed(1)}s)`;
+                activeEffectsContainer.appendChild(el);
+            });
+            if (mocnyUderActive) {
+                hasActiveEffects = true; const el = document.createElement('div'); el.classList.add('skill-active-display');
+                el.textContent = `Mocný úder: ${MOCNY_UDER_DAMAGE_MULTIPLIER.toFixed(0)}x Poškození (${mocnyUderDurationLeft.toFixed(1)}s)`; activeEffectsContainer.appendChild(el);
+            }
+            if (zlataHoreckaAktivniActive) {
+                hasActiveEffects = true; const el = document.createElement('div'); el.classList.add('skill-active-display', 'gold-rush-buff');
+                el.textContent = `Zlatá horečka (Aktivní): ${ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER}x Zlato (${zlataHoreckaAktivniDurationLeft.toFixed(1)}s)`; activeEffectsContainer.appendChild(el);
+            }
+            activeEffectsContainer.classList.toggle('hidden', !hasActiveEffects);
+            cleanseDebuffButton.classList.toggle('hidden', !activeDebuffs[DEBUFF_TYPE_PARASITE]);
+            if(activeDebuffs[DEBUFF_TYPE_PARASITE]) { cleanseCostDisplay.textContent = formatNumber(PARASITE_CLEANSE_COST); cleanseDebuffButton.disabled = gold < PARASITE_CLEANSE_COST; }
+
+            const canEchoNow = currentTierIndex === tiers.length - 1 && equipmentSlots.every(slot => equipment[slot].level >= MAX_ITEM_LEVEL);
+            echoButton.classList.toggle('hidden', !(canEchoNow && !bossFightTimerActive));
+            if(canEchoNow && !bossFightTimerActive) { echoShardsToGain.textContent = formatNumber(calculateEchoShardsToGain()); echoConditionDisplay.textContent = "Připraveno!"; }
+            
+            echoGoldBonusValueDisplay.textContent = (echoGoldUpgradeValue * 100).toFixed(0);
+            echoGoldLevelDisplay.textContent = `(Úr. ${echoGoldLevelCount})`;
+            echoGoldCostDisplay.textContent = formatNumber(echoGoldUpgradeCost);
+            upgradeEchoGoldButton.disabled = echoShards < echoGoldUpgradeCost;
+            echoDamageBonusValueDisplay.textContent = (echoDamageUpgradeValue * 100).toFixed(0);
+            echoDamageLevelDisplay.textContent = `(Úr. ${echoDamageLevelCount})`;
+            echoDamageCostDisplay.textContent = formatNumber(echoDamageUpgradeCost);
+            upgradeEchoDamageButton.disabled = echoShards < echoDamageUpgradeCost;
+
+            updateEquipmentButtonStates(); updateCompanionButtonStates(); renderGameStatsUI(); 
+
+            mocnyUderButton.disabled = mocnyUderActive || mocnyUderCooldownTimeLeft > 0;
+            mocnyUderCooldownDisplay.textContent = mocnyUderActive ? `Aktivní: ${mocnyUderDurationLeft.toFixed(1)}s` : (mocnyUderCooldownTimeLeft > 0 ? `Nabíjí se: ${Math.ceil(mocnyUderCooldownTimeLeft)}s` : "(Připraveno)");
+            zlataHoreckaAktivniButton.disabled = zlataHoreckaAktivniActive || zlataHoreckaAktivniCooldownTimeLeft > 0;
+            zlataHoreckaAktivniCooldownDisplay.textContent = zlataHoreckaAktivniActive ? `Aktivní: ${zlataHoreckaAktivniDurationLeft.toFixed(1)}s` : (zlataHoreckaAktivniCooldownTimeLeft > 0 ? `Nabíjí se: ${Math.ceil(zlataHoreckaAktivniCooldownTimeLeft)}s` : "(Připraveno)");
+        }
+        
+        function renderMilestonesUI() {
+            milestonesListModalElement.innerHTML = ''; 
+            milestones.forEach(milestone => {
+                const milestoneDiv = document.createElement('div');
+                milestoneDiv.classList.add('milestone');
+                milestoneDiv.classList.toggle('achieved', milestone.achieved);
+                milestoneDiv.classList.toggle('pending', !milestone.achieved);
+                const descSpan = document.createElement('span'); descSpan.classList.add('description'); descSpan.textContent = milestone.description; milestoneDiv.appendChild(descSpan);
+                const rewardSpan = document.createElement('span'); rewardSpan.classList.add('reward');
+                rewardSpan.textContent = milestone.achieved ? ` (Odměna: ${milestone.rewardText} - Získáno!)` : ` (Odměna: ${milestone.rewardText})`; milestoneDiv.appendChild(rewardSpan);
+                milestonesListModalElement.appendChild(milestoneDiv);
+            });
+        }
+
+        function checkMilestones() {
+            let newMilestoneAchieved = false;
+            milestones.forEach(milestone => {
+                if (!milestone.achieved && milestone.condition()) {
+                    milestone.applyReward(); milestone.achieved = true; newMilestoneAchieved = true;
+                    showMessageBox(`Milník dosažen: ${milestone.description}! Odměna: ${milestone.rewardText}`, false);
+                }
+            });
+            if (newMilestoneAchieved) { renderMilestonesUI(); updateUI(); } 
+        }
+
+        function spawnNewEnemy() {
+            const worldZoneBaseLevel = ((currentWorld - 1) * ZONES_PER_WORLD * 10) + ((currentZoneInWorld - 1) * 10);
+            const levelOffsetInZone = Math.floor(enemiesDefeatedInZone / (ENEMIES_PER_ZONE / 10)); 
+            enemy.effectiveLevel = worldZoneBaseLevel + levelOffsetInZone + 1;
+            if (enemy.effectiveLevel > highestEffectiveLevelReachedThisEcho) highestEffectiveLevelReachedThisEcho = enemy.effectiveLevel;
+            const monsterNumberInZone = enemiesDefeatedInZone + 1; 
+            enemy.isBoss = (monsterNumberInZone === ENEMIES_PER_ZONE); 
+            enemy.isChampion = !enemy.isBoss && (monsterNumberInZone % 10 === 0); 
+            let healthMultiplier = 1; let goldMultiplier = 1;
+            if (enemy.isBoss) { healthMultiplier = 10; goldMultiplier = 5; bossFightTimerActive = true; bossFightTimeLeft = BOSS_FIGHT_DURATION; } 
+            else bossFightTimerActive = false; 
+            if (enemy.isChampion) { healthMultiplier = 5;  goldMultiplier = 3; }
+            healthMultiplier *= Math.max(0.5, 1 - (echoCount * 0.04)); 
+            enemy.maxHealth = Math.ceil(8 * Math.pow(1.13 + (currentWorld*0.0008) + (currentTierIndex*0.0025) , enemy.effectiveLevel -1) * healthMultiplier); 
+            enemy.currentHealth = enemy.maxHealth;
+            enemy.goldReward = Math.ceil(15 * Math.pow(1.15 + (currentWorld*0.002) + (currentTierIndex*0.0045), enemy.effectiveLevel -1) * goldMultiplier); 
+            let baseName = enemyNames[ (enemy.effectiveLevel -1 + enemyNames.length) % enemyNames.length ];
+            enemy.name = enemy.isBoss ? `BOSS ${baseName}` : (enemy.isChampion ? `Šampion ${baseName}` : baseName);
+            enemyArtElement.innerHTML = enemySVGs[(enemy.effectiveLevel - 1 + enemySVGs.length) % enemySVGs.length]; 
+            updateUI(); checkMilestones(); 
+        }
+        
+        function calculateEchoShardsToGain() {
+            let shards = Math.floor(highestEffectiveLevelReachedThisEcho / 3.5) + Math.floor(totalGoldEarnedThisEcho / 1000) + (echoCount * 7) + ((tiers.length - 1) * 10); 
+            if (talents.echoAffinity.currentLevel > 0) shards = Math.floor(shards * (1 + talents.echoAffinity.effectValue * talents.echoAffinity.currentLevel));
+            let artifactDoubleChanceBonus = getArtifactBonus('echo_shard_double_chance');
+            if (Math.random() < (artifactDoubleChanceBonus / 100)) {
+                shards = Math.floor(shards * 2);
+                showMessageBox("Dvojnásobek Echo Úlomků díky artefaktu!", false, 2500);
+            }
+            return Math.max(1, shards); 
+        }
+
+        function resetCurrentEchoProgress() {
+            gold = 0; currentTierIndex = 0; baseClickDamage = 10; 
+            initializeEquipment(); renderEquipment();
+            currentWorld = 1; currentZoneInWorld = 1; enemiesDefeatedInZone = 0;
+            enemy.effectiveLevel = 0; highestEffectiveLevelReachedThisEcho = 1; 
+            totalGoldEarnedThisEcho = 0; enemiesKilledThisEcho = 0; 
+            milestones.forEach(m => { if (m.perEcho) m.achieved = false; }); 
+            activeBuffs = {}; activeDebuffs = {}; 
+            bossFightTimerActive = false; bossFightTimeLeft = 0;
+            updateCurrentTierBonuses(); 
+        }
+
+        function handleEcho() {
+            if (bossFightTimerActive) { showMessageBox("Nelze provést Echo během souboje s bossem!", true); return; }
+            const canEcho = currentTierIndex === tiers.length - 1 && equipmentSlots.every(slot => equipment[slot].level >= MAX_ITEM_LEVEL);
+            if (!canEcho) { showMessageBox(`Musíš mít veškeré vybavení na Tieru ${tiers.length -1} (${tiers[tiers.length-1].name}) a maximální úrovni (${MAX_ITEM_LEVEL}) pro Echo!`, true, 4000); return; }
+            const shardsGained = calculateEchoShardsToGain();
+            echoShards += shardsGained; lifetimeStats.lifetimeEchoShardsEarned += shardsGained; echoCount++;
+            soundManager.playSound('echo', 'C2', '1n');
+            resetCurrentEchoProgress(); 
+            showMessageBox(`Echo provedeno! Získal jsi ${formatNumber(shardsGained)} Echo Úlomků. Celkem máš ${formatNumber(echoShards)}. Zlato, svět a zóny resetovány.`, false, 4000);
+            spawnNewEnemy(); updateUI(); 
+        }
+
+        function onEnemyClick(event) {
+            if (enemy.currentHealth <= 0) return; 
+            lifetimeStats.totalClicks++; 
+            let currentGoldMultiplierOnClick = echoPermanentGoldBonus; 
+            if (talents.goldVeins.currentLevel > 0) currentGoldMultiplierOnClick *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
+            if (activeBuffs[BUFF_TYPE_GOLD_RUSH]) currentGoldMultiplierOnClick *= GOLD_RUSH_MULTIPLIER;
+            if (zlataHoreckaAktivniActive) currentGoldMultiplierOnClick *= ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER;
+            let artifactGoldBonus = getArtifactBonus('gold_bonus_percent_additive') / 100; 
+            currentGoldMultiplierOnClick *= (1 + artifactGoldBonus);
+            let currentDamageDealt = effectiveClickDamage; let isCrit = false;
+            if (talents.ultimateCritMastery && talents.ultimateCritMastery.currentLevel > 0) {
+                clicksSinceLastGuaranteedCrit++;
+                if (clicksSinceLastGuaranteedCrit >= talents.ultimateCritMastery.effectValue) { isCrit = true; clicksSinceLastGuaranteedCrit = 0; }
+            }
+            if (!isCrit) isCrit = Math.random() < effectiveCritChance;
+            if (isCrit) {
+                let actualCritMultiplier = critDamageMultiplier;
+                if (talents.critDamageBoost && talents.critDamageBoost.currentLevel > 0) actualCritMultiplier *= (1 + talents.critDamageBoost.effectValue * talents.critDamageBoost.currentLevel);
+                currentDamageDealt *= actualCritMultiplier; lifetimeStats.totalCrits++; 
+                soundManager.playSound('critClick', 'E5', '16n');
+            } else {
+                soundManager.playSound('click', 'C4', '16n');
+            }
+            if (currentDamageDealt > lifetimeStats.highestDamageDealt) lifetimeStats.highestDamageDealt = Math.ceil(currentDamageDealt);
+            enemy.currentHealth -= currentDamageDealt;
+            showDamageNumber(currentDamageDealt, event.clientX, event.clientY, isCrit); 
+            if (enemy.currentHealth <= 0) {
+                const goldFromKill = enemy.goldReward * currentGoldMultiplierOnClick;
+                gold += goldFromKill; lifetimeStats.lifetimeGoldEarned += goldFromKill; totalGoldEarnedThisEcho += goldFromKill;
+                updateDailyQuestProgress('goldEarnedQuest', goldFromKill);
+                showGoldGainAnimation(goldFromKill); 
+
+                if (enemy.isBoss) { soundManager.playSound('bossDefeat', 'G2', '1n'); bossFightTimerActive = false; bossFightTimeLeft = 0; lifetimeStats.totalBossesKilled++; }
+                else if (enemy.isChampion) { soundManager.playSound('championDefeat', 'A3', '8n'); lifetimeStats.totalChampionsKilled++; }
+                else { soundManager.playSound('enemyDefeat', 'C3', '16n'); }
+                lifetimeStats.totalEnemiesKilled++; 
+                let xpFromKill = enemy.effectiveLevel; 
+                if(enemy.isChampion) xpFromKill += Math.floor(enemy.effectiveLevel * 1.5); 
+                if(enemy.isBoss) xpFromKill += Math.floor(enemy.effectiveLevel * 4.0); 
+                gainXP(xpFromKill);
+                enemiesKilledThisEcho++; enemiesDefeatedInZone++;
+                updateDailyQuestProgress('enemyKill', 1); 
+                if (enemy.isChampion) updateDailyQuestProgress('championKill', 1);
+                if (enemy.isBoss) tryDropArtifact();
+                if (enemiesDefeatedInZone >= ENEMIES_PER_ZONE) {
+                    enemiesDefeatedInZone = 0; currentZoneInWorld++;
+                    updateDailyQuestProgress('zoneReached', currentZoneInWorld); 
+                    if (currentZoneInWorld > ZONES_PER_WORLD) {
+                        currentZoneInWorld = 1; currentWorld++;
+                        if (currentWorld > MAX_WORLDS) { showMessageBox("Gratulujeme! Dosáhl jsi konce známého multiversa!", false, 7000); currentWorld = MAX_WORLDS; currentZoneInWorld = ZONES_PER_WORLD; } 
+                        else showMessageBox(`Postup do Světa ${currentWorld}!`, false, 3000);
+                    } else showMessageBox(`Postup do Zóny ${currentZoneInWorld} (Svět ${currentWorld})!`, false, 2500);
+                }
+                if (Math.random() < POWER_SHARD_DROP_CHANCE) activateBuff(BUFF_TYPE_POWER_SHARD, POWER_SHARD_DURATION);
+                if (echoCount > 0 && Math.random() < GOLD_RUSH_DROP_CHANCE) activateBuff(BUFF_TYPE_GOLD_RUSH, GOLD_RUSH_DURATION); 
+                if (Math.random() < PARASITE_APPLY_CHANCE && !activeDebuffs[DEBUFF_TYPE_PARASITE]) applyDebuff(DEBUFF_TYPE_PARASITE, PARASITE_DURATION, PARASITE_GOLD_DRAIN_PER_SECOND);
+                spawnNewEnemy(); 
+            } else { updateUI(); checkMilestones(); } 
+        }
+
+        function handleBossFightTimeout() {
+            showMessageBox(`Boss nebyl poražen včas! Zóna ${currentZoneInWorld} (Svět ${currentWorld}) se restartuje.`, true, 4000);
+            soundManager.playSound('debuffApply', 'A2', '4n'); 
+            bossFightTimerActive = false; bossFightTimeLeft = 0; enemiesDefeatedInZone = 0; 
+            spawnNewEnemy(); updateUI();
+        }
+
+        function showDamageNumber(damage, x, y, isCrit) { 
+            const damageText = document.createElement('div');
+            damageText.textContent = formatNumber(Math.ceil(damage)); 
+            damageText.classList.add('damage-number');
+            if (isCrit) damageText.classList.add('crit');
+            const containerRect = damageNumberContainer.getBoundingClientRect();
+            const approxTextWidth = (damageText.textContent.length * 10) + (isCrit ? 10:0); 
+            const approxTextHeight = 20 + (isCrit ? 5:0); 
+            damageText.style.left = `${x - containerRect.left - (approxTextWidth / 2)}px`; 
+            damageText.style.top = `${y - containerRect.top - (approxTextHeight / 2) - 15}px`; 
+            damageNumberContainer.appendChild(damageText); 
+            damageText.addEventListener('animationend', () => damageText.remove()); 
+        }
+        
+        function showMessageBox(message, isError = false, duration = 3500) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('hidden');
+            messageBox.className = `p-3 text-center text-sm rounded-md messageBox ${isError ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`;
+            messageBox.style.maxWidth = '1000px'; messageBox.style.width = '100%';
+            setTimeout(() => messageBox.classList.add('hidden') , duration); 
+        }
+        
+        function onUpgradeEchoGold() {
+            if (echoShards >= echoGoldUpgradeCost) {
+                echoShards -= echoGoldUpgradeCost; echoPermanentGoldBonus += echoGoldUpgradeValue; echoGoldLevelCount++;
+                echoGoldUpgradeCost = Math.ceil(initialEchoGoldUpgradeCost * Math.pow(1.5, echoGoldLevelCount)); 
+                showMessageBox(`Permanentní bonus zlata zvýšen na +${((echoPermanentGoldBonus - 1) * 100).toFixed(0)}%!`, false);
+                soundManager.playSound('upgrade', 'E5', '16n'); updateUI();
+            } else showMessageBox("Nedostatek Echo Úlomků!", true);
+        }
+        function onUpgradeEchoDamage() {
+            if (echoShards >= echoDamageUpgradeCost) {
+                echoShards -= echoDamageUpgradeCost; echoPermanentDamageBonus += echoDamageUpgradeValue; echoDamageLevelCount++;
+                echoDamageUpgradeCost = Math.ceil(initialEchoDamageUpgradeCost * Math.pow(1.5, echoDamageLevelCount));
+                showMessageBox(`Permanentní bonus poškození zvýšen na +${((echoPermanentDamageBonus - 1) * 100).toFixed(0)}%!`, false);
+                soundManager.playSound('upgrade', 'F#5', '16n'); calculateEffectiveStats(); updateUI();
+            } else showMessageBox("Nedostatek Echo Úlomků!", true);
+        }
+
+        function activateBuff(buffType, duration) {
+            if (buffType === BUFF_TYPE_POWER_SHARD) {
+                if (activeBuffs[buffType]) activeBuffs[buffType].duration = duration; 
+                else activeBuffs[buffType] = { duration: duration }; 
+                showMessageBox(`Úlomek síly aktivován!`, false, 2000);
+                soundManager.playSound('buffGain', 'G5', '8n');
+            } else if (buffType === BUFF_TYPE_GOLD_RUSH) {
+                if (activeBuffs[buffType]) activeBuffs[buffType].duration = duration; 
+                else activeBuffs[buffType] = { duration: duration }; 
+                showMessageBox(`Zlatá horečka (Pasivní) aktivována! ${GOLD_RUSH_MULTIPLIER}x zlato!`, false, 2000);
+                soundManager.playSound('buffGain', 'A#5', '8n');
+            }
+            calculateEffectiveStats(); updateUI();
+        }
+        function removeBuff(buffType) {
+            if (activeBuffs[buffType]) {
+                delete activeBuffs[buffType];
+                if (buffType === BUFF_TYPE_POWER_SHARD) showMessageBox("Úlomek síly vyprchal.", true, 2000); 
+                if (buffType === BUFF_TYPE_GOLD_RUSH) showMessageBox("Zlatá horečka (Pasivní) skončila.", true, 2000);
+            }
+            calculateEffectiveStats(); updateUI();
+        }
+        function applyDebuff(debuffType, duration, effectValue) {
+            if (debuffType === DEBUFF_TYPE_PARASITE) {
+                if (activeDebuffs[debuffType]) return; 
+                activeDebuffs[debuffType] = { duration: duration, effectValue: effectValue };
+                showMessageBox(`Chytil jsi Parazita! Odsává ti zlato!`, true, 2500);
+                soundManager.playSound('debuffApply', 'F3', '4n');
+            }
+            updateUI();
+        }
+        function clearDebuff(debuffType) {
+            if (activeDebuffs[debuffType]) {
+                delete activeDebuffs[debuffType];
+                if (debuffType === DEBUFF_TYPE_PARASITE) { 
+                    showMessageBox("Parazit byl odstraněn!", false, 2000); 
+                    soundManager.playSound('buffGain', 'C4', '8n'); 
+                }
+            }
+            updateUI();
+        }
+        function onCleanseParasite() {
+            if (activeDebuffs[DEBUFF_TYPE_PARASITE] && gold >= PARASITE_CLEANSE_COST) {
+                gold -= PARASITE_CLEANSE_COST; clearDebuff(DEBUFF_TYPE_PARASITE);
+            } else if (gold < PARASITE_CLEANSE_COST) showMessageBox("Nedostatek zlata na očistění!", true);
+        }
+
+        function activateMocnyUder() {
+            if (mocnyUderCooldownTimeLeft > 0) { showMessageBox("Mocný úder se stále nabíjí!", true); return; }
+            mocnyUderActive = true; mocnyUderDurationLeft = MOCNY_UDER_DURATION;
+            let baseCooldown = MOCNY_UDER_COOLDOWN;
+            const reductionPercent = getArtifactBonus('cooldown_reduction_power_strike_percent');
+            mocnyUderCooldownTimeLeft = baseCooldown * (1 - (reductionPercent / 100));
+            soundManager.playSound('skillActivate', 'E4', '4n');
+            updateDailyQuestProgress('powerStrikeUsed', 1); 
+            calculateEffectiveStats(); updateUI();
+            showMessageBox(`Mocný úder aktivován! ${MOCNY_UDER_DAMAGE_MULTIPLIER}x poškození na ${MOCNY_UDER_DURATION}s!`, false);
+        }
+
+        function activateZlataHoreckaAktivni() {
+            if (zlataHoreckaAktivniCooldownTimeLeft > 0) { showMessageBox("Zlatá horečka se stále nabíjí!", true); return; }
+            zlataHoreckaAktivniActive = true; zlataHoreckaAktivniDurationLeft = ZLATA_HORECKA_AKTIVNI_DURATION;
+            zlataHoreckaAktivniCooldownTimeLeft = ZLATA_HORECKA_AKTIVNI_COOLDOWN;
+            soundManager.playSound('skillActivate', 'G4', '4n');
+            updateUI(); 
+            showMessageBox(`Zlatá horečka aktivována! ${ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER}x zlato na ${ZLATA_HORECKA_AKTIVNI_DURATION}s!`, false);
+        }
+
+        function gameTick() {
+            let currentGoldMultiplierForPassive = echoPermanentGoldBonus; 
+            if (talents.goldVeins.currentLevel > 0) currentGoldMultiplierForPassive *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
+            if (activeBuffs[BUFF_TYPE_GOLD_RUSH]) currentGoldMultiplierForPassive *= GOLD_RUSH_MULTIPLIER; 
+            let artifactGoldBonusPassive = getArtifactBonus('gold_bonus_percent_additive') / 100;
+            currentGoldMultiplierForPassive *= (1 + artifactGoldBonusPassive);
+            let totalEffectivePassivePercent = passivePercentFromTiers + totalCompanionPassivePercent;
+            if (talents.passivePercentMultiplierTalent && talents.passivePercentMultiplierTalent.currentLevel > 0) {
+                totalEffectivePassivePercent *= (1 + talents.passivePercentMultiplierTalent.effectValue * talents.passivePercentMultiplierTalent.currentLevel);
+            }
+            if (totalEffectivePassivePercent > 0 && enemy.currentHealth > 0 ) {
+                const damageThisTick = enemy.maxHealth * totalEffectivePassivePercent / 10; 
+                enemy.currentHealth -= damageThisTick;
+                if (enemy.currentHealth <= 0) {
+                    if (enemy.isBoss && bossFightTimerActive) { bossFightTimerActive = false; bossFightTimeLeft = 0; }
+                    let xpFromKill = enemy.effectiveLevel;
+                    if(enemy.isChampion) xpFromKill += Math.floor(enemy.effectiveLevel * 1.5);
+                    if(enemy.isBoss) xpFromKill += Math.floor(enemy.effectiveLevel * 4.0);
+                    gainXP(xpFromKill);
+                    let goldFromPassiveKillMultiplier = currentGoldMultiplierForPassive;
+                    if (zlataHoreckaAktivniActive) goldFromPassiveKillMultiplier *= ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER;
+                    const goldFromKill = enemy.goldReward * goldFromPassiveKillMultiplier;
+                    gold += goldFromKill; lifetimeStats.lifetimeGoldEarned += goldFromKill; totalGoldEarnedThisEcho += goldFromKill;
+                    updateDailyQuestProgress('goldEarnedQuest', goldFromKill);
+                    showGoldGainAnimation(goldFromKill);
+                    if (enemy.isBoss) soundManager.playSound('bossDefeat', 'G2', '1n');
+                    else if (enemy.isChampion) soundManager.playSound('championDefeat', 'A3', '8n');
+                    else soundManager.playSound('enemyDefeat', 'C3', '16n');
+                    lifetimeStats.totalEnemiesKilled++; enemiesKilledThisEcho++; enemiesDefeatedInZone++;
+                    updateDailyQuestProgress('enemyKill', 1);
+                    if (enemy.isChampion) { updateDailyQuestProgress('championKill', 1); lifetimeStats.totalChampionsKilled++; }
+                    if (enemy.isBoss) { lifetimeStats.totalBossesKilled++; tryDropArtifact(); }
+                     if (enemiesDefeatedInZone >= ENEMIES_PER_ZONE) {
+                         enemiesDefeatedInZone = 0; currentZoneInWorld++;
+                         updateDailyQuestProgress('zoneReached', currentZoneInWorld);
+                         if (currentZoneInWorld > ZONES_PER_WORLD) {
+                             currentZoneInWorld = 1; currentWorld++;
+                             if (currentWorld > MAX_WORLDS) { currentWorld = MAX_WORLDS; currentZoneInWorld = ZONES_PER_WORLD;} 
+                         }
+                     }
+                    spawnNewEnemy(); 
+                }
+            }
+            if (talents.ultimateAuraOfDecay && talents.ultimateAuraOfDecay.currentLevel > 0 && enemy.currentHealth > 0) {
+                const auraDamage = Math.min(enemy.maxHealth * talents.ultimateAuraOfDecay.effectValue.percent, talents.ultimateAuraOfDecay.effectValue.cap) / 10; 
+                enemy.currentHealth -= auraDamage;
+                 if (enemy.currentHealth <= 0 && ! (totalEffectivePassivePercent > 0 && (enemy.maxHealth * totalEffectivePassivePercent / 10) >= enemy.maxHealth)) {
+                    if (enemy.isBoss && bossFightTimerActive) { bossFightTimerActive = false; bossFightTimeLeft = 0; }
+                    let xpFromKill = enemy.effectiveLevel;
+                    if(enemy.isChampion) xpFromKill += Math.floor(enemy.effectiveLevel * 1.5);
+                    if(enemy.isBoss) xpFromKill += Math.floor(enemy.effectiveLevel * 4.0);
+                    gainXP(xpFromKill);
+                    const goldFromKill = enemy.goldReward * currentGoldMultiplierForPassive; 
+                    gold += goldFromKill; lifetimeStats.lifetimeGoldEarned += goldFromKill; totalGoldEarnedThisEcho += goldFromKill;
+                    updateDailyQuestProgress('goldEarnedQuest', goldFromKill);
+                    showGoldGainAnimation(goldFromKill);
+                    if (enemy.isBoss) soundManager.playSound('bossDefeat', 'G2', '1n');
+                    else if (enemy.isChampion) soundManager.playSound('championDefeat', 'A3', '8n');
+                    else soundManager.playSound('enemyDefeat', 'C3', '16n');
+                    lifetimeStats.totalEnemiesKilled++; enemiesKilledThisEcho++; enemiesDefeatedInZone++;
+                    updateDailyQuestProgress('enemyKill', 1);
+                    if (enemy.isChampion) { updateDailyQuestProgress('championKill', 1); lifetimeStats.totalChampionsKilled++; }
+                    if (enemy.isBoss) { lifetimeStats.totalBossesKilled++; tryDropArtifact(); }
+                    if (enemiesDefeatedInZone >= ENEMIES_PER_ZONE) { spawnNewEnemy(); } else { spawnNewEnemy(); }
+                 }
+            }
+            if (bossFightTimerActive && enemy.isBoss) {
+                bossFightTimeLeft -= 0.1;
+                if (bossFightTimeLeft <= 0 && enemy.currentHealth > 0) { 
+                    bossFightTimeLeft = 0; handleBossFightTimeout(); 
+                }
+            }
+            for (const buffKey in activeBuffs) {
+                activeBuffs[buffKey].duration -= 0.1; 
+                if (activeBuffs[buffKey].duration <= 0) removeBuff(buffKey);
+            }
+            for (const debuffKey in activeDebuffs) {
+                activeDebuffs[debuffKey].duration -= 0.1;
+                if (debuffKey === DEBUFF_TYPE_PARASITE) {
+                    let goldToDrain = activeDebuffs[debuffKey].effectValue / 10; 
+                    gold = Math.max(0, gold - goldToDrain); 
+                }
+                if (activeDebuffs[debuffKey].duration <= 0) {
+                    clearDebuff(debuffKey); 
+                    if (debuffKey === DEBUFF_TYPE_PARASITE) showMessageBox("Parazit sám od sebe zmizel.", false, 2000);
+                }
+            }
+            if (mocnyUderCooldownTimeLeft > 0) {
+                mocnyUderCooldownTimeLeft -= 0.1; if(mocnyUderCooldownTimeLeft < 0) mocnyUderCooldownTimeLeft = 0;
+            }
+            if (mocnyUderActive) {
+                mocnyUderDurationLeft -= 0.1;
+                if (mocnyUderDurationLeft <= 0) { mocnyUderActive = false; calculateEffectiveStats(); showMessageBox("Mocný úder vyprchal.", true); }
+            }
+            if (zlataHoreckaAktivniCooldownTimeLeft > 0) {
+                zlataHoreckaAktivniCooldownTimeLeft -= 0.1; if(zlataHoreckaAktivniCooldownTimeLeft < 0) zlataHoreckaAktivniCooldownTimeLeft = 0;
+            }
+            if (zlataHoreckaAktivniActive) {
+                zlataHoreckaAktivniDurationLeft -= 0.1;
+                if (zlataHoreckaAktivniDurationLeft <= 0) { zlataHoreckaAktivniActive = false; showMessageBox("Zlatá horečka (Aktivní) skončila.", true); }
+            }
+            checkMilestones(); updateUI(); 
+        }
+        
+        function openTalentTreeModal() { renderTalentTree(); talentTreeModal.classList.remove('hidden'); soundManager.playSound('openModal', 'C5', '16n');}
+        function closeTalentTreeModal() { talentTreeModal.classList.add('hidden'); soundManager.playSound('closeModal', 'C4', '16n');}
+        
+        function renderTalentTree() {
+            talentsContainer.innerHTML = ''; 
+            modalPlayerLevel.textContent = playerLevel; modalTalentPoints.textContent = formatNumber(talentPoints);
+            const branches = {}; 
+            for (const id in talents) {
+                const talent = talents[id];
+                if (!branches[talent.branch]) branches[talent.branch] = [];
+                branches[talent.branch].push({ ...talent, id }); 
+            }
+            for (const branchName in branches) {
+                const branchTitle = document.createElement('h4'); branchTitle.classList.add('talent-branch-title');
+                let readableBranchName = branchName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()); 
+                if (branchName === 'basic') readableBranchName = "Základní Vylepšení";
+                if (branchName === 'crit') readableBranchName = "Kritické Zásahy";
+                if (branchName === 'passive_dps') readableBranchName = "Pasivní Poškození (%HP)";
+                branchTitle.textContent = readableBranchName; talentsContainer.appendChild(branchTitle);
+                branches[branchName].forEach(talent => {
+                    const talentDiv = document.createElement('div'); talentDiv.classList.add('talent-item');
+                    if (talent.isUltimate) talentDiv.classList.add('is-ultimate');
+                    const nameP = document.createElement('p'); nameP.classList.add('talent-name'); nameP.textContent = `${talent.name} (Úr. ${talent.currentLevel}/${talent.maxLevel})`; talentDiv.appendChild(nameP);
+                    const descP = document.createElement('p'); descP.classList.add('talent-description'); descP.textContent = talent.description; talentDiv.appendChild(descP);
+                    const costP = document.createElement('p'); costP.classList.add('talent-level-cost');
+                    const currentCost = talent.cost(talent.currentLevel);
+                    costP.textContent = talent.currentLevel < talent.maxLevel ? `Cena další úrovně: ${formatNumber(currentCost)} TB` : 'Maximální úroveň'; talentDiv.appendChild(costP);
+                    if (talent.currentLevel < talent.maxLevel) {
+                        const upgradeButton = document.createElement('button'); upgradeButton.classList.add('talent-upgrade-button'); upgradeButton.textContent = 'Vylepšit';
+                        let prerequisiteMet = true;
+                        if (talent.requires) {
+                            const prerequisiteTalent = talents[talent.requires];
+                            if (prerequisiteTalent) {
+                                if (talents[talent.requires].isUltimate) prerequisiteMet = prerequisiteTalent.currentLevel > 0;
+                                else prerequisiteMet = prerequisiteTalent.currentLevel >= prerequisiteTalent.maxLevel;
+                            } else prerequisiteMet = false;
+                        }
+                        upgradeButton.disabled = talentPoints < currentCost || !prerequisiteMet;
+                        upgradeButton.onclick = () => upgradeTalent(talent.id); talentDiv.appendChild(upgradeButton);
+                    }
+                    talentsContainer.appendChild(talentDiv);
+                });
+            }
+        }
+
+        function upgradeTalent(talentId) {
+            const talent = talents[talentId]; 
+            const cost = talent.cost(talent.currentLevel);
+            if (talentPoints >= cost && talent.currentLevel < talent.maxLevel) {
+                talentPoints -= cost; talent.currentLevel++;
+                showMessageBox(`Talent "${talent.name}" vylepšen na úroveň ${talent.currentLevel}!`, false, 2000);
+                soundManager.playSound('upgrade', 'G5', '16n');
+                if (talent.effectType === 'passive_percent_flat_boost_talent' || talent.effectType === 'all_passive_percent_multiplier_talent') {
+                    updateCurrentTierBonuses(); 
+                }
+                calculateEffectiveStats(); renderTalentTree(); updateUI(); 
+            }
+        }
+
+        function initializeOrResetDailyQuests() {
+            const today = new Date().toDateString();
+            if (dailyQuestData.lastResetDate !== today) {
+                dailyQuestData.lastResetDate = today; dailyQuestData.quests = []; dailyQuestData.goldEarnedForQuestToday = 0; 
+                const shuffledQuests = [...allPossibleQuests].sort(() => 0.5 - Math.random());
+                const selectedQuests = shuffledQuests.slice(0, 3);
+                selectedQuests.forEach(questDef => {
+                    dailyQuestData.quests.push({ ...questDef, currentProgress: 0, claimed: false });
+                });
+                 showMessageBox("Nové denní výzvy jsou k dispozici!", false, 3000);
+            }
+            renderDailyQuestsUI();
+        }
+
+        function updateDailyQuestProgress(actionType, value = 1) {
+            let questUIUpdated = false;
+            dailyQuestData.quests.forEach(quest => {
+                if (!quest.claimed && quest.actionType === actionType) {
+                    if (actionType === 'goldEarnedQuest') { dailyQuestData.goldEarnedForQuestToday += value; quest.currentProgress = dailyQuestData.goldEarnedForQuestToday; }
+                    else if (actionType === 'zoneReached') { if (value > quest.currentProgress) quest.currentProgress = value; }
+                    else quest.currentProgress += value;
+                    questUIUpdated = true;
+                }
+            });
+            if (questUIUpdated) renderDailyQuestsUI();
+        }
+
+        function renderDailyQuestsUI() {
+            dailyQuestsListModalElement.innerHTML = ''; 
+            if (!dailyQuestData || !dailyQuestData.quests || dailyQuestData.quests.length === 0) {
+                dailyQuestsListModalElement.innerHTML = '<p class="text-xs text-gray-400 text-center">Žádné aktivní výzvy.</p>'; return;
+            }
+            dailyQuestData.quests.forEach(quest => {
+                const questDiv = document.createElement('div'); questDiv.classList.add('daily-quest-item');
+                const progressText = quest.actionType === 'zoneReached' ? 
+                                     `Zóna ${Math.min(quest.currentProgress, quest.target)} / ${quest.target}` :
+                                     `${formatNumber(Math.min(quest.currentProgress, quest.target))} / ${formatNumber(quest.target)}`;
+                let rewardText = "";
+                if (quest.rewardType === 'echo_shards') rewardText = `${formatNumber(quest.rewardAmount)} EÚ`;
+                else if (quest.rewardType === 'gold') rewardText = `${formatNumber(quest.rewardAmount)} Zlata`;
+                questDiv.innerHTML = `
+                    <p class="description">${quest.icon} ${quest.description}</p> <p class="progress">Pokrok: ${progressText}</p>
+                    <p class="reward">Odměna: ${rewardText}</p>
+                    <button id="claim-quest-${quest.id}" class="claim-quest-button" 
+                             ${quest.claimed || quest.currentProgress < quest.target ? 'disabled' : ''}>
+                        ${quest.claimed ? 'Vyzvednuto' : (quest.currentProgress >= quest.target ? 'Vyzvednout' : 'Probíhá')}
+                    </button>`;
+                if (quest.claimed) questDiv.querySelector('.claim-quest-button').classList.add('claimed');
+                dailyQuestsListModalElement.appendChild(questDiv); 
+                if (!quest.claimed && quest.currentProgress >= quest.target) {
+                    const button = document.getElementById(`claim-quest-${quest.id}`);
+                    if (button) button.addEventListener('click', () => claimDailyQuestReward(quest.id));
+                }
+            });
+        }
+
+        function claimDailyQuestReward(questId) {
+            const quest = dailyQuestData.quests.find(q => q.id === questId);
+            if (quest && !quest.claimed && quest.currentProgress >= quest.target) {
+                if (quest.rewardType === 'echo_shards') { echoShards += quest.rewardAmount; showMessageBox(`Získal jsi ${formatNumber(quest.rewardAmount)} Echo Úlomků!`, false); }
+                else if (quest.rewardType === 'gold') { gold += quest.rewardAmount; showMessageBox(`Získal jsi ${formatNumber(quest.rewardAmount)} Zlata!`, false); }
+                quest.claimed = true; soundManager.playSound('milestone', 'C5', '4n');
+                renderDailyQuestsUI(); updateUI(); 
+            }
+        }
+
+        function calculateCompanionPassivePercent(companionId) {
+            const companionDef = allCompanions[companionId]; const companionInstance = ownedCompanions[companionId];
+            if (companionDef && companionInstance) return companionDef.basePassivePercent + (companionInstance.level -1) * companionDef.passivePercentPerLevel;
+            return 0;
+        }
+        function calculateTotalCompanionPassivePercent() {
+            let totalPercent = 0; for (const id in ownedCompanions) totalPercent += calculateCompanionPassivePercent(id); return totalPercent;
+        }
+        function updateCompanionPassivePercentOnUI() { totalCompanionPassivePercent = calculateTotalCompanionPassivePercent(); }
+
+        function renderCompanionsUI() {
+            companionsContainer.innerHTML = '';
+            for (const id in allCompanions) {
+                const companionDef = allCompanions[id]; const companionInstance = ownedCompanions[id];
+                const companionDiv = document.createElement('div'); companionDiv.classList.add('companion-item'); 
+                let companionHTML = `
+                    <span class="companion-icon">${companionDef.icon}</span>
+                    <div class="companion-info"> <span class="companion-name">${companionDef.name}</span>
+                        <span class="text-xs text-gray-400">${companionDef.description}</span>`;
+                if (companionInstance) {
+                    const currentPassivePerc = calculateCompanionPassivePercent(id);
+                    companionHTML += `
+                        <span class="companion-level">Úroveň: ${companionInstance.level} / ${companionDef.maxLevel}</span>
+                        <span class="companion-dps">%HP/s: ${formatNumber(currentPassivePerc * 100, 2)}%</span> </div>
+                    <div class="companion-upgrade-options">`; 
+                    if (companionInstance.level < companionDef.maxLevel) {
+                        const upgradeCost = Math.ceil(companionDef.upgradeBaseCost * Math.pow(companionDef.upgradeCostMultiplier, companionInstance.level -1));
+                        companionHTML += `<button data-id="${id}" class="companion-button upgrade-companion" ${gold < upgradeCost ? 'disabled' : ''}>Vylepšit <span class="cost-text">(${formatNumber(upgradeCost)} Z)</span></button>`;
+                    } else companionHTML += `<button class="companion-button" disabled>Max. úroveň</button>`;
+                    companionHTML += `</div>`;
+                } else {
+                     companionHTML += `</div> <div class="companion-upgrade-options">
+                        <button data-id="${id}" class="companion-button unlock" ${gold < companionDef.unlockCost ? 'disabled' : ''}>Odemknout <span class="cost-text">(${formatNumber(companionDef.unlockCost)} Z)</span></button>
+                    </div>`;
+                }
+                companionDiv.innerHTML = companionHTML; companionsContainer.appendChild(companionDiv);
+            }
+        }
+
+        function unlockCompanion(companionId) {
+            const companionDef = allCompanions[companionId];
+            if (companionDef && !ownedCompanions[companionId] && gold >= companionDef.unlockCost) { 
+                gold -= companionDef.unlockCost; ownedCompanions[companionId] = { level: 1 };
+                showMessageBox(`Společník ${companionDef.name} odemčen!`, false);
+                soundManager.playSound('upgrade', 'D5', '8n');
+                updateCompanionPassivePercentOnUI(); renderCompanionsUI(); updateUI();
+            } else if (gold < companionDef.unlockCost) showMessageBox("Nedostatek zlata!", true);
+        }
+
+        function upgradeCompanion(companionId) {
+            const companionDef = allCompanions[companionId]; const companionInstance = ownedCompanions[companionId];
+            if (companionDef && companionInstance && companionInstance.level < companionDef.maxLevel) {
+                const upgradeCost = Math.ceil(companionDef.upgradeBaseCost * Math.pow(companionDef.upgradeCostMultiplier, companionInstance.level -1));
+                if (gold >= upgradeCost) {
+                    gold -= upgradeCost; companionInstance.level++;
+                    showMessageBox(`${companionDef.name} vylepšen na úroveň ${companionInstance.level}!`, false);
+                    soundManager.playSound('upgrade', 'D#5', '16n');
+                    updateCompanionPassivePercentOnUI(); renderCompanionsUI(); updateUI();
+                } else showMessageBox("Nedostatek zlata!", true);
+            }
+        }
+
+        function confirmAndResetGame() {
+            if (confirm("Opravdu si přejete restartovat celou hru? Veškerý postup bude ztracen.")) {
+                localStorage.removeItem(SAVE_KEY); 
+                initializeNewGameVariables(); initializeNewGameUI();     
+            }
+        }
+        
+        function initializeNewGameVariables() {
+            gold = 0; baseClickDamage = 10; effectiveClickDamage = baseClickDamage;
+            passivePercentFromTiers = 0; currentGlobalTierClickDamageBonus = 0; totalCompanionPassivePercent = 0;
+            currentWorld = 1; currentZoneInWorld = 1; enemiesDefeatedInZone = 0;
+            enemy = { name: "Slime", currentHealth: 10, maxHealth: 10, goldReward: 5, effectiveLevel: 1, isChampion: false, isBoss: false };
+            highestEffectiveLevelReachedThisEcho = 1; activeBuffs = {}; activeDebuffs = {};
+            echoShards = 0; echoCount = 0; echoPermanentGoldBonus = 1.0; echoPermanentDamageBonus = 1.0;
+            echoGoldLevelCount = 0; echoDamageLevelCount = 0;
+            echoGoldUpgradeCost = initialEchoGoldUpgradeCost; echoDamageUpgradeCost = initialEchoDamageUpgradeCost; 
+            lifetimeStats = { totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0, totalChampionsKilled: 0, totalEnemiesKilled: 0, lifetimeGoldEarned: 0, lifetimeEchoShardsEarned: 0, lifetimePlayerLevelsGained: 0, lifetimeTiersAdvanced: 0 };
+            milestones.forEach(m => m.achieved = false); 
+            playerLevel = 1; playerXP = 0; xpToNextLevel = calculateXpToNextLevel(); 
+            talentPoints = 0; for (const id in talents) talents[id].currentLevel = 0;
+            clicksSinceLastGuaranteedCrit = 0;
+            mocnyUderCooldownTimeLeft = 0; mocnyUderActive = false; mocnyUderDurationLeft = 0;
+            zlataHoreckaAktivniCooldownTimeLeft = 0; zlataHoreckaAktivniActive = false; zlataHoreckaAktivniDurationLeft = 0;
+            ownedArtifactsData = {}; ownedCompanions = {}; 
+            baseCritChance = 0.05; effectiveCritChance = baseCritChance;
+            bossFightTimerActive = false; bossFightTimeLeft = 0;
+            currentTierIndex = 0; initializeEquipment(); updateCurrentTierBonuses(); 
+            dailyQuestData = { quests: [], lastResetDate: null, goldEarnedForQuestToday: 0 };
+            initializeOrResetDailyQuests(); updateCompanionPassivePercentOnUI(); 
+        }
+
+        function initializeNewGameUI() {
+            renderEquipment(); renderArtifactsUI(); renderDailyQuestsUI(); renderMilestonesUI(); renderCompanionsUI(); 
+            spawnNewEnemy(); calculateEffectiveStats(); updateUI(); 
+            showMessageBox("Hra byla restartována. Začínáte odznovu.", false, 3000);
+        }
+
+        const SAVE_KEY = 'echoesOfInfinitySave_v26_sounds_animations'; 
+
+        function saveGame() {
+            const talentLevels = {}; for (const id in talents) talentLevels[id] = talents[id].currentLevel;
+            const equipmentSave = {}; equipmentSlots.forEach(slot => { equipmentSave[slot] = { level: equipment[slot].level }; });
+            const gameState = {
+                gold, baseClickDamage, passivePercentFromTiers, currentTierIndex, equipment: equipmentSave, 
+                currentGlobalTierClickDamageBonus, currentWorld, currentZoneInWorld, enemiesDefeatedInZone,
+                enemy: { effectiveLevel: enemy.effectiveLevel, currentHealth: enemy.currentHealth, maxHealth: enemy.maxHealth, name: enemy.name, isChampion: enemy.isChampion, isBoss: enemy.isBoss, goldReward: enemy.goldReward },
+                highestEffectiveLevelReachedThisEcho, activeBuffs, activeDebuffs, echoShards, echoCount,
+                echoPermanentGoldBonus, echoPermanentDamageBonus, echoGoldLevelCount, echoDamageLevelCount, 
+                echoGoldUpgradeCost, echoDamageUpgradeCost, lifetimeStats, totalGoldEarnedThisEcho, enemiesKilledThisEcho, 
+                milestonesAchieved: milestones.map(m => m.achieved), lastSaveTime: Date.now(), 
+                playerLevel, playerXP, xpToNextLevel, talentPoints, talentLevels, clicksSinceLastGuaranteedCrit, 
+                mocnyUderCooldownTimeLeft, mocnyUderActive, mocnyUderDurationLeft,
+                zlataHoreckaAktivniCooldownTimeLeft, zlataHoreckaAktivniActive, zlataHoreckaAktivniDurationLeft,
+                ownedArtifactsData, ownedCompanions, totalCompanionPassivePercent, baseCritChance, 
+                bossFightTimerActive, bossFightTimeLeft, dailyQuestData,
+                soundVolume: soundManager.volume, soundMuted: soundManager.isMuted 
+            };
+            localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+        }
+        
+        function loadGame() {
+            const savedState = localStorage.getItem(SAVE_KEY);
+            if (savedState) {
+                const gameState = JSON.parse(savedState);
+                gold = gameState.gold || 0; baseClickDamage = gameState.baseClickDamage || 10; 
+                passivePercentFromTiers = gameState.passivePercentFromTiers || 0;
+                currentTierIndex = gameState.currentTierIndex || 0;
+                currentGlobalTierClickDamageBonus = gameState.currentGlobalTierClickDamageBonus || 0; 
+                initializeEquipment(); 
+                if (gameState.equipment) { 
+                    equipmentSlots.forEach(slot => {
+                        if (gameState.equipment[slot]) {
+                            equipment[slot].level = gameState.equipment[slot].level || 0;
+                            equipment[slot].cost = calculateItemUpgradeCost(slot, equipment[slot].level, currentTierIndex); 
+                        }
+                    });
+                }
+                currentWorld = gameState.currentWorld || 1; currentZoneInWorld = gameState.currentZoneInWorld || 1;
+                enemiesDefeatedInZone = gameState.enemiesDefeatedInZone || 0;
+                highestEffectiveLevelReachedThisEcho = gameState.highestEffectiveLevelReachedThisEcho || 1;
+                activeBuffs = gameState.activeBuffs || {}; activeDebuffs = gameState.activeDebuffs || {};
+                echoShards = gameState.echoShards || 0; echoCount = gameState.echoCount || 0;
+                echoPermanentGoldBonus = gameState.echoPermanentGoldBonus || 1.0;
+                echoPermanentDamageBonus = gameState.echoPermanentDamageBonus || 1.0;
+                echoGoldLevelCount = gameState.echoGoldLevelCount || 0; echoDamageLevelCount = gameState.echoDamageLevelCount || 0;
+                echoGoldUpgradeCost = gameState.echoGoldUpgradeCost || initialEchoGoldUpgradeCost; 
+                echoDamageUpgradeCost = gameState.echoDamageUpgradeCost || initialEchoDamageUpgradeCost; 
+                lifetimeStats = gameState.lifetimeStats || { totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0, totalChampionsKilled: 0, totalEnemiesKilled: 0, lifetimeGoldEarned: 0, lifetimeEchoShardsEarned: 0, lifetimePlayerLevelsGained: 0, lifetimeTiersAdvanced: 0 };
+                totalGoldEarnedThisEcho = gameState.totalGoldEarnedThisEcho || 0;
+                enemiesKilledThisEcho = gameState.enemiesKilledThisEcho || 0;
+                if (gameState.milestonesAchieved && gameState.milestonesAchieved.length === milestones.length) {
+                    milestones.forEach((m, index) => m.achieved = gameState.milestonesAchieved[index]);
+                }
+                playerLevel = gameState.playerLevel || 1; playerXP = gameState.playerXP || 0;
+                xpToNextLevel = gameState.xpToNextLevel || calculateXpToNextLevel(); 
+                talentPoints = gameState.talentPoints || 0;
+                if (gameState.talentLevels) {
+                    for (const id in gameState.talentLevels) if (talents[id]) talents[id].currentLevel = gameState.talentLevels[id];
+                }
+                clicksSinceLastGuaranteedCrit = gameState.clicksSinceLastGuaranteedCrit || 0;
+                mocnyUderCooldownTimeLeft = gameState.mocnyUderCooldownTimeLeft || 0; mocnyUderActive = gameState.mocnyUderActive || false; mocnyUderDurationLeft = gameState.mocnyUderDurationLeft || 0;
+                zlataHoreckaAktivniCooldownTimeLeft = gameState.zlataHoreckaAktivniCooldownTimeLeft || 0; zlataHoreckaAktivniActive = gameState.zlataHoreckaAktivniActive || false; zlataHoreckaAktivniDurationLeft = gameState.zlataHoreckaAktivniDurationLeft || 0;
+                ownedArtifactsData = gameState.ownedArtifactsData || {}; ownedCompanions = gameState.ownedCompanions || {}; 
+                totalCompanionPassivePercent = gameState.totalCompanionPassivePercent || 0;
+                baseCritChance = gameState.baseCritChance || 0.05; 
+                dailyQuestData = gameState.dailyQuestData || { quests: [], lastResetDate: null, goldEarnedForQuestToday: 0 };
+                bossFightTimerActive = gameState.bossFightTimerActive || false; bossFightTimeLeft = gameState.bossFightTimeLeft || 0;
+                
+                soundManager.volume = gameState.soundVolume !== undefined ? gameState.soundVolume : 0.5;
+                soundManager.isMuted = gameState.soundMuted !== undefined ? gameState.soundMuted : false;
+                
+                if (volumeSlider) volumeSlider.value = soundManager.volume;
+                if (muteButton) {
+                     muteButton.textContent = soundManager.isMuted ? "Odtlumit" : "Ztlumit";
+                     muteButton.classList.toggle('muted', soundManager.isMuted);
+                }
+
+
+                const timeSinceLastSave = (Date.now() - (gameState.lastSaveTime || Date.now())) / 1000;
+                if (bossFightTimerActive && gameState.enemy && gameState.enemy.isBoss) {
+                    bossFightTimeLeft -= timeSinceLastSave; 
+                    if (bossFightTimeLeft <= 0) {
+                        bossFightTimeLeft = 0; showMessageBox("Souboj s bossem vypršel během tvé nepřítomnosti. Zóna byla restartována.", true, 4000);
+                        enemiesDefeatedInZone = 0; bossFightTimerActive = false; 
+                    }
+                }
+                if (gameState.enemy && gameState.enemy.currentHealth > 0 && gameState.enemy.maxHealth > 0 && (!bossFightTimerActive || bossFightTimeLeft > 0) ) {
+                     enemy = {...gameState.enemy};
+                     enemyArtElement.innerHTML = enemySVGs[(enemy.effectiveLevel - 1 + enemySVGs.length) % enemySVGs.length];
+                } else spawnNewEnemy(); 
+                updateCurrentTierBonuses(); initializeOrResetDailyQuests(); updateCompanionPassivePercentOnUI(); 
+                if (timeSinceLastSave > 0 && (passivePercentFromTiers > 0 || totalCompanionPassivePercent > 0) && !bossFightTimerActive) { 
+                     showMessageBox(`Vítej zpět! Byl jsi pryč ${formatNumber(Math.floor(timeSinceLastSave/60))} minut. Pasivní poškození bylo aktivní.`, false, 4000);
+                }
+                renderEquipment(); renderArtifactsUI(); renderCompanionsUI(); renderMilestonesUI();
+                showMessageBox("Hra načtena!", false, 2000);
+            } else {
+                initializeNewGameVariables(); initializeNewGameUI();
+                soundManager.loadSettings(); 
+                if (volumeSlider) volumeSlider.value = soundManager.volume;
+                if (muteButton) {
+                    muteButton.textContent = soundManager.isMuted ? "Odtlumit" : "Ztlumit";
+                    muteButton.classList.toggle('muted', soundManager.isMuted);
+                }
+
+            }
+            updateUI();
+        }
+
+        // Event Listeners
+        enemyElement.addEventListener('click', onEnemyClick);
+        cleanseDebuffButton.addEventListener('click', onCleanseParasite);
+        echoButton.addEventListener('click', handleEcho);
+        upgradeEchoGoldButton.addEventListener('click', onUpgradeEchoGold);
+        upgradeEchoDamageButton.addEventListener('click', onUpgradeEchoDamage);
+        openTalentTreeButton.addEventListener('click', openTalentTreeModal);
+        closeTalentTreeButton.addEventListener('click', closeTalentTreeModal);
+        advanceTierButton.addEventListener('click', advanceToNextTier);
+        mocnyUderButton.addEventListener('click', activateMocnyUder);
+        zlataHoreckaAktivniButton.addEventListener('click', activateZlataHoreckaAktivni);
+        equipmentContainer.addEventListener('click', handleEquipmentUpgradeClick); 
+        resetGameButton.addEventListener('click', confirmAndResetGame); 
+        
+        openDailyQuestsButton.addEventListener('click', () => { dailyQuestsModal.classList.remove('hidden'); renderDailyQuestsUI(); soundManager.playSound('openModal', 'D5', '16n'); });
+        closeDailyQuestsButton.addEventListener('click', () => { dailyQuestsModal.classList.add('hidden'); soundManager.playSound('closeModal', 'D4', '16n'); });
+        openMilestonesButton.addEventListener('click', () => { milestonesModal.classList.remove('hidden'); renderMilestonesUI(); soundManager.playSound('openModal', 'E5', '16n'); });
+        closeMilestonesButton.addEventListener('click', () => { milestonesModal.classList.add('hidden'); soundManager.playSound('closeModal', 'E4', '16n'); });
+
+        dailyQuestsListModalElement.addEventListener('click', (event) => { 
+            const button = event.target.closest('.claim-quest-button');
+            if (button && !button.disabled) {
+                const questId = button.id.replace('claim-quest-', '');
+                claimDailyQuestReward(questId);
+            }
+        });
+        companionsContainer.addEventListener('click', (event) => {
+            const button = event.target.closest('.companion-button');
+            if (button) {
+                const companionId = button.dataset.id;
+                if (button.classList.contains('unlock')) unlockCompanion(companionId);
+                else if (button.classList.contains('upgrade-companion')) upgradeCompanion(companionId);
+            }
+        });
+
+        volumeSlider.addEventListener('input', (event) => {
+            soundManager.setVolume(event.target.value);
+        });
+
+        muteButton.addEventListener('click', () => {
+            const isMuted = soundManager.toggleMute();
+            muteButton.textContent = isMuted ? "Odtlumit" : "Ztlumit";
+            muteButton.classList.toggle('muted', isMuted);
+        });
+
+
+        window.onload = () => {
+            loadGame(); 
+            // First user gesture listener is already attached to document.body
+            // It will handle starting the audio context and initializing synths.
+            // It will also update the sound control UI elements once the context is ready.
+            setInterval(gameTick, 100); 
+            setInterval(saveGame, 15000); 
+        };
+        window.onbeforeunload = saveGame; 
+
+    </script>
+</body>
+</html>
