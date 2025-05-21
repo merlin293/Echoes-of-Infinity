@@ -2,15 +2,15 @@
 
 /**
  * Inicializuje vybavení hráče pro všechny sloty na úroveň 0.
+ * Volá se na začátku nové hry nebo při resetu Echa.
  */
 function initializeEquipment() {
     if (typeof gameState.equipment !== 'object' || gameState.equipment === null) {
         gameState.equipment = {};
     }
-    // Ujistíme se, že equipmentSlots je definováno a je pole
     if (typeof equipmentSlots === 'undefined' || !Array.isArray(equipmentSlots)) {
-        console.error("CRITICAL: equipmentSlots is not defined or not an array in initializeEquipment. Equipment cannot be initialized.");
-        return;
+        console.error("CRITICAL: equipmentSlots is not defined or not an array in initializeEquipment. Equipment cannot be initialized properly.");
+        return; 
     }
     equipmentSlots.forEach(slot => { 
         gameState.equipment[slot] = { 
@@ -18,7 +18,7 @@ function initializeEquipment() {
         };
     });
     // console.log("Equipment initialized in gameState:", JSON.parse(JSON.stringify(gameState.equipment)));
-    // renderEquipmentUI se volá až po úplné inicializaci gameState v loadGame nebo initializeNewGameVariablesAndUI
+    // renderEquipmentUI se NEVOLÁ ZDE, ale až po kompletním načtení/inicializaci hry.
 }
 
 /**
@@ -130,23 +130,20 @@ function renderEquipmentUI() {
     }
     currentTierDisplay.textContent = tierNameForHeader;
 
-    // Ujistíme se, že equipmentSlots je definováno a je pole
     if (typeof equipmentSlots === 'undefined' || !Array.isArray(equipmentSlots)) {
         console.error("CRITICAL: equipmentSlots is not defined or not an array in renderEquipmentUI. Cannot render equipment items.");
         equipmentContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Chyba konfigurace vybavení.</p>';
         return;
     }
     if (equipmentSlots.length === 0) {
-        // console.log("renderEquipmentUI: No equipment slots to render.");
         equipmentContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Žádné sloty vybavení k zobrazení.</p>';
         return;
     }
 
     equipmentSlots.forEach(slot => { 
-        // Ujistíme se, že gameState.equipment a gameState.equipment[slot] existují
         if (!gameState.equipment || !gameState.equipment[slot]) {
             console.warn(`renderEquipmentUI: Chybí data pro vybavení ve slotu: ${slot}. Inicializuji na úroveň 0.`);
-            if (!gameState.equipment) gameState.equipment = {}; // Pokud chybí celý objekt equipment
+            if (!gameState.equipment) gameState.equipment = {}; 
             gameState.equipment[slot] = { level: 0 }; 
         }
         const item = gameState.equipment[slot];

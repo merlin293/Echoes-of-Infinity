@@ -193,19 +193,27 @@ function updateEquipmentButtonStates() {
         return;
     }
 
-    const validCurrentTierIndex = (typeof gameState.currentTierIndex === 'number' && 
-                                 gameState.currentTierIndex >= 0 && 
-                                 typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0 &&
-                                 gameState.currentTierIndex < tiers.length)
-                                 ? gameState.currentTierIndex
-                                 : 0; 
+    let validCurrentTierIndex = 0; // Výchozí hodnota, pokud nic jiného není dostupné
+    if (typeof gameState.currentTierIndex === 'number' && gameState.currentTierIndex >= 0) {
+        if (typeof tiers !== 'undefined' && Array.isArray(tiers) && gameState.currentTierIndex < tiers.length) {
+            validCurrentTierIndex = gameState.currentTierIndex;
+        } else if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
+            // Pokud je index mimo rozsah, ale tiers existuje, použijeme 0
+            console.warn(`updateEquipmentButtonStates: gameState.currentTierIndex (${gameState.currentTierIndex}) je mimo rozsah pro tiers. Používám 0.`);
+            validCurrentTierIndex = 0;
+        } else {
+            // Pokud tiers není definováno, použijeme 0 a spolehneme se na fallback v calculateItemUpgradeCost
+            console.warn(`updateEquipmentButtonStates: tiers není definováno nebo je prázdné. Používám tier index 0 pro výpočet ceny.`);
+        }
+    } else {
+        console.warn(`updateEquipmentButtonStates: gameState.currentTierIndex je '${gameState.currentTierIndex}'. Používám tier index 0.`);
+    }
+
 
     equipmentSlots.forEach(slot => { 
         const item = gameState.equipment[slot]; 
-        
         const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
         
-        // Pokud item neexistuje nebo nemá vlastnost level, deaktivujeme všechna tlačítka pro tento slot
         if (!item || typeof item.level === 'undefined') { 
             upgradeButtons.forEach(btn => {
                 btn.disabled = true;
