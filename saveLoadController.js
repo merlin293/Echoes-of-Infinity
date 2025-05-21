@@ -108,23 +108,22 @@ function loadGame() {
         if (typeof tempCurrentTierIndex !== 'number' || isNaN(tempCurrentTierIndex)) {
             tempCurrentTierIndex = 0; 
         }
+        // Ověření proti délce pole tiers (pokud je tiers již definováno)
         if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
             if (tempCurrentTierIndex < 0 || tempCurrentTierIndex >= tiers.length) {
                 console.warn(`loadGame: Načtený currentTierIndex (${loadedGameState.currentTierIndex}) je mimo meze pole tiers (délka ${tiers.length}). Nastavuji na 0.`);
                 tempCurrentTierIndex = 0;
             }
-        } else {
+        } else { // Pokud pole tiers ještě není definováno nebo je prázdné
              console.warn("loadGame: Pole 'tiers' není definováno nebo je prázdné při nastavování currentTierIndex. Používám 0.");
              tempCurrentTierIndex = 0; 
         }
-        gameState.currentTierIndex = tempCurrentTierIndex; // Nastavení PŘED initializeEquipment
-        console.log(`LOADGAME: gameState.currentTierIndex nastaven na: ${gameState.currentTierIndex}`);
+        gameState.currentTierIndex = tempCurrentTierIndex; 
+        console.log(`LOADGAME (save exists): gameState.currentTierIndex nastaven na: ${gameState.currentTierIndex}`);
 
-
-        // 2. Inicializace základní struktury vybavení
+        // 2. Inicializace základní struktury vybavení (pokud by chyběla)
         if (typeof initializeEquipment === 'function') {
-            initializeEquipment(); // Tato funkce by NEMĚLA volat renderEquipmentUI
-            console.log("LOADGAME: initializeEquipment() zavoláno.");
+            initializeEquipment(); 
         } else {
             console.error("loadGame: initializeEquipment function not found!");
             gameState.equipment = {}; 
@@ -153,11 +152,9 @@ function loadGame() {
                 }
             }
         });
-        // Fallbacky pro klíčové hodnoty
-        gameState.gold = loadedGameState.gold || 0;
-        // ... (ostatní fallbacky pro jednoduché hodnoty) ...
-
-        // 4. Načtení úrovní vybavení do již existující struktury gameState.equipment
+        // ... (fallbacky pro jednoduché hodnoty) ...
+        
+        // 4. Načtení úrovní vybavení
         if (loadedGameState.equipment && typeof equipmentSlots !== 'undefined' && gameState.equipment) { 
             equipmentSlots.forEach(slot => {
                 if (gameState.equipment[slot]) { 
@@ -167,14 +164,14 @@ function loadGame() {
                         gameState.equipment[slot].level = 0; 
                     }
                 } else {
-                     console.warn(`loadGame: Slot '${slot}' chybí v gameState.equipment po inicializaci při načítání úrovní. Vytvářím.`);
+                     console.warn(`loadGame (save exists): Slot '${slot}' chybí v gameState.equipment po inicializaci při načítání úrovní. Vytvářím.`);
                      gameState.equipment[slot] = { level: (loadedGameState.equipment[slot] ? loadedGameState.equipment[slot].level : 0) || 0 };
                 }
             });
         }
-        console.log("LOADGAME: Úrovně vybavení načteny:", JSON.parse(JSON.stringify(gameState.equipment)));
+        console.log("LOADGAME (save exists): Úrovně vybavení načteny:", JSON.parse(JSON.stringify(gameState.equipment)));
         
-        // Načtení komplexnějších struktur (talenty, statistiky, atd.)
+        // ... (zbytek načítání komplexních struktur jako v předchozí verzi) ...
         gameState.enemy = { ...(gameState.enemy || { name: "Slime", currentHealth: 10, maxHealth: 10, goldReward: 5, effectiveLevel: 1, isChampion: false, isBoss: false }), ...(loadedGameState.enemy || {}) };
         gameState.lifetimeStats = { 
             totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0, 
@@ -184,7 +181,73 @@ function loadGame() {
             totalPlayTimeSeconds: 0, fastestBossKillSeconds: Infinity,
             ...(loadedGameState.lifetimeStats || {}) 
         };
-        // ... (zbytek načítání komplexních struktur) ...
+        if (typeof gameState.lifetimeStats.companionEssenceCollectedTotal === 'undefined') gameState.lifetimeStats.companionEssenceCollectedTotal = 0;
+        if (typeof gameState.lifetimeStats.expeditionsCompletedTotal === 'undefined') gameState.lifetimeStats.expeditionsCompletedTotal = 0;
+        if (typeof gameState.lifetimeStats.totalPlayTimeSeconds === 'undefined') gameState.lifetimeStats.totalPlayTimeSeconds = 0;
+        if (typeof gameState.lifetimeStats.fastestBossKillSeconds === 'undefined') gameState.lifetimeStats.fastestBossKillSeconds = Infinity;
+
+        gameState.playerResearchProgress = loadedGameState.playerResearchProgress || {};
+        if (typeof allResearchProjects !== 'undefined') {
+            for (const id in allResearchProjects) {
+                if (!gameState.playerResearchProgress[id]) gameState.playerResearchProgress[id] = { level: 0 };
+            }
+        }
+        gameState.playerEssences = loadedGameState.playerEssences || {};
+        if (typeof allEssences !== 'undefined') {
+            for (const id in allEssences) {
+                if (!gameState.playerEssences[id]) gameState.playerEssences[id] = { level: 0 };
+            }
+        }
+        gameState.companionSkillLevels = loadedGameState.companionSkillLevels || {};
+        if (typeof allCompanions !== 'undefined') {
+            for (const companionId in allCompanions) {
+                if (allCompanions.hasOwnProperty(companionId)) {
+                    if (!gameState.companionSkillLevels[companionId]) gameState.companionSkillLevels[companionId] = {};
+                    if (allCompanions[companionId].skillTree) {
+                        for (const skillId in allCompanions[companionId].skillTree) {
+                            if (typeof gameState.companionSkillLevels[companionId][skillId] === 'undefined') {
+                                gameState.companionSkillLevels[companionId][skillId] = 0; 
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        gameState.activeExpeditions = loadedGameState.activeExpeditions || [];
+        gameState.expeditionSlots = loadedGameState.expeditionSlots || 1;
+
+
+        if (loadedGameState.talentLevels && typeof talents !== 'undefined') { 
+            for (const id in loadedGameState.talentLevels) {
+                if (talents.hasOwnProperty(id)) {
+                    talents[id].currentLevel = loadedGameState.talentLevels[id] || 0;
+                }
+            }
+        } else if (typeof talents !== 'undefined') {
+             for (const id in talents) {
+                if (talents.hasOwnProperty(id)) {
+                    talents[id].currentLevel = 0;
+                }
+            }
+        }
+                
+        if (typeof allMilestonesConfig !== 'undefined') {
+            gameState.milestones = JSON.parse(JSON.stringify(allMilestonesConfig)).map((mConfig, index) => {
+                let achievedState = false;
+                if (loadedGameState.milestonesAchieved && loadedGameState.milestonesAchieved.length > index) {
+                    achievedState = loadedGameState.milestonesAchieved[index];
+                }
+                return {...mConfig, achieved: achievedState };
+            });
+        } else {
+            gameState.milestones = [];
+        }
+
+        if (typeof calculateXpToNextLevel === 'function') {
+            gameState.xpToNextLevel = calculateXpToNextLevel();
+        } else {
+            gameState.xpToNextLevel = 70; 
+        }
         
         if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); 
         if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState();
@@ -216,16 +279,15 @@ function loadGame() {
         
         if (typeof initializeOrResetDailyQuests === 'function') initializeOrResetDailyQuests(); 
         
-        // Finální překreslení UI
-        console.log("LOADGAME: Před finálním renderEquipmentUI. currentTierIndex:", gameState.currentTierIndex, "typeof tiers:", typeof tiers);
+        console.log("LOADGAME (save exists): Před finálním renderEquipmentUI. currentTierIndex:", gameState.currentTierIndex, "typeof tiers:", typeof tiers);
         if (typeof renderEquipmentUI === 'function') renderEquipmentUI(); 
         if (typeof renderArtifactsUI === 'function') renderArtifactsUI();
         // ... (ostatní render funkce) ...
 
-    } else { // Pokud neexistuje uložený stav
+    } else { 
         console.log("LOADGAME: Nebyl nalezen žádný uložený stav, volám initializeNewGameVariablesAndUI.");
         if (typeof initializeNewGameVariablesAndUI === 'function') {
-            initializeNewGameVariablesAndUI(); // Tato funkce by měla volat renderEquipmentUI na svém konci
+            initializeNewGameVariablesAndUI(); 
         } else {
             console.error("initializeNewGameVariablesAndUI function not found!");
         }
@@ -234,20 +296,77 @@ function loadGame() {
     gameState.lastTickTime = Date.now(); 
     gameState.lastActiveTime = Date.now(); 
 
+    console.log("LOADGAME: Před finálním updateUI. currentTierIndex:", gameState.currentTierIndex);
     if (typeof updateUI === 'function') updateUI(); 
 }
 
 
 /**
+ * Inicializuje proměnné a UI pro novou hru.
+ */
+function initializeNewGameVariablesAndUI() {
+    console.log("NEW_GAME: Začátek initializeNewGameVariablesAndUI.");
+    if (typeof initializeDefaultGameStateVariables === 'function') {
+        initializeDefaultGameStateVariables(); 
+        // initializeDefaultGameStateVariables by měla nastavit currentTierIndex na 0 a volat initializeEquipment
+        console.log("NEW_GAME: Po initializeDefaultGameStateVariables. currentTierIndex:", gameState.currentTierIndex, "Equipment keys:", Object.keys(gameState.equipment || {}));
+    } else {
+        console.error("initializeDefaultGameStateVariables function not found! Kritická chyba inicializace.");
+        // Manuální fallback, pokud hlavní inicializační funkce chybí
+        gameState.currentTierIndex = 0; 
+        gameState.equipment = {};
+        if(typeof equipmentSlots !== 'undefined' && Array.isArray(equipmentSlots)){
+            equipmentSlots.forEach(slot => { gameState.equipment[slot] = { level: 0 }; });
+        }
+    }
+    
+    // Ostatní UI a herní inicializace, které závisí na gameState
+    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); 
+    if (typeof initializeOrResetDailyQuests === 'function') initializeOrResetDailyQuests(); 
+    if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState(); 
+    
+    if (typeof soundManager !== 'undefined' && typeof soundManager.loadSettingsFromGameState === 'function') {
+        soundManager.loadSettingsFromGameState(); 
+    }
+    if (typeof volumeSlider !== 'undefined' && volumeSlider && typeof muteButton !== 'undefined' && muteButton) {
+        volumeSlider.value = gameState.gameSettings.soundVolume;
+        muteButton.textContent = gameState.gameSettings.soundMuted ? "Odtlumit" : "Ztlumit";
+        muteButton.classList.toggle('muted', gameState.gameSettings.soundMuted);
+    }
+    if (typeof toggleDamageNumbersEl !== 'undefined') toggleDamageNumbersEl.checked = gameState.gameSettings.showDamageNumbers;
+    if (typeof toggleGoldAnimationsEl !== 'undefined') toggleGoldAnimationsEl.checked = gameState.gameSettings.showGoldAnimations;
+
+    // Všechny render funkce by měly být volány až poté, co je gameState plně sestaven.
+    console.log("NEW_GAME: Před finálním renderEquipmentUI. currentTierIndex:", gameState.currentTierIndex, "typeof tiers:", (typeof tiers));
+    if (typeof tiers === 'undefined') {
+        console.error("CRITICAL in NEW_GAME: 'tiers' is undefined before renderEquipmentUI!");
+    }
+
+    if (typeof renderEquipmentUI === 'function') renderEquipmentUI();
+    if (typeof renderArtifactsUI === 'function') renderArtifactsUI();
+    if (typeof renderCompanionsUI === 'function') renderCompanionsUI();
+    if (typeof renderMilestonesUI === 'function') renderMilestonesUI();
+    if (typeof renderResearchUI === 'function') renderResearchUI();
+    if (typeof renderEssenceForgeUI === 'function') renderEssenceForgeUI();
+    if (typeof renderTalentTree === 'function') renderTalentTree(); 
+    
+    if (typeof spawnNewEnemy === 'function') spawnNewEnemy(); 
+    
+    if (typeof showMessageBox === 'function') showMessageBox("Vítej ve hře Echoes of Infinity! Začínáš novou hru.", false, 3000);
+    console.log("NEW_GAME: Konec initializeNewGameVariablesAndUI.");
+}
+
+
+/**
  * Vypočítá a aplikuje offline progres.
- * @param {number} offlineDurationTotalSeconds - Celková doba, po kterou byl hráč offline, v sekundách.
  */
 function calculateAndApplyOfflineProgress(offlineDurationTotalSeconds) {
+    // ... (kód zůstává stejný)
     if (offlineDurationTotalSeconds < MIN_OFFLINE_TIME_FOR_PROGRESS_SECONDS) {
         if (typeof showMessageBox === 'function') showMessageBox("Vítej zpět!", false, 2000);
         return; 
     }
-    // ... (zbytek funkce zůstává stejný) ...
+
     const effectiveOfflineDurationSeconds = Math.min(offlineDurationTotalSeconds, MAX_OFFLINE_TIME_SECONDS);
 
     let passiveDamageFromTiersArtifactsTalents = gameState.passivePercentFromTiers; 
@@ -342,50 +461,6 @@ function calculateAndApplyOfflineProgress(offlineDurationTotalSeconds) {
     } else {
         if (typeof showMessageBox === 'function') showMessageBox(`Vítej zpět! (Doba nepřítomnosti: ${formatTime(offlineDurationTotalSeconds)})`, false, 3000);
     }
-}
-
-
-/**
- * Inicializuje proměnné a UI pro novou hru.
- * Volá se, pokud se nenajde uložený stav, nebo při hard resetu.
- */
-function initializeNewGameVariablesAndUI() {
-    if (typeof initializeDefaultGameStateVariables === 'function') {
-        initializeDefaultGameStateVariables(); // Tato funkce volá initializeEquipment
-        console.log("NEW_GAME: initializeDefaultGameStateVariables() zavoláno. currentTierIndex:", gameState.currentTierIndex);
-    } else {
-        console.error("initializeDefaultGameStateVariables function not found!");
-        return; 
-    }
-    
-    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); 
-    if (typeof initializeOrResetDailyQuests === 'function') initializeOrResetDailyQuests(); 
-    if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState(); 
-    
-    if (typeof soundManager !== 'undefined' && typeof soundManager.loadSettingsFromGameState === 'function') {
-        soundManager.loadSettingsFromGameState(); 
-    }
-    if (typeof volumeSlider !== 'undefined' && volumeSlider && typeof muteButton !== 'undefined' && muteButton) {
-        volumeSlider.value = gameState.gameSettings.soundVolume;
-        muteButton.textContent = gameState.gameSettings.soundMuted ? "Odtlumit" : "Ztlumit";
-        muteButton.classList.toggle('muted', gameState.gameSettings.soundMuted);
-    }
-    if (typeof toggleDamageNumbersEl !== 'undefined') toggleDamageNumbersEl.checked = gameState.gameSettings.showDamageNumbers;
-    if (typeof toggleGoldAnimationsEl !== 'undefined') toggleGoldAnimationsEl.checked = gameState.gameSettings.showGoldAnimations;
-
-    // renderEquipmentUI se volá až po všech těchto inicializacích
-    console.log("NEW_GAME: Před finálním renderEquipmentUI. currentTierIndex:", gameState.currentTierIndex, "typeof tiers:", typeof tiers);
-    if (typeof renderEquipmentUI === 'function') renderEquipmentUI();
-    if (typeof renderArtifactsUI === 'function') renderArtifactsUI();
-    if (typeof renderCompanionsUI === 'function') renderCompanionsUI();
-    if (typeof renderMilestonesUI === 'function') renderMilestonesUI();
-    if (typeof renderResearchUI === 'function') renderResearchUI();
-    if (typeof renderEssenceForgeUI === 'function') renderEssenceForgeUI();
-    if (typeof renderTalentTree === 'function') renderTalentTree(); 
-    
-    if (typeof spawnNewEnemy === 'function') spawnNewEnemy(); 
-    
-    if (typeof showMessageBox === 'function') showMessageBox("Vítej ve hře Echoes of Infinity! Začínáš novou hru.", false, 3000);
 }
 
 
