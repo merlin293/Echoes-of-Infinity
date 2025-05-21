@@ -201,13 +201,13 @@ function updateEquipmentButtonStates() {
                                  : 0; 
 
     equipmentSlots.forEach(slot => { 
-        const item = gameState.equipment[slot]; // Zde je potenciální problém, pokud gameState.equipment[slot] neexistuje
+        const item = gameState.equipment[slot]; 
         
-        // Přidána kontrola, zda item existuje a má vlastnost 'level'
+        const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
+        
+        // Pokud item neexistuje nebo nemá vlastnost level, deaktivujeme všechna tlačítka pro tento slot
         if (!item || typeof item.level === 'undefined') { 
-            // console.warn(`updateEquipmentButtonStates: Item for slot '${slot}' is undefined or has no level in gameState.equipment.`);
-            const upgradeButtonsForSlot = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
-            upgradeButtonsForSlot.forEach(btn => {
+            upgradeButtons.forEach(btn => {
                 btn.disabled = true;
                 const costSpan = btn.querySelector('.cost-text');
                 if (costSpan && btn.dataset.amount === "1") costSpan.textContent = '(N/A)';
@@ -215,7 +215,6 @@ function updateEquipmentButtonStates() {
             return; 
         }
         
-        const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
         upgradeButtons.forEach(button => {
             const amount = button.dataset.amount;
             let cost = 0; 
@@ -486,36 +485,4 @@ function closeExpeditionCompanionSelectModalUI() {
     if (expeditionCompanionSelectModal) {
         closeModal(expeditionCompanionSelectModal);
     }
-}
-
-function updateEquipmentButtonStates() {
-    if (!equipmentContainer || typeof gameState === 'undefined' || typeof gameState.equipment === 'undefined') {
-        // console.warn("updateEquipmentButtonStates: Bailing early, equipmentContainer or gameState.equipment not ready.");
-        return;
-    }
-
-    const validCurrentTierIndex = (typeof gameState.currentTierIndex === 'number' && 
-                                 gameState.currentTierIndex >= 0 && 
-                                 typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0 &&
-                                 gameState.currentTierIndex < tiers.length)
-                                 ? gameState.currentTierIndex
-                                 : 0; 
-
-    equipmentSlots.forEach(slot => { 
-        const item = gameState.equipment[slot]; 
-        
-        // Přidána kontrola, zda item existuje a má vlastnost 'level'
-        if (!item || typeof item.level === 'undefined') { 
-            // console.warn(`updateEquipmentButtonStates: Item for slot '${slot}' is undefined or has no level in gameState.equipment.`);
-            const upgradeButtonsForSlot = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
-            upgradeButtonsForSlot.forEach(btn => {
-                btn.disabled = true; // Deaktivujeme tlačítka, pokud item není v pořádku
-                const costSpan = btn.querySelector('.cost-text');
-                if (costSpan && btn.dataset.amount === "1") costSpan.textContent = '(N/A)'; // Zobrazíme N/A u ceny
-            });
-            return; // Přeskočíme zbytek logiky pro tento slot
-        }
-        
-        // ... zbytek funkce ...
-    });
 }

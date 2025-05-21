@@ -26,7 +26,7 @@ function spawnNewEnemy() {
         goldMultiplier = 5; 
         gameState.bossFightTimerActive = true; 
         gameState.bossFightTimeLeft = BOSS_FIGHT_DURATION; 
-        gameState.bossFightInitialDuration = BOSS_FIGHT_DURATION; // Uložíme počáteční čas
+        gameState.bossFightInitialDuration = BOSS_FIGHT_DURATION;
     } else {
         if (gameState.bossFightTimerActive && !gameState.enemy.isBoss) {
             gameState.bossFightTimerActive = false;
@@ -42,12 +42,29 @@ function spawnNewEnemy() {
 
     healthMultiplier *= Math.max(0.5, 1 - (gameState.echoCount * 0.04)); 
     
+    let tierPassiveBonus = 0;
+    let tierCostMultiplier = 1;
+
+    if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
+        const tierIndex = (typeof gameState.currentTierIndex === 'number' && gameState.currentTierIndex >= 0 && gameState.currentTierIndex < tiers.length) 
+                          ? gameState.currentTierIndex 
+                          : 0; // Fallback na tier 0
+        if (tiers[tierIndex]) {
+            tierPassiveBonus = tiers[tierIndex].passivePercentBonus || 0;
+            tierCostMultiplier = tiers[tierIndex].costMultiplier || 1;
+        } else {
+            console.warn(`spawnNewEnemy: tiers[${tierIndex}] je undefined. Používám defaultní hodnoty pro bonusy tieru.`);
+        }
+    } else {
+        console.error("spawnNewEnemy: Pole 'tiers' není dostupné. Používám defaultní hodnoty pro bonusy tieru.");
+    }
+    
     gameState.enemy.maxHealth = Math.ceil(
-        8 * Math.pow(1.13 + (gameState.currentWorld * 0.0008) + (tiers[gameState.currentTierIndex].passivePercentBonus * 10) + (gameState.currentTierIndex * 0.0025) , gameState.enemy.effectiveLevel -1) * healthMultiplier
+        8 * Math.pow(1.13 + (gameState.currentWorld * 0.0008) + (tierPassiveBonus * 10) + (gameState.currentTierIndex * 0.0025) , gameState.enemy.effectiveLevel -1) * healthMultiplier
     ); 
     gameState.enemy.currentHealth = gameState.enemy.maxHealth;
     gameState.enemy.goldReward = Math.ceil(
-        15 * Math.pow(1.15 + (gameState.currentWorld * 0.002) + (tiers[gameState.currentTierIndex].costMultiplier * 0.001) + (gameState.currentTierIndex * 0.0045), gameState.enemy.effectiveLevel -1) * goldMultiplier
+        15 * Math.pow(1.15 + (gameState.currentWorld * 0.002) + (tierCostMultiplier * 0.001) + (gameState.currentTierIndex * 0.0045), gameState.enemy.effectiveLevel -1) * goldMultiplier
     ); 
     
     let baseNameIndex = (gameState.enemy.effectiveLevel - 1 + enemyNames.length) % enemyNames.length; 
@@ -180,7 +197,6 @@ function onEnemyDefeated(currentGoldMultiplier) {
     if (gameState.enemy.isBoss) { 
         if (typeof soundManager !== 'undefined') soundManager.playSound('bossDefeat', 'G2', '1n');
         
-        // Zaznamenání času poražení bosse
         const timeTakenToKillBoss = gameState.bossFightInitialDuration - gameState.bossFightTimeLeft;
         if (timeTakenToKillBoss < gameState.lifetimeStats.fastestBossKillSeconds) {
             gameState.lifetimeStats.fastestBossKillSeconds = timeTakenToKillBoss;
@@ -191,7 +207,7 @@ function onEnemyDefeated(currentGoldMultiplier) {
 
         gameState.bossFightTimerActive = false; 
         gameState.bossFightTimeLeft = 0;       
-        gameState.bossFightInitialDuration = 0; // Reset pro dalšího bosse
+        gameState.bossFightInitialDuration = 0; 
         gameState.lifetimeStats.totalBossesKilled++;
         if (typeof tryDropArtifact === 'function') tryDropArtifact(); 
         if (Math.random() < COMPANION_ESSENCE_DROP_CHANCE_FROM_BOSS) {
@@ -265,7 +281,7 @@ function handleBossFightTimeout() {
     
     gameState.bossFightTimerActive = false; 
     gameState.bossFightTimeLeft = 0;       
-    gameState.bossFightInitialDuration = 0; // Reset i zde
+    gameState.bossFightInitialDuration = 0; 
     gameState.enemiesDefeatedInZone = 0;  
     
     spawnNewEnemy(); 
