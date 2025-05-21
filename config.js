@@ -44,6 +44,13 @@ const critDamageMultiplier = 2;
 const COMPANION_ESSENCE_DROP_CHANCE_FROM_CHAMPION = 0.1; 
 const COMPANION_ESSENCE_DROP_CHANCE_FROM_BOSS = 0.5; 
 
+// --- Konstanty pro Offline Progres ---
+const MAX_OFFLINE_TIME_SECONDS = 60 * 60 * 8; // Maximální doba offline progresu (např. 8 hodin)
+const OFFLINE_GOLD_EARN_PERCENTAGE = 0.25;   // Hráč získá 25% zlata, které by získal aktivním hraním (z pasivního poškození)
+const OFFLINE_XP_EARN_PERCENTAGE = 0.10;     // Hráč získá 10% XP
+const MIN_OFFLINE_TIME_FOR_PROGRESS_SECONDS = 60 * 2; // Minimální doba offline, aby se progres započítal (např. 2 minuty)
+
+
 const equipmentSlots = ['weapon', 'helmet', 'gloves', 'armor', 'pants', 'boots'];
 const itemNamesCzech = {
     weapon: 'Zbraň', helmet: 'Helma', gloves: 'Rukavice',
@@ -146,7 +153,7 @@ const allCompanions = {
         }
     },
     'wolf_companion': {
-        id: 'wolf_companion', name: "Mystický Vlk", icon: '�', description: "Silný vlk, který způsobuje značné poškození.",
+        id: 'wolf_companion', name: "Mystický Vlk", icon: '🐺', description: "Silný vlk, který způsobuje značné poškození.",
         basePassivePercent: 0.001, passivePercentPerLevel: 0.0004, maxLevel: 30,
         unlockCost: 25000, upgradeBaseCost: 100, upgradeCostMultiplier: 1.20, source: 'shop',
         skillTree: {
@@ -182,7 +189,7 @@ const allCompanions = {
                 maxLevel: 10,
                 cost: (level) => 4 + level * 2,
                 effectType: 'companion_base_damage_increase_percent',
-                effectValuePerLevel: 0.08, // +8% k základní hodnotě
+                effectValuePerLevel: 0.08, 
                 icon: '🧱'
             },
             'golem_taunt': {
@@ -190,14 +197,14 @@ const allCompanions = {
                 description: "Malá šance, že nepřítel na okamžik způsobí menší poškození hráči (efekt zatím není implementován).",
                 maxLevel: 3,
                 cost: (level) => 15 + level * 5,
-                effectType: 'enemy_damage_reduction_chance', // Efekt zatím jen pro popis
-                effectValuePerLevel: 0.02, // +2% šance
+                effectType: 'enemy_damage_reduction_chance', 
+                effectValuePerLevel: 0.02, 
                 icon: '😠'
             }
         }
     },
     'fire_sprite': {
-        id: 'fire_sprite', name: "Ohnivý Skřítek", icon: '🔥', description: "Mrštný skřítek, který může nepřátele popálit.",
+        id: 'fire_sprite', name: "Ohnivý Skřítek", icon: '�', description: "Mrštný skřítek, který může nepřátele popálit.",
         basePassivePercent: 0.0005, passivePercentPerLevel: 0.00015, maxLevel: 40,
         unlockCost: 40000, upgradeBaseCost: 70, upgradeCostMultiplier: 1.18, source: 'shop',
         skillTree: {
@@ -207,7 +214,7 @@ const allCompanions = {
                 maxLevel: 10,
                 cost: (level) => 3 + level,
                 effectType: 'companion_damage_multiplier_percent',
-                effectValuePerLevel: 0.06, // +6%
+                effectValuePerLevel: 0.06, 
                 icon: '♨️'
             },
             'sprite_burning_aura': {
@@ -215,8 +222,8 @@ const allCompanions = {
                 description: "Přidává malý dodatečný pasivní %HP/s efekt všem společníkům ({bonusValue}%).",
                 maxLevel: 5,
                 cost: (level) => 20 + level * 4,
-                effectType: 'global_companion_passive_percent_flat_boost', // Nový typ efektu
-                effectValuePerLevel: 0.00005, // +0.005%
+                effectType: 'global_companion_passive_percent_flat_boost', 
+                effectValuePerLevel: 0.00005, 
                 icon: '☄️',
                 requires: { skill: 'sprite_kindle', level: 4}
             }
@@ -232,8 +239,8 @@ const allCompanions = {
                 description: "Zvyšuje veškerý zisk zlata hráče o {bonusValue}%, když je dryáda aktivní.",
                 maxLevel: 10,
                 cost: (level) => 5 + level * 2,
-                effectType: 'global_player_gold_multiplier_percent_if_active', // Nový typ efektu
-                effectValuePerLevel: 0.01, // +1% zlata
+                effectType: 'global_player_gold_multiplier_percent_if_active', 
+                effectValuePerLevel: 0.01, 
                 icon: '🌟'
             },
             'dryad_essence_whisper': {
@@ -241,8 +248,8 @@ const allCompanions = {
                 description: "Zvyšuje šanci na zisk Esencí Společníků o {bonusValue}% (absolutní bonus).",
                 maxLevel: 5,
                 cost: (level) => 25 + level * 5,
-                effectType: 'global_companion_essence_drop_chance_additive_percent', // Nový typ efektu
-                effectValuePerLevel: 0.005, // +0.5% šance
+                effectType: 'global_companion_essence_drop_chance_additive_percent', 
+                effectValuePerLevel: 0.005, 
                 icon: '✨',
                 requires: { skill: 'dryad_gold_blessing', level: 3}
             }
@@ -250,7 +257,6 @@ const allCompanions = {
     }
 };
 
-// --- Definice Expedic ---
 const allExpeditions = {
     'exp_short_gold_hunt': {
         id: 'exp_short_gold_hunt',
@@ -494,5 +500,5 @@ const allMilestonesConfig = [
     }
 ];
 
-const SAVE_KEY = 'echoesOfInfinitySave_v33_expeditions'; 
+const SAVE_KEY = 'echoesOfInfinitySave_v34_offline_progress'; // Aktualizovaný SAVE_KEY
 const talentPointGainPerLevel = 1;

@@ -28,10 +28,10 @@ let goldDisplayContainer, enemyElement, enemyArtElement, enemyNameDisplay, enemy
     companionEssenceDisplay, 
     companionSkillModal, companionSkillModalTitle, modalCompanionEssenceDisplay, 
     companionSkillsContainer, closeCompanionSkillModalButton,
-    // Nové DOM elementy pro Expedice
     openExpeditionsButton, expeditionsModal, expeditionsListContainer, closeExpeditionsModalButton,
     expeditionSlotsDisplay, expeditionCompanionSelectModal, expeditionCompanionSelectList,
-    confirmExpeditionStartButton, cancelExpeditionStartButton;
+    confirmExpeditionStartButton, cancelExpeditionStartButton,
+    totalPlayTimeDisplay, currentRunPlayTimeDisplay, fastestBossKillDisplay;
 
 
 function initializeUIElements() {
@@ -139,7 +139,6 @@ function initializeUIElements() {
     companionSkillsContainer = document.getElementById('companionSkillsContainer');
     closeCompanionSkillModalButton = document.getElementById('closeCompanionSkillModalButton');
 
-    // Inicializace DOM elementů pro Expedice
     openExpeditionsButton = document.getElementById('openExpeditionsButton');
     expeditionsModal = document.getElementById('expeditionsModal');
     expeditionsListContainer = document.getElementById('expeditionsListContainer');
@@ -149,6 +148,10 @@ function initializeUIElements() {
     expeditionCompanionSelectList = document.getElementById('expeditionCompanionSelectList');
     confirmExpeditionStartButton = document.getElementById('confirmExpeditionStartButton');
     cancelExpeditionStartButton = document.getElementById('cancelExpeditionStartButton');
+
+    totalPlayTimeDisplay = document.getElementById('totalPlayTimeDisplay');
+    currentRunPlayTimeDisplay = document.getElementById('currentRunPlayTimeDisplay');
+    fastestBossKillDisplay = document.getElementById('fastestBossKillDisplay');
 }
 
 
@@ -186,10 +189,32 @@ function showGoldGainAnimation(amount) {
 }
 
 function updateEquipmentButtonStates() {
-    if (!equipmentContainer) return;
+    if (!equipmentContainer || typeof gameState === 'undefined' || typeof gameState.equipment === 'undefined') {
+        return;
+    }
+
+    const validCurrentTierIndex = (typeof gameState.currentTierIndex === 'number' && 
+                                 gameState.currentTierIndex >= 0 && 
+                                 typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0 &&
+                                 gameState.currentTierIndex < tiers.length)
+                                 ? gameState.currentTierIndex
+                                 : 0; 
+
     equipmentSlots.forEach(slot => { 
-        const item = gameState.equipment[slot]; 
-        if (!item) return; 
+        const item = gameState.equipment[slot]; // Zde je potenciální problém, pokud gameState.equipment[slot] neexistuje
+        
+        // Přidána kontrola, zda item existuje a má vlastnost 'level'
+        if (!item || typeof item.level === 'undefined') { 
+            // console.warn(`updateEquipmentButtonStates: Item for slot '${slot}' is undefined or has no level in gameState.equipment.`);
+            const upgradeButtonsForSlot = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
+            upgradeButtonsForSlot.forEach(btn => {
+                btn.disabled = true;
+                const costSpan = btn.querySelector('.cost-text');
+                if (costSpan && btn.dataset.amount === "1") costSpan.textContent = '(N/A)';
+            });
+            return; 
+        }
+        
         const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
         upgradeButtons.forEach(button => {
             const amount = button.dataset.amount;
@@ -209,7 +234,7 @@ function updateEquipmentButtonStates() {
             }
 
             button.disabled = false; 
-            cost = calculateItemUpgradeCost(slot, item.level, gameState.currentTierIndex); 
+            cost = calculateItemUpgradeCost(slot, item.level, validCurrentTierIndex); 
             canAfford = gameState.gold >= cost; 
             
             if (amount === "1" && costSpan) {
@@ -226,7 +251,6 @@ function updateEquipmentButtonStates() {
 
 function updateUI() {
     if (!goldDisplay || !passiveDamageDisplay || !companionEssenceDisplay) { 
-        console.warn("UI elements not ready for updateUI, or gameState not fully initialized yet.");
         return; 
     }
     
@@ -370,14 +394,18 @@ function renderGameStatsUI() {
         { label: "Celkem zlata", value: formatNumber(Math.floor(gameState.lifetimeStats.lifetimeGoldEarned)) },
         { label: "Celkem Echo Úlomků", value: formatNumber(gameState.lifetimeStats.lifetimeEchoShardsEarned) },
         { label: "Nasbíraných Esencí Spol.", value: formatNumber(gameState.lifetimeStats.companionEssenceCollectedTotal || 0)},
-        { label: "Dokončených Výprav", value: formatNumber(gameState.lifetimeStats.expeditionsCompletedTotal || 0)}, // Přidáno
+        { label: "Dokončených Výprav", value: formatNumber(gameState.lifetimeStats.expeditionsCompletedTotal || 0)}, 
         { label: "Dosažených úrovní", value: formatNumber(gameState.lifetimeStats.lifetimePlayerLevelsGained) },
         { label: "Postoupených Tierů", value: formatNumber(gameState.lifetimeStats.lifetimeTiersAdvanced) },
+        { label: "Celkový čas hraní", value: formatTime(gameState.lifetimeStats.totalPlayTimeSeconds || 0), id: "totalPlayTimeDisplay" },
+        { label: "Čas v tomto Echu", value: formatTime(gameState.currentRunPlayTimeSeconds || 0), id: "currentRunPlayTimeDisplay" },
+        { label: "Nejrychlejší Boss Kill", value: gameState.lifetimeStats.fastestBossKillSeconds === Infinity ? "N/A" : formatTime(gameState.lifetimeStats.fastestBossKillSeconds), id: "fastestBossKillDisplay" }
     ];
+
     statsToShow.forEach(stat => {
         const statDiv = document.createElement('div');
         statDiv.classList.add('stat-item');
-        statDiv.innerHTML = `<span class="stat-label">${stat.label}:</span> <span class="stat-value">${stat.value}</span>`;
+        statDiv.innerHTML = `<span class="stat-label">${stat.label}:</span> <span class="stat-value" ${stat.id ? `id="${stat.id}"` : ''}>${stat.value}</span>`;
         gameStatsContainer.appendChild(statDiv);
     });
 }
@@ -448,18 +476,46 @@ function closeResetConfirmModalUI() {
     }
 }
 
-// Funkce pro otevření a zavření modálních oken expedic
-// Tyto funkce budou volány z expeditionController.js nebo main.js
-// (openExpeditionsModalUI je již v expeditionController.js)
-
-function closeExpeditionsModalUI() { // Tuto funkci může volat tlačítko v main.js
+function closeExpeditionsModalUI() { 
     if (expeditionsModal) {
         closeModal(expeditionsModal);
     }
 }
 
-function closeExpeditionCompanionSelectModalUI() { // Tuto funkci může volat tlačítko v main.js
+function closeExpeditionCompanionSelectModalUI() { 
     if (expeditionCompanionSelectModal) {
         closeModal(expeditionCompanionSelectModal);
     }
+}
+
+function updateEquipmentButtonStates() {
+    if (!equipmentContainer || typeof gameState === 'undefined' || typeof gameState.equipment === 'undefined') {
+        // console.warn("updateEquipmentButtonStates: Bailing early, equipmentContainer or gameState.equipment not ready.");
+        return;
+    }
+
+    const validCurrentTierIndex = (typeof gameState.currentTierIndex === 'number' && 
+                                 gameState.currentTierIndex >= 0 && 
+                                 typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0 &&
+                                 gameState.currentTierIndex < tiers.length)
+                                 ? gameState.currentTierIndex
+                                 : 0; 
+
+    equipmentSlots.forEach(slot => { 
+        const item = gameState.equipment[slot]; 
+        
+        // Přidána kontrola, zda item existuje a má vlastnost 'level'
+        if (!item || typeof item.level === 'undefined') { 
+            // console.warn(`updateEquipmentButtonStates: Item for slot '${slot}' is undefined or has no level in gameState.equipment.`);
+            const upgradeButtonsForSlot = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
+            upgradeButtonsForSlot.forEach(btn => {
+                btn.disabled = true; // Deaktivujeme tlačítka, pokud item není v pořádku
+                const costSpan = btn.querySelector('.cost-text');
+                if (costSpan && btn.dataset.amount === "1") costSpan.textContent = '(N/A)'; // Zobrazíme N/A u ceny
+            });
+            return; // Přeskočíme zbytek logiky pro tento slot
+        }
+        
+        // ... zbytek funkce ...
+    });
 }

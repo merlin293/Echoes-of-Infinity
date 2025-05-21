@@ -5,16 +5,12 @@
  * Volá se na začátku nové hry nebo při resetu Echa, které resetuje vybavení.
  */
 function initializeEquipment() {
-    // equipmentSlots je globální konstanta z config.js
-    // gameState je globální objekt z gameState.js
     equipmentSlots.forEach(slot => { 
         gameState.equipment[slot] = { 
             level: 0,
-            // Cena se vypočítá při prvním renderování nebo při pokusu o vylepšení
         };
     });
-    // Po inicializaci je dobré rovnou překreslit UI vybavení
-    if (typeof renderEquipmentUI === 'function') { // renderEquipmentUI z uiController.js
+    if (typeof renderEquipmentUI === 'function') {
         renderEquipmentUI();
     }
 }
@@ -28,11 +24,12 @@ function initializeEquipment() {
  */
 function calculateItemUpgradeCost(itemSlot, localLevel, tierIndexOfItem) {
     const baseCost = 10; 
-    // tiers a MAX_ITEM_LEVEL jsou globální konstanty z config.js
     const tierConfig = tiers[tierIndexOfItem]; 
     if (!tierConfig) {
-        console.error(`Neznámý tier index: ${tierIndexOfItem} pro slot ${itemSlot}`);
-        return Infinity; 
+        console.error(`Neznámý tier index: ${tierIndexOfItem} pro slot ${itemSlot}. Používám fallback cost.`);
+        // Fallback, pokud tierConfig není nalezen, aby se předešlo dalším chybám.
+        // Můžete nastavit na Infinity nebo nějakou velmi vysokou hodnotu.
+        return Math.ceil((baseCost * 1) * Math.pow(1.12 , localLevel)); 
     }
     const tierCostMultiplier = tierConfig.costMultiplier; 
     const effectiveLevelForCosting = (tierIndexOfItem * MAX_ITEM_LEVEL) + localLevel; 
@@ -47,7 +44,6 @@ function calculateItemUpgradeCost(itemSlot, localLevel, tierIndexOfItem) {
 function getItemDamage(level) {
     if (level <= 0) return 0;
     let totalDamage = 0;
-    // Tato logika pro výpočet poškození je specifická pro hru
     const levelBlocksDamage = [1, 2, 4, 8, 16, 32, 64, 128, 256, 521]; 
     const levelsPerBlock = 10;
 
@@ -75,21 +71,36 @@ function getItemDamage(level) {
  * Volá se při inicializaci a po každé změně vybavení nebo tieru.
  */
 function renderEquipmentUI() {
-    // equipmentContainer a currentTierDisplay jsou DOM elementy z uiController.js
     if (!equipmentContainer || !currentTierDisplay) {
-        console.error("Equipment UI elements not found for rendering.");
+        console.error("Equipment UI elements (equipmentContainer or currentTierDisplay) not found for rendering.");
         return;
     }
     equipmentContainer.innerHTML = ''; 
-    // gameState a tiers jsou z gameState.js a config.js
-    currentTierDisplay.textContent = `T${gameState.currentTierIndex} ${tiers[gameState.currentTierIndex].name}`; 
 
-    // equipmentSlots, itemIcons, itemNamesCzech, MAX_ITEM_LEVEL jsou z config.js
+    let tierNameForHeader = `T${gameState.currentTierIndex} (Chyba načítání tieru)`; // Fallback
+    let currentTierForItems = tiers && tiers[gameState.currentTierIndex] ? tiers[gameState.currentTierIndex] : null;
+
+    if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
+        if (gameState.currentTierIndex >= 0 && gameState.currentTierIndex < tiers.length && tiers[gameState.currentTierIndex] && typeof tiers[gameState.currentTierIndex].name === 'string') {
+            tierNameForHeader = `T${gameState.currentTierIndex} ${tiers[gameState.currentTierIndex].name}`;
+        } else {
+            console.warn(`renderEquipmentUI: Invalid gameState.currentTierIndex (${gameState.currentTierIndex}) or tier definition missing. Tiers length: ${tiers.length}.`);
+            // Fallback na první tier, pokud je index neplatný, ale pole tiers existuje
+            if (tiers[0] && typeof tiers[0].name === 'string') {
+                 tierNameForHeader = `T0 ${tiers[0].name} (Index ${gameState.currentTierIndex} neplatný)`;
+                 currentTierForItems = tiers[0]; // Použijeme první tier pro itemy jako fallback
+            }
+        }
+    } else {
+        console.error("CRITICAL: 'tiers' array from config.js is not defined, not an array, or empty when renderEquipmentUI is called.");
+    }
+    currentTierDisplay.textContent = tierNameForHeader;
+
     equipmentSlots.forEach(slot => { 
         const item = gameState.equipment[slot]; 
         if (!item) {
             console.warn(`Chybějící data pro vybavení ve slotu: ${slot}`);
-            gameState.equipment[slot] = { level: 0 }; // Základní inicializace, pokud chybí
+            gameState.equipment[slot] = { level: 0 }; 
         }
         const itemDamage = getItemDamage(item.level); 
         
@@ -98,19 +109,24 @@ function renderEquipmentUI() {
         
         const infoDiv = document.createElement('div');
         infoDiv.classList.add('equipment-info');
+
+        const itemTierName = currentTierForItems ? currentTierForItems.name : "Neznámý";
+
         infoDiv.innerHTML = `
             <span class="equipment-item-icon" style="float: left; margin-right: 0.5rem;">${itemIcons[slot]}</span>
             <div>
                 <span class="equipment-name">${itemNamesCzech[slot]}</span>
-                <span class="equipment-tier-level">T${gameState.currentTierIndex} ${tiers[gameState.currentTierIndex].name} - Úr. ${item.level}/${MAX_ITEM_LEVEL}</span>
+                <span class="equipment-tier-level">T${gameState.currentTierIndex} ${itemTierName} - Úr. ${item.level}/${MAX_ITEM_LEVEL}</span>
                 <span class="equipment-bonus">+${formatNumber(itemDamage)} Poškození</span>
-            </div>`; // formatNumber z utils.js
+            </div>`;
         itemDiv.appendChild(infoDiv);
         
         const upgradeOptionsDiv = document.createElement('div');
         upgradeOptionsDiv.classList.add('equipment-upgrade-options');
         
-        const costForNextLevel = item.level < MAX_ITEM_LEVEL ? calculateItemUpgradeCost(slot, item.level, gameState.currentTierIndex) : 'MAX';
+        // Použijeme platný tier index pro výpočet ceny
+        const validTierIndexForCost = (currentTierForItems && gameState.currentTierIndex >=0 && gameState.currentTierIndex < tiers.length) ? gameState.currentTierIndex : 0;
+        const costForNextLevel = item.level < MAX_ITEM_LEVEL ? calculateItemUpgradeCost(slot, item.level, validTierIndexForCost) : 'MAX';
         const disabledStatus = item.level >= MAX_ITEM_LEVEL ? 'disabled' : '';
         
         upgradeOptionsDiv.innerHTML = `
@@ -123,7 +139,7 @@ function renderEquipmentUI() {
         itemDiv.appendChild(upgradeOptionsDiv);
         equipmentContainer.appendChild(itemDiv);
     });
-    if (typeof updateEquipmentButtonStates === 'function') updateEquipmentButtonStates(); // z uiController.js
+    if (typeof updateEquipmentButtonStates === 'function') updateEquipmentButtonStates(); 
     checkTierAdvanceReady(); 
 }
         
@@ -133,18 +149,19 @@ function renderEquipmentUI() {
  * @param {string} amount - Počet úrovní k vylepšení ('1', '5', '10', 'max').
  */
 function upgradeEquipmentItem(slot, amount) {
-    // gameState, MAX_ITEM_LEVEL jsou z gameState.js a config.js
     const item = gameState.equipment[slot]; 
     if (!item || item.level >= MAX_ITEM_LEVEL) return;
 
     let levelsPurchased = 0;
     let totalCost = 0;
+    const validTierIndexForCost = (tiers && gameState.currentTierIndex >=0 && gameState.currentTierIndex < tiers.length) ? gameState.currentTierIndex : 0;
+
 
     if (amount === 'max') {
         let tempGold = gameState.gold; 
         let tempLevel = item.level;
         while (tempLevel < MAX_ITEM_LEVEL) {
-            const costForThisLevel = calculateItemUpgradeCost(slot, tempLevel, gameState.currentTierIndex); 
+            const costForThisLevel = calculateItemUpgradeCost(slot, tempLevel, validTierIndexForCost); 
             if (tempGold >= costForThisLevel) {
                 tempGold -= costForThisLevel;
                 totalCost += costForThisLevel;
@@ -159,13 +176,13 @@ function upgradeEquipmentItem(slot, amount) {
         let tempLevel = item.level;
         for (let i = 0; i < numAmount; i++) {
             if (tempLevel >= MAX_ITEM_LEVEL) break;
-            const costForThisLevel = calculateItemUpgradeCost(slot, tempLevel, gameState.currentTierIndex);
+            const costForThisLevel = calculateItemUpgradeCost(slot, tempLevel, validTierIndexForCost);
             if (gameState.gold >= totalCost + costForThisLevel) { 
                 totalCost += costForThisLevel;
                 tempLevel++;
                 levelsPurchased++;
             } else {
-                if (levelsPurchased === 0 && i === 0 && typeof showMessageBox === 'function') showMessageBox("Nedostatek zlata!", true); // showMessageBox z uiController.js
+                if (levelsPurchased === 0 && i === 0 && typeof showMessageBox === 'function') showMessageBox("Nedostatek zlata!", true); 
                 break; 
             }
         }
@@ -175,14 +192,11 @@ function upgradeEquipmentItem(slot, amount) {
         gameState.gold -= totalCost; 
         gameState.equipment[slot].level += levelsPurchased;
         
-        if (typeof soundManager !== 'undefined') soundManager.playSound('upgrade', 'C5', '16n'); // soundManager z utils.js
+        if (typeof soundManager !== 'undefined') soundManager.playSound('upgrade', 'C5', '16n');
         
-        if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); // z gameLogic.js
-        
-        // Přidáno explicitní volání renderEquipmentUI pro překreslení panelu vybavení
-        if (typeof renderEquipmentUI === 'function') renderEquipmentUI(); // z uiController.js
-        
-        if (typeof updateUI === 'function') updateUI(); // z uiController.js (pro ostatní části UI)
+        if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); 
+        if (typeof renderEquipmentUI === 'function') renderEquipmentUI(); 
+        if (typeof updateUI === 'function') updateUI(); 
         
         checkTierAdvanceReady(); 
     }
@@ -192,18 +206,18 @@ function upgradeEquipmentItem(slot, amount) {
  * Zkontroluje, zda je možné postoupit na další tier vybavení a aktualizuje tlačítko.
  */
 function checkTierAdvanceReady() {
-    // advanceTierButton je DOM element z uiController.js
-    // equipmentSlots, MAX_ITEM_LEVEL, tiers jsou z config.js
-    // gameState je z gameState.js
     if (!advanceTierButton) return;
 
     const allMaxLevel = equipmentSlots.every(slot => gameState.equipment[slot] && gameState.equipment[slot].level >= MAX_ITEM_LEVEL);
-    advanceTierButton.disabled = !allMaxLevel || gameState.currentTierIndex >= tiers.length - 1; 
+    const nextTierExists = typeof tiers !== 'undefined' && gameState.currentTierIndex < tiers.length - 1;
+    
+    advanceTierButton.disabled = !allMaxLevel || !nextTierExists; 
 
-    if (gameState.currentTierIndex >= tiers.length - 1) {
+    if (!nextTierExists) {
          advanceTierButton.textContent = "MAX TIER"; 
     } else if (allMaxLevel) {
-        advanceTierButton.textContent = `Postoupit na T${gameState.currentTierIndex + 1} ${tiers[gameState.currentTierIndex+1].name}`;
+        const nextTierName = (tiers[gameState.currentTierIndex+1] && tiers[gameState.currentTierIndex+1].name) ? tiers[gameState.currentTierIndex+1].name : "Další Tier";
+        advanceTierButton.textContent = `Postoupit na T${gameState.currentTierIndex + 1} ${nextTierName}`;
     } else {
          advanceTierButton.textContent = `Vyleveluj vše na ${MAX_ITEM_LEVEL}`;
     }
@@ -213,8 +227,8 @@ function checkTierAdvanceReady() {
  * Zpracuje postup na další tier vybavení.
  */
 function advanceToNextTier() {
-    // gameState, tiers, equipmentSlots jsou z gameState.js a config.js
-    if (gameState.currentTierIndex < tiers.length - 1 && equipmentSlots.every(slot => gameState.equipment[slot] && gameState.equipment[slot].level >= MAX_ITEM_LEVEL)) {
+    const nextTierExists = typeof tiers !== 'undefined' && gameState.currentTierIndex < tiers.length - 1;
+    if (nextTierExists && equipmentSlots.every(slot => gameState.equipment[slot] && gameState.equipment[slot].level >= MAX_ITEM_LEVEL)) {
         let itemDamageFromCompletedTier = 0;
         equipmentSlots.forEach(slot => {
             itemDamageFromCompletedTier += getItemDamage(gameState.equipment[slot].level);
@@ -225,20 +239,18 @@ function advanceToNextTier() {
         
         if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); 
         
-        equipmentSlots.forEach(slot => { // Reset úrovní vybavení pro nový tier
+        equipmentSlots.forEach(slot => { 
             gameState.equipment[slot].level = 0;
         });
         
-        if (typeof showMessageBox === 'function') showMessageBox(`Postup na Tier ${gameState.currentTierIndex}: ${tiers[gameState.currentTierIndex].name}! Bonusy aktualizovány. Poškození z předchozího tieru zachováno.`, false); // showMessageBox z uiController.js
-        if (typeof soundManager !== 'undefined') soundManager.playSound('tierAdvance', 'C4', '2n'); // soundManager z utils.js
+        const currentTierName = (tiers[gameState.currentTierIndex] && tiers[gameState.currentTierIndex].name) ? tiers[gameState.currentTierIndex].name : `Tier ${gameState.currentTierIndex}`;
+        if (typeof showMessageBox === 'function') showMessageBox(`Postup na Tier ${gameState.currentTierIndex}: ${currentTierName}! Bonusy aktualizovány. Poškození z předchozího tieru zachováno.`, false); 
+        if (typeof soundManager !== 'undefined') soundManager.playSound('tierAdvance', 'C4', '2n'); 
         
-        if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); // z gameLogic.js
-        
-        // Přidáno explicitní volání renderEquipmentUI pro překreslení panelu vybavení po postupu na tier
-        if (typeof renderEquipmentUI === 'function') renderEquipmentUI(); // z uiController.js
-
-        if (typeof updateUI === 'function') updateUI(); // z uiController.js (pro ostatní části UI)
-        if (typeof checkMilestones === 'function') checkMilestones(); // z milestoneController.js
+        if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); 
+        if (typeof renderEquipmentUI === 'function') renderEquipmentUI(); 
+        if (typeof updateUI === 'function') updateUI(); 
+        if (typeof checkMilestones === 'function') checkMilestones(); 
     }
 }
 
@@ -247,17 +259,20 @@ function advanceToNextTier() {
  * Volá se po změně tieru nebo po načtení hry.
  */
 function updateCurrentTierBonuses() {
-    // gameState, tiers jsou z gameState.js a config.js
-    // talents je z config.js (pro přístup k talentům)
-    // getArtifactBonus je z artifactController.js
     let cumulativeTierPassivePercent = 0;
     let cumulativeTierClickDmg = 0;
-    for (let i = 0; i <= gameState.currentTierIndex; i++) { 
-        if (tiers[i]) { 
-            cumulativeTierPassivePercent += tiers[i].passivePercentBonus || 0;
-            cumulativeTierClickDmg += tiers[i].clickDamageBonus || 0; 
+
+    if (typeof tiers !== 'undefined' && Array.isArray(tiers)) {
+        for (let i = 0; i <= gameState.currentTierIndex; i++) { 
+            if (tiers[i]) { 
+                cumulativeTierPassivePercent += tiers[i].passivePercentBonus || 0;
+                cumulativeTierClickDmg += tiers[i].clickDamageBonus || 0; 
+            }
         }
+    } else {
+        console.error("updateCurrentTierBonuses: 'tiers' array is not defined or not an array.");
     }
+
 
     gameState.passivePercentFromTiers = cumulativeTierPassivePercent; 
     if (typeof getArtifactBonus === 'function') {

@@ -137,7 +137,8 @@
             </div>
             
             <div class="right-column">
-                 <button id="openExpeditionsButton" class="modal-trigger-button !bg-yellow-500 hover:!bg-yellow-600"> <span class="modal-trigger-text">Výpravy</span>
+                 <button id="openExpeditionsButton" class="modal-trigger-button !bg-yellow-500 hover:!bg-yellow-600">
+                    <span class="modal-trigger-text">Výpravy</span>
                 </button>
                  <button id="openEssenceForgeButton" class="modal-trigger-button essence-forge-button">
                     <span class="essence-forge-button-text">Kovárna Esencí</span>
@@ -169,7 +170,21 @@
                 </div>
                 <div id="gameStatsPanel" class="panel game-stats-panel"> <h3>Herní Statistiky</h3>
                     <div id="gameStatsContainer">
+                        <!-- Následující elementy jsou přidány pro nové statistiky, 
+                             ale jejich obsah bude řízen z renderGameStatsUI -->
+                        <div class="stat-item">
+                            <span class="stat-label">Celkový čas hraní:</span>
+                            <span class="stat-value" id="totalPlayTimeDisplay">N/A</span>
                         </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Čas v tomto Echu:</span>
+                            <span class="stat-value" id="currentRunPlayTimeDisplay">N/A</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Nejrychlejší Boss Kill:</span>
+                            <span class="stat-value" id="fastestBossKillDisplay">N/A</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -405,7 +420,7 @@
                     <button id="closeExpeditionsModalButton" class="modal-close-button">&times;</button>
                 </div>
                 <div id="expeditionsListContainer" class="space-y-3 mt-2">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -413,9 +428,9 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h2 class="modal-title">Vybrat Společníky pro Výpravu</h2>
-                    </div>
+                </div>
                 <ul id="expeditionCompanionSelectList" class="space-y-2 mt-3 mb-4 max-h-60 overflow-y-auto">
-                    </ul>
+                </ul>
                 <div class="flex justify-around mt-4">
                     <button id="confirmExpeditionStartButton" class="action-button !bg-green-500 hover:!bg-green-600 px-4 py-2 !w-auto" disabled>Zahájit Výpravu</button>
                     <button id="cancelExpeditionStartButton" class="action-button !bg-gray-500 hover:!bg-gray-600 px-4 py-2 !w-auto">Zrušit</button>
@@ -435,7 +450,8 @@
     <script src="artifactController.js"></script>
     <script src="companionSkillController.js"></script> 
     <script src="companionController.js"></script>
-    <script src="expeditionController.js"></script> <script src="equipmentController.js"></script>
+    <script src="expeditionController.js"></script> 
+    <script src="equipmentController.js"></script>
     <script src="playerController.js"></script>
     <script src="enemyController.js"></script>
     <script src="actionController.js"></script>

@@ -6,12 +6,6 @@
  * @param {number} duration - Doba trvání buffu v sekundách.
  */
 function activateBuff(buffType, duration) {
-    // gameState je globální objekt z gameState.js
-    // BUFF_TYPE_POWER_SHARD, POWER_SHARD_MULTIPLIER, BUFF_TYPE_GOLD_RUSH, GOLD_RUSH_MULTIPLIER jsou konstanty z config.js
-    // showMessageBox je funkce z uiController.js
-    // soundManager je objekt z utils.js
-    // calculateEffectiveStats je funkce z gameLogic.js
-    // updateUI je funkce z uiController.js
     if (!gameState || !gameState.activeBuffs) {
         console.error("gameState or gameState.activeBuffs is not defined in activateBuff");
         return;
@@ -62,10 +56,9 @@ function removeBuff(buffType) {
  * @param {number} effectValue - Hodnota efektu debuffu (např. odsávání zlata za sekundu).
  */
 function applyDebuff(debuffType, duration, effectValue) {
-    // DEBUFF_TYPE_PARASITE je konstanta z config.js
     if (!gameState || !gameState.activeDebuffs) return;
     if (debuffType === DEBUFF_TYPE_PARASITE) {
-        if (gameState.activeDebuffs[debuffType]) return; // Parazit se neaplikuje, pokud již je aktivní
+        if (gameState.activeDebuffs[debuffType]) return; 
         gameState.activeDebuffs[debuffType] = { duration: duration, effectValue: effectValue };
         if (typeof showMessageBox === 'function') showMessageBox(`Chytil jsi Parazita! Odsává ti zlato!`, true, 2500);
         if (typeof soundManager !== 'undefined') soundManager.playSound('debuffApply', 'F3', '4n');
@@ -93,7 +86,6 @@ function clearDebuff(debuffType) {
  * Zpracuje pokus o očistění parazita.
  */
 function onCleanseParasite() {
-    // PARASITE_CLEANSE_COST je konstanta z config.js
     if (!gameState || !gameState.activeDebuffs) return;
     if (gameState.activeDebuffs[DEBUFF_TYPE_PARASITE] && gameState.gold >= PARASITE_CLEANSE_COST) {
         gameState.gold -= PARASITE_CLEANSE_COST; 
@@ -107,8 +99,6 @@ function onCleanseParasite() {
  * Aktivuje schopnost Mocný úder.
  */
 function activateMocnyUder() {
-    // MOCNY_UDER_DURATION, MOCNY_UDER_COOLDOWN, MOCNY_UDER_DAMAGE_MULTIPLIER jsou konstanty z config.js
-    // getArtifactBonus je funkce z artifactController.js
     if (!gameState) return;
     if (gameState.mocnyUderCooldownTimeLeft > 0) { 
         if (typeof showMessageBox === 'function') showMessageBox("Mocný úder se stále nabíjí!", true); 
@@ -120,14 +110,13 @@ function activateMocnyUder() {
     let baseCooldown = MOCNY_UDER_COOLDOWN;
     if (typeof getArtifactBonus === 'function') { 
         const reductionPercent = getArtifactBonus('cooldown_reduction_power_strike_percent');
-        // Omezení maximálního snížení cooldownu na 90%
         const effectiveReduction = Math.min(reductionPercent, 90); 
         baseCooldown *= (1 - (effectiveReduction / 100));
     }
     gameState.mocnyUderCooldownTimeLeft = baseCooldown;
     
     if (typeof soundManager !== 'undefined') soundManager.playSound('skillActivate', 'E4', '4n');
-    if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('powerStrikeUsed', 1); // updateDailyQuestProgress z dailyQuestController.js
+    if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('powerStrikeUsed', 1); 
     
     if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); 
     if (typeof updateUI === 'function') updateUI();
@@ -138,7 +127,6 @@ function activateMocnyUder() {
  * Aktivuje schopnost Zlatá horečka.
  */
 function activateZlataHoreckaAktivni() {
-    // ZLATA_HORECKA_AKTIVNI_DURATION, ZLATA_HORECKA_AKTIVNI_COOLDOWN, ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER jsou konstanty z config.js
     if (!gameState) return;
     if (gameState.zlataHoreckaAktivniCooldownTimeLeft > 0) { 
         if (typeof showMessageBox === 'function') showMessageBox("Zlatá horečka se stále nabíjí!", true); 
@@ -157,7 +145,6 @@ function activateZlataHoreckaAktivni() {
  * Vylepší permanentní bonus zlata z Echa.
  */
 function onUpgradeEchoGold() {
-    // echoGoldUpgradeValue, initialEchoGoldUpgradeCost jsou konstanty z config.js
     if (!gameState) return;
     if (gameState.echoShards >= gameState.echoGoldUpgradeCost) {
         gameState.echoShards -= gameState.echoGoldUpgradeCost;
@@ -179,7 +166,6 @@ function onUpgradeEchoGold() {
  * Vylepší permanentní bonus poškození z Echa.
  */
 function onUpgradeEchoDamage() {
-    // echoDamageUpgradeValue, initialEchoDamageUpgradeCost jsou konstanty z config.js
     if (!gameState) return;
     if (gameState.echoShards >= gameState.echoDamageUpgradeCost) {
         gameState.echoShards -= gameState.echoDamageUpgradeCost;
@@ -203,11 +189,9 @@ function onUpgradeEchoDamage() {
  * @returns {number} - Počet Echo Úlomků.
  */
 function calculateEchoShardsToGain() {
-    // talents, tiers jsou z config.js
-    // getResearchBonus z researchController.js, getEssenceBonus z essenceController.js, getArtifactBonus z artifactController.js
     if (!gameState || typeof talents === 'undefined' || typeof tiers === 'undefined') {
         console.error("Chybějící data pro calculateEchoShardsToGain (gameState, talents, or tiers).");
-        return 1; // Fallback
+        return 1; 
     }
     let shards = Math.floor(gameState.highestEffectiveLevelReachedThisEcho / 3.5) + 
                  Math.floor(gameState.totalGoldEarnedThisEcho / 1000) + 
@@ -246,8 +230,7 @@ function resetCurrentEchoProgress() {
     gameState.currentTierIndex = 0; 
     gameState.baseClickDamage = 10; 
     
-    if (typeof initializeEquipment === 'function') initializeEquipment(); // initializeEquipment z equipmentController.js
-    // renderEquipmentUI bude voláno v rámci updateUI
+    if (typeof initializeEquipment === 'function') initializeEquipment(); 
     
     gameState.currentWorld = 1; 
     gameState.currentZoneInWorld = 1; 
@@ -257,8 +240,8 @@ function resetCurrentEchoProgress() {
     
     gameState.totalGoldEarnedThisEcho = 0; 
     gameState.enemiesKilledThisEcho = 0; 
-    
-    // allMilestonesConfig z config.js
+    gameState.currentRunPlayTimeSeconds = 0; // Reset času běhu pro toto Echo
+
     if (gameState.milestones && typeof allMilestonesConfig !== 'undefined') { 
         gameState.milestones.forEach(milestoneInstance => { 
             const milestoneConfig = allMilestonesConfig.find(m => m.id === milestoneInstance.id); 
@@ -272,15 +255,15 @@ function resetCurrentEchoProgress() {
     gameState.activeDebuffs = {}; 
     gameState.bossFightTimerActive = false; 
     gameState.bossFightTimeLeft = 0;
+    gameState.bossFightInitialDuration = 0; // Reset i zde
     
-    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); // updateCurrentTierBonuses z equipmentController.js
+    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); 
 }
 
 /**
  * Zpracuje mechaniku Echa (prestiže).
  */
 function handleEcho() {
-    // tiers, equipmentSlots, MAX_ITEM_LEVEL jsou z config.js
     if (!gameState || typeof tiers === 'undefined' || typeof equipmentSlots === 'undefined' || typeof MAX_ITEM_LEVEL === 'undefined') return;
 
     if (gameState.bossFightTimerActive) { 
@@ -304,10 +287,9 @@ function handleEcho() {
     
     resetCurrentEchoProgress(); 
     
-    // formatNumber z utils.js
     if (typeof showMessageBox === 'function') showMessageBox(`Echo provedeno! Získal jsi ${formatNumber(shardsGained)} Echo Úlomků. Celkem máš ${formatNumber(gameState.echoShards)}. Zlato, svět a zóny resetovány.`, false, 4000);
     
-    if (typeof spawnNewEnemy === 'function') spawnNewEnemy(); // spawnNewEnemy z enemyController.js
-    if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); // Přepočítat hned po spawnu a před UI
+    if (typeof spawnNewEnemy === 'function') spawnNewEnemy(); 
+    if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); 
     if (typeof updateUI === 'function') updateUI(); 
 }

@@ -54,18 +54,22 @@ const gameState = {
 
     bossFightTimerActive: false,
     bossFightTimeLeft: 0, 
+    bossFightInitialDuration: 0, 
 
     lifetimeStats: {
         totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0,
         totalChampionsKilled: 0, totalEnemiesKilled: 0, lifetimeGoldEarned: 0,
         lifetimeEchoShardsEarned: 0, lifetimePlayerLevelsGained: 0, lifetimeTiersAdvanced: 0,
         companionEssenceCollectedTotal: 0,
-        expeditionsCompletedTotal: 0 // Přidáno pro sledování dokončených expedic
+        expeditionsCompletedTotal: 0,
+        totalPlayTimeSeconds: 0, 
+        fastestBossKillSeconds: Infinity, 
     },
 
     milestones: [], 
     totalGoldEarnedThisEcho: 0, 
     enemiesKilledThisEcho: 0, 
+    currentRunPlayTimeSeconds: 0, 
 
     ownedArtifactsData: {}, 
     ownedCompanions: {}, 
@@ -87,13 +91,12 @@ const gameState = {
     companionEssence: 0, 
     companionSkillLevels: {}, 
 
-    // --- Nové vlastnosti pro Expedice ---
-    activeExpeditions: [], // Pole pro aktivní expedice
-                           // Každý objekt bude: { id: 'unique_exp_run_id', expeditionId: 'config_id', startTime: timestamp, durationSeconds: X, completionTime: timestamp, assignedCompanionIds: ['id1', 'id2'] }
-    expeditionSlots: 1,    // Počet souběžných expedic, které může hráč spustit (začínáme s 1)
+    activeExpeditions: [], 
+    expeditionSlots: 1,    
 
-
-    lastSaveTime: Date.now() 
+    lastSaveTime: Date.now(),
+    lastTickTime: Date.now(), 
+    lastActiveTime: Date.now() // Nová vlastnost pro sledování poslední aktivity
 };
 
 // Funkce pro inicializaci/reset proměnných pro novou hru nebo po načtení defaultních hodnot
@@ -160,13 +163,16 @@ function initializeDefaultGameStateVariables() {
 
     gameState.bossFightTimerActive = false;
     gameState.bossFightTimeLeft = 0;
+    gameState.bossFightInitialDuration = 0;
 
     gameState.lifetimeStats = {
         totalClicks: 0, totalCrits: 0, highestDamageDealt: 0, totalBossesKilled: 0,
         totalChampionsKilled: 0, totalEnemiesKilled: 0, lifetimeGoldEarned: 0,
         lifetimeEchoShardsEarned: 0, lifetimePlayerLevelsGained: 0, lifetimeTiersAdvanced: 0,
         companionEssenceCollectedTotal: 0,
-        expeditionsCompletedTotal: 0 // Inicializace
+        expeditionsCompletedTotal: 0,
+        totalPlayTimeSeconds: 0, 
+        fastestBossKillSeconds: Infinity 
     };
     
     if (typeof allMilestonesConfig !== 'undefined') { 
@@ -176,9 +182,10 @@ function initializeDefaultGameStateVariables() {
         console.error("allMilestonesConfig is not defined in config.js. Milestones will not be initialized correctly.");
     }
 
-    gameState.totalGoldEarnedThisEcho = 0;
-    gameState.enemiesKilledThisEcho = 0;
-    
+    gameState.totalGoldEarnedThisEcho = 0; 
+    gameState.enemiesKilledThisEcho = 0; 
+    gameState.currentRunPlayTimeSeconds = 0;
+
     gameState.ownedArtifactsData = {};
     gameState.ownedCompanions = {}; 
     gameState.baseCritChance = 0.05;
@@ -230,9 +237,10 @@ function initializeDefaultGameStateVariables() {
         }
     }
 
-    // Inicializace pro Expedice
     gameState.activeExpeditions = [];
-    gameState.expeditionSlots = 1; // Výchozí počet slotů
+    gameState.expeditionSlots = 1; 
 
     gameState.lastSaveTime = Date.now();
+    gameState.lastTickTime = Date.now(); 
+    gameState.lastActiveTime = Date.now(); // Inicializace pro novou hru
 }

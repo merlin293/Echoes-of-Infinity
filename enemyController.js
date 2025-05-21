@@ -26,10 +26,12 @@ function spawnNewEnemy() {
         goldMultiplier = 5; 
         gameState.bossFightTimerActive = true; 
         gameState.bossFightTimeLeft = BOSS_FIGHT_DURATION; 
+        gameState.bossFightInitialDuration = BOSS_FIGHT_DURATION; // Uložíme počáteční čas
     } else {
         if (gameState.bossFightTimerActive && !gameState.enemy.isBoss) {
             gameState.bossFightTimerActive = false;
             gameState.bossFightTimeLeft = 0;
+            gameState.bossFightInitialDuration = 0;
         }
     }
 
@@ -125,34 +127,28 @@ function handleEnemyClick(event) {
         showDamageNumber(currentDamageDealt, event.clientX, event.clientY, isCrit); 
     }
 
-    // Zpracování efektů "zlato za zásah" od společníků při kliknutí
     if (typeof getCompanionSkillBonus === 'function' && typeof allCompanions !== 'undefined' && typeof gameState.ownedCompanions !== 'undefined') {
         for (const companionId in gameState.ownedCompanions) {
             if (gameState.ownedCompanions.hasOwnProperty(companionId) && gameState.ownedCompanions[companionId].level > 0) {
                 const companionDef = allCompanions[companionId];
                 const goldOnHitChance = getCompanionSkillBonus(companionId, 'companion_gold_on_hit_chance');
                 if (goldOnHitChance > 0 && Math.random() < goldOnHitChance) {
-                    // Najdeme definici dovednosti, abychom získali funkci goldAmount
                     let goldAmountFromSkill = 0;
                     if (companionDef.skillTree) {
                         for (const skillId in companionDef.skillTree) {
                             if (companionDef.skillTree[skillId].effectType === 'companion_gold_on_hit_chance' && typeof companionDef.skillTree[skillId].goldAmount === 'function') {
-                                // Předpokládáme, že může být jen jedna taková dovednost, nebo sečteme efekty, pokud by jich bylo více
-                                // Pro jednoduchost vezmeme první nalezenou.
                                 goldAmountFromSkill = companionDef.skillTree[skillId].goldAmount(gameState.ownedCompanions[companionId].level);
                                 break;
                             }
                         }
                     }
                     if (goldAmountFromSkill > 0) {
-                        const actualGoldGained = Math.ceil(goldAmountFromSkill * currentGoldMultiplierOnClick); // Aplikujeme i globální gold multiplikátory
+                        const actualGoldGained = Math.ceil(goldAmountFromSkill * currentGoldMultiplierOnClick); 
                         gameState.gold += actualGoldGained;
                         gameState.lifetimeStats.lifetimeGoldEarned += actualGoldGained;
                         gameState.totalGoldEarnedThisEcho += actualGoldGained;
                         if (typeof showGoldGainAnimation === 'function') showGoldGainAnimation(actualGoldGained);
                         if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('goldEarnedQuest', actualGoldGained);
-                        // Můžeme přidat i specifickou zprávu nebo zvuk
-                        // if (typeof showMessageBox === 'function') showMessageBox(`${companionDef.name} našel ${formatNumber(actualGoldGained)} zlata!`, false, 1000);
                     }
                 }
             }
@@ -183,8 +179,19 @@ function onEnemyDefeated(currentGoldMultiplier) {
 
     if (gameState.enemy.isBoss) { 
         if (typeof soundManager !== 'undefined') soundManager.playSound('bossDefeat', 'G2', '1n');
+        
+        // Zaznamenání času poražení bosse
+        const timeTakenToKillBoss = gameState.bossFightInitialDuration - gameState.bossFightTimeLeft;
+        if (timeTakenToKillBoss < gameState.lifetimeStats.fastestBossKillSeconds) {
+            gameState.lifetimeStats.fastestBossKillSeconds = timeTakenToKillBoss;
+            if (typeof showMessageBox === 'function') {
+                showMessageBox(`Nový rekord v poražení bosse: ${formatTime(timeTakenToKillBoss)}!`, false, 2500);
+            }
+        }
+
         gameState.bossFightTimerActive = false; 
         gameState.bossFightTimeLeft = 0;       
+        gameState.bossFightInitialDuration = 0; // Reset pro dalšího bosse
         gameState.lifetimeStats.totalBossesKilled++;
         if (typeof tryDropArtifact === 'function') tryDropArtifact(); 
         if (Math.random() < COMPANION_ESSENCE_DROP_CHANCE_FROM_BOSS) {
@@ -258,6 +265,7 @@ function handleBossFightTimeout() {
     
     gameState.bossFightTimerActive = false; 
     gameState.bossFightTimeLeft = 0;       
+    gameState.bossFightInitialDuration = 0; // Reset i zde
     gameState.enemiesDefeatedInZone = 0;  
     
     spawnNewEnemy(); 
