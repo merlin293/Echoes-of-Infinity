@@ -2,6 +2,7 @@
 
 // Globální proměnná pro sledování prvního gesta uživatele (pro SoundManager)
 let firstGestureMade = false; 
+let gameInitializationAttempted = false; // Nová vlajka, aby se initializeGame nevolala donekonečna
 
 /**
  * Zpracuje první interakci uživatele pro inicializaci audio kontextu.
@@ -21,6 +22,24 @@ async function firstUserGestureHandler() {
  * Volá se po načtení celého DOM.
  */
 function initializeGame() {
+    // Kontrola, zda je konfigurace načtena
+    if (typeof window.gameConfigLoaded === 'undefined' || !window.gameConfigLoaded) {
+        if (!gameInitializationAttempted) { // Zkusíme jen jednou odložit, abychom se vyhnuli nekonečné smyčce
+            console.warn("Config.js se ještě nenačetl. Zkouším znovu za 100ms...");
+            gameInitializationAttempted = true;
+            setTimeout(initializeGame, 100); // Zkusíme znovu za 100ms
+        } else {
+            console.error("KRITICKÁ CHYBA: Config.js se nepodařilo načíst ani po zpoždění. Hra nemůže pokračovat.");
+            // Zde by se mohlo zobrazit chybové hlášení uživateli
+            if (typeof showMessageBox === 'function') {
+                showMessageBox("Kritická chyba: Konfigurace hry se nenahrála. Zkuste obnovit stránku.", true, 10000);
+            }
+        }
+        return; // Ukončíme aktuální pokus o inicializaci
+    }
+    // console.log("Config.js je načten, pokračuji s initializeGame.");
+
+
     if (typeof initializeUIElements === 'function') {
         initializeUIElements(); 
     } else {
@@ -29,7 +48,7 @@ function initializeGame() {
     }
 
     if (typeof loadGame === 'function') {
-        loadGame(); 
+        loadGame(); // loadGame by měla volat initializeEquipment a renderEquipmentUI na správných místech
     } else {
         console.error("loadGame function not found. Cannot start or load the game.");
         return; 
@@ -141,33 +160,31 @@ function initializeGame() {
     if (closeCompanionSkillModalButton && typeof closeModal === 'function' && typeof companionSkillModal !== 'undefined') {
         closeCompanionSkillModalButton.addEventListener('click', () => closeModal(companionSkillModal));
     }
-
-    // Expedice - Otevírání/Zavírání Modálů a Akce
-    if (openExpeditionsButton && typeof openExpeditionsModalUI === 'function') { // openExpeditionsModalUI z expeditionController.js
+    if (openExpeditionsButton && typeof openExpeditionsModalUI === 'function') { 
         openExpeditionsButton.addEventListener('click', openExpeditionsModalUI);
     }
-    if (closeExpeditionsModalButton && typeof closeModal === 'function' && typeof expeditionsModal !== 'undefined') { // closeModal z uiController.js
+    if (closeExpeditionsModalButton && typeof closeModal === 'function' && typeof expeditionsModal !== 'undefined') { 
         closeExpeditionsModalButton.addEventListener('click', () => closeModal(expeditionsModal));
     }
-    if (expeditionsListContainer && typeof openCompanionSelectModalForExpedition === 'function') { // Delegovaný listener
+    if (expeditionsListContainer && typeof openCompanionSelectModalForExpedition === 'function') { 
         expeditionsListContainer.addEventListener('click', (event) => {
             const startButton = event.target.closest('.start-expedition-btn');
             if (startButton && !startButton.disabled) {
                 const expeditionId = startButton.dataset.expeditionId;
                 if (expeditionId) {
-                    openCompanionSelectModalForExpedition(expeditionId); // Funkce z expeditionController.js
+                    openCompanionSelectModalForExpedition(expeditionId); 
                 }
             }
         });
     }
-    if (expeditionCompanionSelectList && typeof updateConfirmExpeditionButtonState === 'function') { // Delegovaný listener pro checkboxy
+    if (expeditionCompanionSelectList && typeof updateConfirmExpeditionButtonState === 'function') { 
         expeditionCompanionSelectList.addEventListener('change', (event) => {
             if (event.target.classList.contains('companion-checkbox')) {
-                updateConfirmExpeditionButtonState(); // Funkce z expeditionController.js
+                updateConfirmExpeditionButtonState(); 
             }
         });
     }
-    if (confirmExpeditionStartButton && typeof startExpedition === 'function') { // startExpedition z expeditionController.js
+    if (confirmExpeditionStartButton && typeof startExpedition === 'function') { 
         confirmExpeditionStartButton.addEventListener('click', startExpedition);
     }
     if (cancelExpeditionStartButton && typeof closeModal === 'function' && typeof expeditionCompanionSelectModal !== 'undefined') {
@@ -235,11 +252,10 @@ function initializeGame() {
     document.body.addEventListener('keydown', firstUserGestureHandler, { capture: true, once: true });
 
     // Spuštění herních smyček
-    // Přidáno volání checkCompletedExpeditions do hlavního intervalu
     if (typeof gameTick === 'function' && typeof saveGame === 'function' && typeof checkCompletedExpeditions === 'function') {
         setInterval(() => {
             gameTick();
-            checkCompletedExpeditions(); // Kontrola dokončených expedic každých 100ms (lze upravit interval)
+            checkCompletedExpeditions(); 
         }, 100); 
         setInterval(saveGame, 15000); 
         console.log("Game loops started (including expedition check).");

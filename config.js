@@ -44,11 +44,10 @@ const critDamageMultiplier = 2;
 const COMPANION_ESSENCE_DROP_CHANCE_FROM_CHAMPION = 0.1; 
 const COMPANION_ESSENCE_DROP_CHANCE_FROM_BOSS = 0.5; 
 
-// --- Konstanty pro Offline Progres ---
-const MAX_OFFLINE_TIME_SECONDS = 60 * 60 * 8; // Maximální doba offline progresu (např. 8 hodin)
-const OFFLINE_GOLD_EARN_PERCENTAGE = 0.25;   // Hráč získá 25% zlata, které by získal aktivním hraním (z pasivního poškození)
-const OFFLINE_XP_EARN_PERCENTAGE = 0.10;     // Hráč získá 10% XP
-const MIN_OFFLINE_TIME_FOR_PROGRESS_SECONDS = 60 * 2; // Minimální doba offline, aby se progres započítal (např. 2 minuty)
+const MAX_OFFLINE_TIME_SECONDS = 60 * 60 * 8; 
+const OFFLINE_GOLD_EARN_PERCENTAGE = 0.25;   
+const OFFLINE_XP_EARN_PERCENTAGE = 0.10;     
+const MIN_OFFLINE_TIME_FOR_PROGRESS_SECONDS = 60 * 2; 
 
 
 const equipmentSlots = ['weapon', 'helmet', 'gloves', 'armor', 'pants', 'boots'];
@@ -58,7 +57,7 @@ const itemNamesCzech = {
 };
 const itemIcons = { 
     weapon: '⚔️', helmet: '🛡️', gloves: '🧤',
-    armor: '👕', pants: '👖', boots: '👢'
+    armor: '👕', pants: '�', boots: '👢'
 };
 const tiers = [ 
     { name: "Plátěné", passivePercentBonus: 0, costMultiplier: 1, clickDamageBonus: 0 }, 
@@ -204,7 +203,7 @@ const allCompanions = {
         }
     },
     'fire_sprite': {
-        id: 'fire_sprite', name: "Ohnivý Skřítek", icon: '�', description: "Mrštný skřítek, který může nepřátele popálit.",
+        id: 'fire_sprite', name: "Ohnivý Skřítek", icon: '🔥', description: "Mrštný skřítek, který může nepřátele popálit.",
         basePassivePercent: 0.0005, passivePercentPerLevel: 0.00015, maxLevel: 40,
         unlockCost: 40000, upgradeBaseCost: 70, upgradeCostMultiplier: 1.18, source: 'shop',
         skillTree: {
@@ -500,5 +499,9 @@ const allMilestonesConfig = [
     }
 ];
 
-const SAVE_KEY = 'echoesOfInfinitySave_v34_offline_progress'; // Aktualizovaný SAVE_KEY
+const SAVE_KEY = 'echoesOfInfinitySave_v34_offline_progress'; 
 const talentPointGainPerLevel = 1;
+
+// Vlajka pro signalizaci načtení konfigurace
+window.gameConfigLoaded = true;
+// console.log("Config.js loaded and gameConfigLoaded set to true.");
