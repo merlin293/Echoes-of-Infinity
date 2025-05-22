@@ -6,6 +6,11 @@
  * @returns {number} - Pasivní poškození v procentech (např. 0.0002 pro 0.02%).
  */
 function calculateCompanionPassivePercent(companionId) {
+    // Kontrola, zda je společník na aktivní výpravě
+    if (gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(companionId))) {
+        return 0; // Společník je na výpravě, nepřispívá k pasivnímu DPS
+    }
+
     const companionDef = allCompanions[companionId]; // Z config.js
     const companionInstance = gameState.ownedCompanions[companionId]; // Z gameState.js
 
@@ -37,10 +42,10 @@ function calculateCompanionPassivePercent(companionId) {
  */
 function calculateTotalCompanionPassivePercent() {
     let totalPercent = 0;
-    if (!gameState.ownedCompanions) return 0; // Pojistka
-    for (const id in gameState.ownedCompanions) { // gameState.ownedCompanions z gameState.js
+    if (!gameState.ownedCompanions) return 0;
+    for (const id in gameState.ownedCompanions) {
         if (gameState.ownedCompanions.hasOwnProperty(id)) {
-            totalPercent += calculateCompanionPassivePercent(id);
+            totalPercent += calculateCompanionPassivePercent(id); // Tato funkce již zohledňuje výpravy
         }
     }
     return totalPercent;
@@ -48,10 +53,9 @@ function calculateTotalCompanionPassivePercent() {
 
 /**
  * Aktualizuje globální proměnnou totalCompanionPassivePercent v gameState.js.
- * Tato funkce by měla být volána po každé změně úrovně, odemčení společníka nebo vylepšení jeho dovednosti.
  */
 function updateTotalCompanionPassivePercentOnGameState() {
-    gameState.totalCompanionPassivePercent = calculateTotalCompanionPassivePercent(); // gameState.totalCompanionPassivePercent z gameState.js
+    gameState.totalCompanionPassivePercent = calculateTotalCompanionPassivePercent();
 }
 
 /**
@@ -63,23 +67,14 @@ function renderCompanionsUI() {
         return;
     }
     // console.log("renderCompanionsUI: companionsContainer found.");
-
-    try {
-        // console.log("renderCompanionsUI: allCompanions:", JSON.stringify(allCompanions || {}));
-    } catch (e) {
-        // console.error("renderCompanionsUI: Error stringifying allCompanions", e, allCompanions);
-    }
-    try {
-        // console.log("renderCompanionsUI: gameState.ownedCompanions:", JSON.stringify(gameState.ownedCompanions || {}));
-    } catch (e) {
-        // console.error("renderCompanionsUI: Error stringifying gameState.ownedCompanions", e, gameState.ownedCompanions);
-    }
+    // console.log("renderCompanionsUI: gameState.ownedCompanions:", JSON.stringify(gameState.ownedCompanions || {}));
+    // console.log("renderCompanionsUI: gameState.activeExpeditions:", JSON.stringify(gameState.activeExpeditions || []));
 
 
     companionsContainer.innerHTML = '';
 
     if (typeof allCompanions !== 'object' || allCompanions === null || Object.keys(allCompanions).length === 0) {
-        console.warn("renderCompanionsUI: allCompanions is not a populated object or is empty. Panel will show 'no companions defined'.");
+        // console.warn("renderCompanionsUI: allCompanions is not a populated object or is empty.");
         companionsContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Žádní společníci nejsou definováni v konfiguraci.</p>';
         return;
     }
@@ -89,14 +84,18 @@ function renderCompanionsUI() {
         if (allCompanions.hasOwnProperty(id)) {
             const companionDef = allCompanions[id];
             const companionInstance = gameState.ownedCompanions ? gameState.ownedCompanions[id] : undefined;
+            const isOnExpedition = gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(id));
 
             if (!companionDef) {
-                console.warn(`renderCompanionsUI: companionDef for id '${id}' is undefined. Skipping.`);
+                // console.warn(`renderCompanionsUI: companionDef for id '${id}' is undefined. Skipping.`);
                 continue;
             }
 
             const companionDiv = document.createElement('div');
             companionDiv.classList.add('companion-item');
+            if (isOnExpedition) {
+                companionDiv.classList.add('on-expedition'); // Pro případné specifické stylování
+            }
 
             let companionHTML = `
                 <span class="companion-icon">${companionDef.icon || '❓'}</span>
@@ -105,21 +104,25 @@ function renderCompanionsUI() {
                     <span class="text-xs text-gray-400">${companionDef.description || 'Popis chybí.'}</span>`;
 
             if (companionInstance) {
-                const currentPassivePerc = calculateCompanionPassivePercent(id);
+                const currentPassivePerc = calculateCompanionPassivePercent(id); // Již vrací 0, pokud je na výpravě
                 companionHTML += `
                     <span class="companion-level">Úroveň: ${companionInstance.level} / ${companionDef.maxLevel || 'N/A'}</span>
-                    <span class="companion-dps">%HP/s: ${formatNumber(currentPassivePerc * 100, 3)}%</span>
+                    <span class="companion-dps">%HP/s: ${formatNumber(currentPassivePerc * 100, 3)}%</span>`;
+                if (isOnExpedition) {
+                    companionHTML += `<span class="text-xs text-yellow-400 block mt-1">Na výpravě</span>`;
+                }
+                companionHTML += `
                 </div>
                 <div class="companion-upgrade-options">`;
 
                 if (companionInstance.level < (companionDef.maxLevel || Infinity)) {
                     const upgradeCost = Math.ceil((companionDef.upgradeBaseCost || 0) * Math.pow(companionDef.upgradeCostMultiplier || 1, companionInstance.level -1));
-                    companionHTML += `<button data-id="${id}" class="companion-button upgrade-companion">Vylepšit <span class="cost-text">(${formatNumber(upgradeCost)} Z)</span></button>`;
+                    companionHTML += `<button data-id="${id}" class="companion-button upgrade-companion" ${isOnExpedition ? 'disabled' : ''}>Vylepšit <span class="cost-text">(${formatNumber(upgradeCost)} Z)</span></button>`;
                 } else {
                     companionHTML += `<button class="companion-button" disabled>Max. úroveň</button>`;
                 }
                 if (companionDef.skillTree && Object.keys(companionDef.skillTree).length > 0) {
-                    companionHTML += `<button data-id="${id}" class="companion-button open-skills-companion">Dovednosti</button>`;
+                    companionHTML += `<button data-id="${id}" class="companion-button open-skills-companion" ${isOnExpedition ? 'disabled' : ''}>Dovednosti</button>`;
                 } else {
                      companionHTML += `<button class="companion-button" disabled>Žádné dovednosti</button>`;
                 }
@@ -136,10 +139,10 @@ function renderCompanionsUI() {
             appendedCount++;
         }
     }
-    // console.log(`renderCompanionsUI: Appended ${appendedCount} companion items to companionsContainer.`);
+    // console.log(`renderCompanionsUI: Appended ${appendedCount} companion items.`);
 
     if (appendedCount === 0 && Object.keys(allCompanions).length > 0) {
-        console.warn("renderCompanionsUI: allCompanions has items, but nothing was appended. Check for data issues in allCompanions definitions or HTML construction errors.");
+        // console.warn("renderCompanionsUI: allCompanions has items, but nothing was appended.");
         companionsContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Společníci jsou definováni, ale nepodařilo se je zobrazit.</p>';
     }
 
@@ -152,7 +155,7 @@ function renderCompanionsUI() {
  * @param {string} companionId - ID společníka k odemčení.
  */
 function unlockCompanion(companionId) {
-    console.log(`UNLOCK_COMPANION: Attempting to unlock companion '${companionId}'. Current gold: ${gameState.gold}`);
+    // console.log(`UNLOCK_COMPANION: Attempting to unlock companion '${companionId}'. Current gold: ${gameState.gold}`);
     const companionDef = allCompanions[companionId];
 
     if (!companionDef) {
@@ -163,16 +166,16 @@ function unlockCompanion(companionId) {
     const isAlreadyOwned = gameState.ownedCompanions && gameState.ownedCompanions[companionId];
     const canAfford = gameState.gold >= (companionDef.unlockCost || 0);
 
-    console.log(`UNLOCK_COMPANION: companionDef.name: ${companionDef.name}, unlockCost: ${companionDef.unlockCost}, isAlreadyOwned: ${isAlreadyOwned}, canAfford: ${canAfford}`);
+    // console.log(`UNLOCK_COMPANION: companionDef.name: ${companionDef.name}, unlockCost: ${companionDef.unlockCost}, isAlreadyOwned: ${isAlreadyOwned}, canAfford: ${canAfford}`);
 
     if (!isAlreadyOwned && canAfford) {
         gameState.gold -= (companionDef.unlockCost || 0);
-        if (!gameState.ownedCompanions) { // Pojistka, pokud by ownedCompanions nebylo inicializováno
+        if (!gameState.ownedCompanions) {
             gameState.ownedCompanions = {};
-            console.log("UNLOCK_COMPANION: gameState.ownedCompanions was undefined, initialized to {}.");
+            // console.log("UNLOCK_COMPANION: gameState.ownedCompanions was undefined, initialized to {}.");
         }
         gameState.ownedCompanions[companionId] = { level: 1 };
-        console.log(`UNLOCK_COMPANION: Companion '${companionId}' unlocked. gameState.ownedCompanions NOW:`, JSON.stringify(gameState.ownedCompanions)); // KLÍČOVÝ LOG
+        // console.log(`UNLOCK_COMPANION: Companion '${companionId}' unlocked. gameState.ownedCompanions NOW:`, JSON.stringify(gameState.ownedCompanions));
 
         if (companionDef.skillTree && typeof gameState.companionSkillLevels !== 'undefined') {
             if (!gameState.companionSkillLevels[companionId]) {
@@ -189,16 +192,16 @@ function unlockCompanion(companionId) {
         if (typeof soundManager !== 'undefined') soundManager.playSound('upgrade', 'D5', '8n');
 
         updateTotalCompanionPassivePercentOnGameState();
-        console.log("UNLOCK_COMPANION: Calling renderCompanionsUI after unlock.");
+        // console.log("UNLOCK_COMPANION: Calling renderCompanionsUI after unlock.");
         renderCompanionsUI();
         if (typeof updateUI === 'function') updateUI();
         if (typeof checkMilestones === 'function') checkMilestones();
     } else if (isAlreadyOwned) {
         if (typeof showMessageBox === 'function') showMessageBox("Tento společník je již odemčen.", true);
-        console.log(`UNLOCK_COMPANION: Companion '${companionId}' is already owned.`);
+        // console.log(`UNLOCK_COMPANION: Companion '${companionId}' is already owned.`);
     } else if (!canAfford) {
         if (typeof showMessageBox === 'function') showMessageBox("Nedostatek zlata!", true);
-        console.log(`UNLOCK_COMPANION: Not enough gold to unlock '${companionId}'. Needed: ${companionDef.unlockCost}, Has: ${gameState.gold}`);
+        // console.log(`UNLOCK_COMPANION: Not enough gold to unlock '${companionId}'. Needed: ${companionDef.unlockCost}, Has: ${gameState.gold}`);
     }
 }
 
@@ -209,6 +212,12 @@ function unlockCompanion(companionId) {
 function upgradeCompanion(companionId) {
     const companionDef = allCompanions[companionId];
     const companionInstance = gameState.ownedCompanions ? gameState.ownedCompanions[companionId] : undefined;
+    const isOnExpedition = gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(companionId));
+
+    if (isOnExpedition) {
+        if (typeof showMessageBox === 'function') showMessageBox("Nelze vylepšit společníka, který je na výpravě.", true);
+        return;
+    }
 
     if (companionDef && companionInstance && companionInstance.level < (companionDef.maxLevel || Infinity)) {
         const upgradeCost = Math.ceil((companionDef.upgradeBaseCost || 0) * Math.pow(companionDef.upgradeCostMultiplier || 1, companionInstance.level -1));
@@ -234,7 +243,6 @@ function upgradeCompanion(companionId) {
 
 /**
  * Aktualizuje stav (disabled/enabled) tlačítek pro odemčení/vylepšení společníků a otevření dovedností.
- * Volá se po renderCompanionsUI a po změně množství zlata/esencí.
  */
 function updateCompanionButtonStates() {
     if (!companionsContainer) return;
@@ -245,15 +253,17 @@ function updateCompanionButtonStates() {
         const companionInstance = gameState.ownedCompanions ? gameState.ownedCompanions[id] : undefined;
         if (!companionDef) return;
 
+        const isOnExpedition = gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(id));
+
         const costSpan = button.querySelector('.cost-text');
 
         if (button.classList.contains('unlock')) {
-            button.disabled = gameState.gold < (companionDef.unlockCost || 0) || !!companionInstance;
+            button.disabled = gameState.gold < (companionDef.unlockCost || 0) || !!companionInstance; // Unlock by neměl být ovlivněn výpravou, protože ještě není vlastněn
             if (costSpan) costSpan.textContent = `(${formatNumber(companionDef.unlockCost || 0)} Z)`;
         } else if (button.classList.contains('upgrade-companion')) {
             if (companionInstance && companionInstance.level < (companionDef.maxLevel || Infinity)) {
                 const upgradeCost = Math.ceil((companionDef.upgradeBaseCost || 0) * Math.pow(companionDef.upgradeCostMultiplier || 1, companionInstance.level -1));
-                button.disabled = gameState.gold < upgradeCost;
+                button.disabled = gameState.gold < upgradeCost || isOnExpedition;
                 if (costSpan) costSpan.textContent = `(${formatNumber(upgradeCost)} Z)`;
             } else {
                 button.disabled = true;
@@ -261,7 +271,7 @@ function updateCompanionButtonStates() {
                 else if (costSpan) costSpan.textContent = '';
             }
         } else if (button.classList.contains('open-skills-companion')) {
-            button.disabled = !companionInstance || !companionDef.skillTree || Object.keys(companionDef.skillTree).length === 0;
+            button.disabled = !companionInstance || !companionDef.skillTree || Object.keys(companionDef.skillTree).length === 0 || isOnExpedition;
         }
     });
 }

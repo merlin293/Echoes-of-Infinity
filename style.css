@@ -1,95 +1,95 @@
 /* SOUBOR: style.css */
 body {
     font-family: 'Inter', sans-serif;
-    touch-action: manipulation; 
-    background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); 
-    color: #F3F4F6; 
-    overflow-y: auto; 
-    overflow-x: hidden; 
+    touch-action: manipulation;
+    background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
+    color: #F3F4F6;
+    overflow-y: auto;
+    overflow-x: hidden;
     margin: 0;
 }
 .game-container {
-    min-height: 100vh; 
+    min-height: 100vh;
     display: flex;
-    flex-direction: column; 
+    flex-direction: column;
     align-items: center;
-    padding: 12px; 
+    padding: 12px;
     box-sizing: border-box;
 }
 .main-content-area {
     display: flex;
-    flex-direction: row; 
-    gap: 12px; 
+    flex-direction: row;
+    gap: 12px;
     width: 100%;
-    max-width: 1024px; 
-    align-items: flex-start; 
+    max-width: 1024px;
+    align-items: flex-start;
 }
-.left-column, .middle-column, .right-column { 
+.left-column, .middle-column, .right-column {
     display: flex;
     flex-direction: column;
-    gap: 12px; 
+    gap: 12px;
 }
-.left-column { flex: 1; max-width: 280px; min-width: 220px; } 
-.middle-column { flex: 2; max-width: 400px; min-width: 280px; } 
-.right-column { flex: 1; max-width: 260px; min-width: 220px; } 
+.left-column { flex: 1; max-width: 280px; min-width: 220px; }
+.middle-column { flex: 2; max-width: 400px; min-width: 280px; }
+.right-column { flex: 1; max-width: 260px; min-width: 220px; }
 
 .game-title { color: #FFFFFF; }
 .game-subtitle { color: #D1D5DB; }
 .enemy {
     width: 170px; height: 170px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
-    cursor: pointer; user-select: none; 
+    cursor: pointer; user-select: none;
     transition: transform 0.1s ease, box-shadow 0.1s ease, border-color 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 0 20px rgba(255,255,255,0.1); 
-    position: relative; overflow: hidden; 
-    margin-left: auto; margin-right: auto; 
-    border: 4px solid transparent; 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 0 20px rgba(255,255,255,0.1);
+    position: relative; overflow: hidden;
+    margin-left: auto; margin-right: auto;
+    border: 4px solid transparent;
 }
 .enemy.champion { border-color: #FBBF24; box-shadow: 0 6px 12px rgba(251, 191, 36, 0.4), 0 0 30px rgba(251, 191, 36, 0.3); }
 .enemy.boss { border-color: #EF4444; box-shadow: 0 8px 16px rgba(239, 68, 68, 0.5), 0 0 40px rgba(239, 68, 68, 0.4); }
 .enemy:active { transform: scale(0.95); box-shadow: 0 2px 3px rgba(0,0,0,0.2), 0 0 10px rgba(255,255,255,0.05); }
 #enemyArt { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-#enemyArt svg { width: 90%; height: 90%; } 
+#enemyArt svg { width: 90%; height: 90%; }
 .enemy-name {
     font-size: 1.05rem; font-weight: 600; color: white;
     position: absolute; bottom: 1.6rem; left: 0; right: 0;
-    text-align: center; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); 
+    text-align: center; pointer-events: none; text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
 }
 .enemy-health-text {
     font-size: 0.8rem; color: white;
     position: absolute; bottom: 0.4rem; left: 0; right: 0;
-    text-align: center; pointer-events: none; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); 
+    text-align: center; pointer-events: none; text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 .health-bar-container {
-    width: 100%; max-width: 170px; background-color: #374151; 
+    width: 100%; max-width: 170px; background-color: #374151;
     border-radius: 0.25rem; margin-top: 0.4rem; height: 8px;
-    overflow: hidden; border: 1px solid #4B5563; 
-    margin-left: auto; margin-right: auto; 
+    overflow: hidden; border: 1px solid #4B5563;
+    margin-left: auto; margin-right: auto;
 }
 .health-bar { height: 100%; background-color: #10B981; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
 #bossTimerDisplay {
-    font-size: 0.9rem; font-weight: 600; color: #EF4444; 
+    font-size: 0.9rem; font-weight: 600; color: #EF4444;
     margin-top: 0.5rem; text-align: center;
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
 }
-.panel { 
+.panel {
     background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
     padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    width: 100%; 
+    width: 100%;
 }
-.panel h3 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; text-align:center; } 
+.panel h3 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; text-align:center; }
 
 .stats-panel p.text-xs, .game-stats-panel p.text-xs { color: #D1D5DB; font-size: 0.7rem; }
 .stats-panel p.text-value, .game-stats-panel p.text-value { color: #FFFFFF; font-size: 0.9rem; font-weight: 600;}
-#goldDisplayContainer { position: relative; } 
+#goldDisplayContainer { position: relative; }
 .gold-gain-animation {
     position: absolute;
-    top: -20px; 
+    top: -20px;
     left: 50%;
     transform: translateX(-50%);
     font-size: 0.8rem;
     font-weight: bold;
-    color: #FBBF24; 
+    color: #FBBF24;
     animation: floatUpAndFade 1s ease-out forwards;
     pointer-events: none;
     white-space: nowrap;
@@ -99,24 +99,28 @@ body {
     100% { opacity: 0; transform: translate(-50%, -30px); }
 }
 
-#goldDisplay { color: #FBBF24; } 
-#clickDamageDisplay { color: #60A5FA; } 
-#passiveDamageDisplay { color: #F87171; } 
-#echoShardsDisplay { color: #A78BFA; } 
-#companionEssenceDisplay { color: #EC4899; } /* Barva pro Esence Společníků */
-#playerLevelDisplay { color: #34D399; } 
+#goldDisplay { color: #FBBF24; }
+#clickDamageDisplay { color: #60A5FA; }
+#passiveDamageDisplay { color: #F87171; }
+#echoShardsDisplay { color: #A78BFA; }
+#companionEssenceDisplay { color: #EC4899; }
+#playerLevelDisplay { color: #34D399; }
 #playerXPBarContainer { width: 100%; background-color: #374151; border-radius: 0.25rem; height: 6px; overflow: hidden; margin-top: 2px;}
 #playerXPBar { height: 100%; background-color: #34D399; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
 
-.equipment-item, .companion-item { 
+.equipment-item, .companion-item {
     background-color: rgba(255,255,255,0.05);
     padding: 0.6rem; border-radius: 0.375rem; margin-bottom: 0.5rem;
     border: 1px solid rgba(255,255,255,0.1);
     display: grid; grid-template-columns: auto 1fr; gap-x-3; align-items: center;
 }
+.companion-item.on-expedition {
+    opacity: 0.6;
+    border-left: 3px solid #F59E0B;
+}
 .equipment-item-icon { font-size: 1.5rem; }
-.companion-icon { 
-    font-size: 1.5rem; 
+.companion-icon {
+    font-size: 1.5rem;
     animation: pulseCompanion 3s infinite ease-in-out;
 }
 @keyframes pulseCompanion {
@@ -125,104 +129,104 @@ body {
     100% { transform: scale(1); opacity: 0.8; }
 }
 
-.equipment-info, .companion-info { display: flex; flex-direction: column; grid-column: span 2; } 
+.equipment-info, .companion-info { display: flex; flex-direction: column; grid-column: span 2; }
 .equipment-name, .companion-name { font-weight: 600; color: #CBD5E0; font-size: 0.8rem; }
 .equipment-tier-level, .companion-level { font-size: 0.7rem; color: #A0AEC0; }
-.equipment-bonus, .companion-dps { font-size: 0.7rem; color: #60A5FA; } 
-    
+.equipment-bonus, .companion-dps { font-size: 0.7rem; color: #60A5FA; }
+
 .equipment-upgrade-options, .companion-upgrade-options {
-    grid-column: span 2; 
+    grid-column: span 2;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); /* Upraveno pro lepší responsivitu */
-    gap: 0.25rem; 
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 0.25rem;
     margin-top: 0.5rem;
 }
 
-.companion-upgrade-options { /* Specifické pro společníky, aby se vešlo i tlačítko dovedností */
+.companion-upgrade-options {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 }
 
 
 .equipment-level-button, .companion-button {
-    background-color: #4A5568; 
+    background-color: #4A5568;
     color: white;
     font-weight: 500;
-    padding: 0.3rem; 
+    padding: 0.3rem;
     border-radius: 0.25rem;
     transition: background-color 0.2s ease, transform 0.1s ease;
     cursor: pointer;
     border: none;
-    font-size: 0.7rem; 
+    font-size: 0.7rem;
     text-align: center;
-    line-height: 1.2; 
+    line-height: 1.2;
 }
-.equipment-level-button.affordable { 
-    background-color: #10B981; 
+.equipment-level-button.affordable {
+    background-color: #10B981;
 }
 .equipment-level-button.affordable:hover {
-    background-color: #059669; 
+    background-color: #059669;
 }
-.equipment-level-button:hover, .companion-button:hover { background-color: #5A6578; transform: translateY(-1px); } 
+.equipment-level-button:hover, .companion-button:hover { background-color: #5A6578; transform: translateY(-1px); }
 .equipment-level-button:disabled, .companion-button:disabled {
-    background-color: #2D3748; 
+    background-color: #2D3748;
     color: #718096;
     cursor: not-allowed; transform: translateY(0);
 }
-.equipment-level-button .cost-text, .companion-button .cost-text { 
-    font-size: 0.6rem; 
-    display: block; 
+.equipment-level-button .cost-text, .companion-button .cost-text {
+    font-size: 0.6rem;
+    display: block;
     opacity: 0.8;
 }
 .companion-button.unlock { background-color: #10B981; }
 .companion-button.unlock:hover { background-color: #059669; }
-.companion-button.open-skills-companion { background-color: #8B5CF6; } /* Fialová pro dovednosti */
+.companion-button.open-skills-companion { background-color: #8B5CF6; }
 .companion-button.open-skills-companion:hover { background-color: #7C3AED; }
-    
+
 #advanceTierButton {
     background-color: #10B981; color: white;
-     grid-column: span 2; 
-    margin-top: 0.5rem; 
-    padding: 0.3rem 0.5rem; border-radius: 0.375rem; 
+     grid-column: span 2;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.5rem; border-radius: 0.375rem;
     transition: background-color 0.2s ease, transform 0.1s ease;
     cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    font-size: 0.75rem; 
+    font-size: 0.75rem;
     display: flex; justify-content: center; align-items: center;
 }
 #advanceTierButton:hover { background-color: #059669; }
 #advanceTierButton:disabled { background-color: #4B5563; }
 
 
-.action-button, .skill-button, .echo-upgrade-button, .talent-tree-button, .echo-button, .reset-game-button, .modal-trigger-button, .research-button, .essence-forge-button { 
-    background-color: #3B82F6; color: white; font-weight: 500; 
-    padding: 0.4rem 0.6rem; border-radius: 0.375rem; 
+.action-button, .skill-button, .echo-upgrade-button, .talent-tree-button, .echo-button, .reset-game-button, .modal-trigger-button, .research-button, .essence-forge-button {
+    background-color: #3B82F6; color: white; font-weight: 500;
+    padding: 0.4rem 0.6rem; border-radius: 0.375rem;
     transition: background-color 0.2s ease, transform 0.1s ease;
     cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    display: flex; justify-content: space-between; align-items: center; 
-    font-size: 0.8rem; 
-    width: 100%; 
-    margin-bottom: 0.5rem; 
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 0.8rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
 }
-.action-button { background-color: #F59E0B; } 
+.action-button { background-color: #F59E0B; }
 .action-button:hover { background-color: #D97706; }
-.skill-button { background-color: #EC4899; } 
+.skill-button { background-color: #EC4899; }
 .skill-button:hover { background-color: #DB2777; }
-.echo-button { background-color: #8B5CF6; } 
+.echo-button { background-color: #8B5CF6; }
 .echo-button:hover { background-color: #7C3AED; }
-.echo-upgrade-button { background-color: #6D28D9; } 
+.echo-upgrade-button { background-color: #6D28D9; }
 .echo-upgrade-button:hover { background-color: #5B21B6; }
-.talent-tree-button { background-color: #10B981; } 
+.talent-tree-button { background-color: #10B981; }
 .talent-tree-button:hover { background-color: #059669; }
-.reset-game-button { background-color: #EF4444; } 
+.reset-game-button { background-color: #EF4444; }
 .reset-game-button:hover { background-color: #DC2626; }
-.modal-trigger-button { background-color: #6366F1; } 
+.modal-trigger-button { background-color: #6366F1; }
 .modal-trigger-button:hover { background-color: #4F46E5; }
-.help-button { background-color: #0EA5E9; } 
+.help-button { background-color: #0EA5E9; }
 .help-button:hover { background-color: #0284C7; }
-.advanced-settings-button { background-color: #F97316; } 
+.advanced-settings-button { background-color: #F97316; }
 .advanced-settings-button:hover { background-color: #EA580C; }
-.research-button { background-color: #D946EF; } 
+.research-button { background-color: #D946EF; }
 .research-button:hover { background-color: #C026D3; }
-.essence-forge-button { background-color: #A855F7; } 
+.essence-forge-button { background-color: #A855F7; }
 .essence-forge-button:hover { background-color: #9333EA; }
 
 
@@ -230,28 +234,28 @@ body {
     background-color: #4B5563; color: #9CA3AF;
     cursor: not-allowed; transform: translateY(0); box-shadow: none;
 }
-.action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text, .help-button-text, .advanced-settings-button-text, .research-button-text, .essence-forge-button-text { 
-    flex-grow: 1; text-align: center; 
+.action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text, .help-button-text, .advanced-settings-button-text, .research-button-text, .essence-forge-button-text {
+    flex-grow: 1; text-align: center;
 }
-.action-cost, .skill-cooldown, .echo-upgrade-cost { 
-    font-size: 0.65rem; opacity: 0.9; margin-left: 4px; white-space: nowrap; 
+.action-cost, .skill-cooldown, .echo-upgrade-cost {
+    font-size: 0.65rem; opacity: 0.9; margin-left: 4px; white-space: nowrap;
 }
 .echo-upgrade-level { font-size: 0.6rem; opacity: 0.7; margin-left: 6px; }
 
 .damage-number {
-    position: absolute; font-size: 1.15rem; font-weight: bold; color: #FBBF24; 
-    animation: floatUp 1s ease-out forwards; pointer-events: none; 
-    text-shadow: 1px 1px 0px black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black; 
+    position: absolute; font-size: 1.15rem; font-weight: bold; color: #FBBF24;
+    animation: floatUp 1s ease-out forwards; pointer-events: none;
+    text-shadow: 1px 1px 0px black, -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black;
 }
 @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(0.8); } }
-.crit { color: #EF4444; font-size: 1.5rem; font-weight: bold; } 
-#messageBox { 
-    border-radius: 0.5rem; font-weight: 500; width: 100%; max-width: 1000px; 
+.crit { color: #EF4444; font-size: 1.5rem; font-weight: bold; }
+#messageBox {
+    border-radius: 0.5rem; font-weight: 500; width: 100%; max-width: 1000px;
     margin-top: 1rem; position: fixed; bottom: 10px; left: 50%;
-    transform: translateX(-50%); z-index: 1000; 
+    transform: translateX(-50%); z-index: 1000;
 }
-.buff-display, .debuff-display, .skill-active-display { 
-    margin-top: 0.3rem; padding: 0.3rem; background-color: rgba(75, 85, 99, 0.5); 
+.buff-display, .debuff-display, .skill-active-display {
+    margin-top: 0.3rem; padding: 0.3rem; background-color: rgba(75, 85, 99, 0.5);
     border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500;
     animation: effectFlash 0.5s ease-in-out;
 }
@@ -259,20 +263,20 @@ body {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
 }
-.buff-display { color: #FBBF24; } 
-.debuff-display { color: #FCA5A5; } 
-.skill-active-display { color: #EC4899; } 
-.gold-rush-buff { color: #FDE047; background-color: rgba(250, 204, 21, 0.2); border: 1px solid #FBBF24;} 
+.buff-display { color: #FBBF24; }
+.debuff-display { color: #FCA5A5; }
+.skill-active-display { color: #EC4899; }
+.gold-rush-buff { color: #FDE047; background-color: rgba(250, 204, 21, 0.2); border: 1px solid #FBBF24;}
 
-.milestone, .artifact-item-display { 
-    padding: 0.3rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.375rem; 
+.milestone, .artifact-item-display {
+    padding: 0.3rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.375rem;
     font-size: 0.7rem; text-align: left;
 }
 .milestone.achieved, .artifact-item-display { background-color: rgba(16, 185, 129, 0.2); color: #A7F3D0; border: 1px solid rgba(16, 185, 129, 0.4); }
 .milestone.pending { background-color: rgba(75, 85, 99, 0.2); color: #9CA3AF; border: 1px solid rgba(107, 114, 128, 0.4); }
 .milestone .description { font-weight: 600; }
 .milestone .reward { font-style: italic; font-size: 0.65rem; }
-    
+
 .artifact-item-display .name { font-weight: 600; }
 .artifact-item-display .level { font-size: 0.65rem; color: #A0AEC0; margin-left: 0.3rem; }
 .artifact-item-display .description { font-style: italic; font-size: 0.65rem; display: block; margin-top: 2px;}
@@ -280,7 +284,7 @@ body {
 
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.7); display: flex; 
+    background-color: rgba(0,0,0,0.7); display: flex;
     align-items: center; justify-content: center; z-index: 2000;
 }
 .modal-content {
@@ -292,43 +296,44 @@ body {
 .modal-title { font-size: 1.1rem; font-weight: 600; color: #E2E8F0; }
 .modal-close-button { background: none; border: none; color: #A0AEC0; font-size: 1.3rem; cursor: pointer; }
 .modal-close-button:hover { color: #FFFFFF; }
-    
-.talent-branch-title, .research-category-title, .essence-category-title, .expedition-category-title { /* Přidáno .expedition-category-title */
+
+.talent-branch-title, .research-category-title, .essence-category-title, .expedition-category-title {
     font-size: 1rem;
     font-weight: 700;
-    color: #A0AEC0; 
+    color: #A0AEC0;
     margin-top: 0.8rem;
     margin-bottom: 0.4rem;
     border-bottom: 1px solid #4A5568;
     padding-bottom: 0.2rem;
 }
-.talent-item, .research-item, .essence-item, .expedition-item { /* Přidáno .expedition-item */
+.talent-item, .research-item, .essence-item, .expedition-item {
     background-color: rgba(255,255,255,0.05); padding: 0.6rem;
     border-radius: 0.375rem; margin-bottom: 0.6rem;
     border: 1px solid rgba(255,255,255,0.1);
+    position: relative;
 }
-.talent-item.is-ultimate { 
-    border-color: #FBBF24; 
+.talent-item.is-ultimate {
+    border-color: #FBBF24;
 }
-.talent-name, .research-name, .essence-name, .expedition-name { /* Přidáno .expedition-name */
+.talent-name, .research-name, .essence-name, .expedition-name {
     font-weight: 600; color: #CBD5E0; font-size: 0.85rem;
 }
-.talent-description, .research-description, .essence-description, .expedition-description { /* Přidáno .expedition-description */
-    font-size: 0.75rem; color: #A0AEC0; margin: 0.2rem 0; 
+.talent-description, .research-description, .essence-description, .expedition-description {
+    font-size: 0.75rem; color: #A0AEC0; margin: 0.2rem 0;
 }
 .talent-level-cost, .research-level-cost, .essence-level-cost { font-size: 0.7rem; color: #718096; }
-.talent-upgrade-button, .research-upgrade-button, .essence-upgrade-button, .expedition-button { /* Přidáno .expedition-button */
-    background-color: #2563eb; 
+.talent-upgrade-button, .research-upgrade-button, .essence-upgrade-button, .expedition-button {
+    background-color: #2563eb;
     color: white; font-size: 0.75rem;
     padding: 0.3rem 0.6rem; border-radius: 0.25rem; margin-top: 0.4rem;
     transition: background-color 0.2s ease;
-    width: 100%; /* Aby tlačítka v expedicích byla také plné šířky */
+    width: 100%;
 }
 .talent-upgrade-button:hover:not(:disabled), .research-upgrade-button:hover:not(:disabled), .essence-upgrade-button:hover:not(:disabled), .expedition-button:hover:not(:disabled) {
-    background-color: #1D4ED8; 
+    background-color: #1D4ED8;
 }
-.talent-upgrade-button:disabled, .research-upgrade-button:disabled, .essence-upgrade-button:disabled, .expedition-button:disabled { 
-    background-color: #4A5568; cursor: not-allowed; 
+.talent-upgrade-button:disabled, .research-upgrade-button:disabled, .essence-upgrade-button:disabled, .expedition-button:disabled {
+    background-color: #4A5568; cursor: not-allowed;
 }
 
 /* Styly specifické pro expedice */
@@ -336,7 +341,7 @@ body {
 .expedition-item .expedition-icon { font-size: 1.2rem; margin-right: 0.5rem; }
 .expedition-item .expedition-details { font-size: 0.7rem; color: #9CA3AF; margin-top: 0.1rem; }
 .expedition-item .expedition-timer { font-weight: 600; color: #F59E0B; }
-.expedition-item.running { border-left: 3px solid #F59E0B; } /* Oranžový pruh pro probíhající */
+.expedition-item.running { border-left: 3px solid #F59E0B; }
 .expedition-item.locked { opacity: 0.6; border-left: 3px solid #6B7280; }
 .expedition-item.locked .expedition-button { background-color: #374151; color: #6B7280; }
 .expedition-unlock-condition { font-size: 0.7rem; color: #F87171; margin-top: 0.3rem; font-style: italic; }
@@ -350,27 +355,27 @@ body {
 
 
 #talentResetSection { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #4A5568; }
-#requestTalentResetButton { background-color: #D97706; } 
+#requestTalentResetButton { background-color: #D97706; }
 #requestTalentResetButton:hover:not(:disabled) { background-color: #B45309; }
 #talentResetCostOptions .talent-upgrade-button { width: 100%; margin-bottom: 0.5rem; }
-#resetTalentsWithShardsButton { background-color: #7C3AED; } 
+#resetTalentsWithShardsButton { background-color: #7C3AED; }
 #resetTalentsWithShardsButton:hover:not(:disabled) { background-color: #6D28D9; }
-#resetTalentsWithGoldButton { background-color: #FBBF24; color: #1F2937;} 
+#resetTalentsWithGoldButton { background-color: #FBBF24; color: #1F2937;}
 #resetTalentsWithGoldButton:hover:not(:disabled) { background-color: #F59E0B;}
-#cancelTalentResetButton { background-color: #6B7280; } 
+#cancelTalentResetButton { background-color: #6B7280; }
 #cancelTalentResetButton:hover:not(:disabled) { background-color: #4B5563; }
 
 
 /* Styly pro Denní Výzvy */
 .daily-quest-item {
-    background-color: rgba(255, 255, 255, 0.04); 
+    background-color: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.5rem;
     border-radius: 0.375rem;
-    margin-bottom: 0.5rem; 
+    margin-bottom: 0.5rem;
 }
 .daily-quest-item.completed {
-    background-color: rgba(16, 185, 129, 0.15); 
+    background-color: rgba(16, 185, 129, 0.15);
     border-color: rgba(16, 185, 129, 0.3);
 }
 .daily-quest-item .description { font-weight: 600; color: #E5E7EB; font-size: 0.8rem; }
@@ -402,22 +407,22 @@ body {
 .game-stats-panel .stat-value { font-size: 0.8rem; font-weight: 600; color: #FFFFFF; }
 
 /* Styly pro ovládání zvuku v Pokročilých Nastaveních */
-.advanced-settings-modal-content label { 
+.advanced-settings-modal-content label {
     font-size: 0.75rem;
     color: #D1D5DB;
-    margin-bottom: 0.25rem; 
-    display: block; 
+    margin-bottom: 0.25rem;
+    display: block;
 }
-.advanced-settings-modal-content .setting-item label { 
-    margin-bottom: 0; 
-    display: inline; 
+.advanced-settings-modal-content .setting-item label {
+    margin-bottom: 0;
+    display: inline;
 }
 
 .advanced-settings-modal-content input[type="range"] {
-    width: 100%; 
+    width: 100%;
     cursor: pointer;
 }
-.advanced-settings-modal-content .setting-item input[type="range"].w-1\/2 { 
+.advanced-settings-modal-content .setting-item input[type="range"].w-1\/2 {
     width: 50%;
 }
 
@@ -432,16 +437,16 @@ body {
  .advanced-settings-modal-content .setting-item:last-of-type {
 }
  .advanced-settings-modal-content .setting-item-divider {
-    padding-top: 0.75rem; 
-    margin-top: 0.75rem; 
+    padding-top: 0.75rem;
+    margin-top: 0.75rem;
     border-top-width: 1px;
-    border-color: #4A5568; 
+    border-color: #4A5568;
 }
  .advanced-settings-modal-content .setting-item-divider h4 {
-    font-size: 0.875rem; 
-    font-weight: 600; 
-    color: #9CA3AF; 
-    margin-bottom: 0.5rem; 
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #9CA3AF;
+    margin-bottom: 0.5rem;
  }
 
 
@@ -449,10 +454,10 @@ body {
 .switch {
   position: relative;
   display: inline-block;
-  width: 40px; 
-  height: 20px; 
+  width: 40px;
+  height: 20px;
 }
-.switch input { 
+.switch input {
   opacity: 0;
   width: 0;
   height: 0;
@@ -464,52 +469,52 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #4A5568; 
+  background-color: #4A5568;
   transition: .4s;
-  border-radius: 20px; 
+  border-radius: 20px;
 }
 .slider:before {
   position: absolute;
   content: "";
-  height: 14px; 
-  width: 14px; 
-  left: 3px; 
-  bottom: 3px; 
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
   background-color: white;
   transition: .4s;
   border-radius: 50%;
 }
 input:checked + .slider {
-  background-color: #10B981; 
+  background-color: #10B981;
 }
 input:focus + .slider {
   box-shadow: 0 0 1px #10B981;
 }
 input:checked + .slider:before {
-  transform: translateX(20px); 
+  transform: translateX(20px);
 }
 
 /* Mute button v Pokročilých Nastaveních */
 .advanced-settings-modal-content .mute-button {
-    background-color: #F59E0B; 
+    background-color: #F59E0B;
     color: white;
     font-weight: 500;
-    padding: 0.2rem 0.5rem; 
+    padding: 0.2rem 0.5rem;
     border-radius: 0.375rem;
-    transition: background-color 0.2s ease, color 0.2s ease; 
+    transition: background-color 0.2s ease, color 0.2s ease;
     cursor: pointer;
     border: none;
-    font-size: 0.75rem; 
+    font-size: 0.75rem;
 }
 .advanced-settings-modal-content .mute-button:hover {
-    background-color: #D97706; 
+    background-color: #D97706;
 }
 .advanced-settings-modal-content .mute-button.muted {
-    background-color: #EF4444; 
-    color: #FEE2E2; 
+    background-color: #EF4444;
+    color: #FEE2E2;
 }
 .advanced-settings-modal-content .mute-button.muted:hover {
-    background-color: #DC2626; 
+    background-color: #DC2626;
 }
 
 /* Styly pro Nápovědu */
@@ -535,46 +540,46 @@ input:checked + .slider:before {
     padding-left: 1.2rem;
  }
  .help-modal-section strong {
-    color: #FBBF24; 
+    color: #FBBF24;
  }
 
 /* Styly pro Reset Confirm Modal */
 #resetConfirmModal .modal-content {
-    max-width: 400px; 
+    max-width: 400px;
     text-align: center;
 }
 #resetConfirmModal .modal-header {
-    justify-content: center; 
+    justify-content: center;
 }
 #resetConfirmModal .modal-title {
-    color: #F87171; 
+    color: #F87171;
 }
 #resetConfirmModal p {
     margin-bottom: 0.75rem;
 }
-#resetConfirmModal .flex { 
+#resetConfirmModal .flex {
     display: flex;
-    justify-content: space-around; 
-    margin-top: 1.5rem; 
+    justify-content: space-around;
+    margin-top: 1.5rem;
 }
 
 #confirmHardResetButton {
-    background-color: #DC2626; 
+    background-color: #DC2626;
     color: white;
-    padding: 0.5rem 1.5rem; 
-    border-radius: 0.375rem; 
+    padding: 0.5rem 1.5rem;
+    border-radius: 0.375rem;
     font-weight: 500;
     transition: background-color 0.2s ease;
     border: none;
     cursor: pointer;
-    width: auto; 
+    width: auto;
 }
 #confirmHardResetButton:hover {
-    background-color: #B91C1C; 
+    background-color: #B91C1C;
 }
 
 #cancelHardResetButton {
-    background-color: #6B7280; 
+    background-color: #6B7280;
     color: white;
     padding: 0.5rem 1.5rem;
     border-radius: 0.375rem;
@@ -585,21 +590,107 @@ input:checked + .slider:before {
     width: auto;
 }
 #cancelHardResetButton:hover {
-    background-color: #4B5563; 
+    background-color: #4B5563;
 }
 
+/* Tooltip Styles (Generic - can be reused or specialized) */
+.tooltip-base {
+    position: fixed;
+    background-color: #1f2937;
+    color: #e5e7eb;
+    border: 1px solid #4b5563;
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    font-size: 0.75rem;
+    z-index: 3000;
+    width: auto;
+    min-width: 220px;
+    max-width: 320px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    line-height: 1.4;
+    transition: opacity 0.1s ease-in-out;
+}
+.tooltip-base.hidden {
+    display: none;
+    opacity: 0;
+}
+.tooltip-name-base {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+.tooltip-level-base {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-bottom: 0.5rem;
+}
+.tooltip-description-base {
+    font-style: italic;
+    color: #d1d5db;
+    margin-bottom: 0.5rem;
+    font-size: 0.7rem;
+}
+.tooltip-hr-base {
+    border: 0;
+    height: 1px;
+    background-color: #374151;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.tooltip-effect-base {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+}
+.tooltip-effect-current-base { color: #a7f3d0; }
+.tooltip-effect-next-base { color: #60A5FA; }
 
-@media (max-width: 900px) { 
+
+/* Talent Tooltip Styles */
+#talentTooltip { /* Inherits from .tooltip-base if that class is added in HTML */
+    /* Specific overrides for talentTooltip if needed, or just use .tooltip-base styles */
+}
+.talent-tooltip-name { /* Inherits from .tooltip-name-base */
+    color: #FBBF24; /* Talent-specific color */
+}
+/* Other .talent-tooltip-* classes can inherit or override .tooltip-*-base */
+.talent-tooltip-effect { color: #a7f3d0; }
+.talent-tooltip-effect-next { color: #60A5FA; }
+
+
+/* Essence Tooltip Styles */
+#essenceTooltip {
+    border-color: #6D28D9; /* Essence-specific border */
+}
+.essence-tooltip-name {
+    color: #A855F7; /* Essence-specific color */
+}
+.essence-tooltip-effect { color: #a7f3d0; }
+.essence-tooltip-effect-next { color: #60A5FA; }
+
+/* Research Tooltip Styles */
+#researchTooltip {
+    border-color: #D946EF; /* Research-specific border (example: magenta) */
+}
+.research-tooltip-name {
+    color: #D946EF; /* Research-specific color */
+}
+.research-tooltip-effect { color: #a7f3d0; }
+.research-tooltip-effect-next { color: #60A5FA; }
+
+
+@media (max-width: 900px) {
      .main-content-area {
-        flex-direction: column; 
-        max-width: 500px; 
+        flex-direction: column;
+        max-width: 500px;
     }
     .left-column, .middle-column, .right-column {
-        max-width: 100%; 
+        max-width: 100%;
     }
 }
- @media (max-width: 400px) { 
-    .equipment-upgrade-options, .companion-upgrade-options { /* Zahrnuto i pro společníky */
-        grid-template-columns: repeat(2, minmax(0, 1fr)); 
+ @media (max-width: 400px) {
+    .equipment-upgrade-options, .companion-upgrade-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

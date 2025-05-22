@@ -25,51 +25,52 @@ let goldDisplayContainer, enemyElement, enemyArtElement, enemyNameDisplay, enemy
     modalEchoShardsResearch, openEssenceForgeButton, closeEssenceForgeButton, essenceForgeModal,
     essenceContainer, modalEchoShardsEssence,
     resetConfirmModal, confirmHardResetButton, cancelHardResetButton,
-    companionEssenceDisplay, 
-    companionSkillModal, companionSkillModalTitle, modalCompanionEssenceDisplay, 
+    companionEssenceDisplay,
+    companionSkillModal, companionSkillModalTitle, modalCompanionEssenceDisplay,
     companionSkillsContainer, closeCompanionSkillModalButton,
     openExpeditionsButton, expeditionsModal, expeditionsListContainer, closeExpeditionsModalButton,
     expeditionSlotsDisplay, expeditionCompanionSelectModal, expeditionCompanionSelectList,
     confirmExpeditionStartButton, cancelExpeditionStartButton,
-    totalPlayTimeDisplay, currentRunPlayTimeDisplay, fastestBossKillDisplay;
+    totalPlayTimeDisplay, currentRunPlayTimeDisplay, fastestBossKillDisplay,
+    talentTooltipElement, essenceTooltipElement, researchTooltipElement; // Přidáno researchTooltipElement
 
 
 function initializeUIElements() {
     goldDisplayContainer = document.getElementById('goldDisplayContainer');
-    enemyElement = document.getElementById('enemy'); 
-    enemyArtElement = document.getElementById('enemyArt'); 
-    enemyNameDisplay = document.getElementById('enemyName'); 
+    enemyElement = document.getElementById('enemy');
+    enemyArtElement = document.getElementById('enemyArt');
+    enemyNameDisplay = document.getElementById('enemyName');
     enemyHealthTextDisplay = document.getElementById('enemyHealthText');
     enemyHealthBar = document.getElementById('enemyHealthBar');
-    bossTimerDisplay = document.getElementById('bossTimerDisplay'); 
-    goldDisplay = document.getElementById('goldDisplay'); 
-    clickDamageDisplay = document.getElementById('clickDamageDisplay'); 
+    bossTimerDisplay = document.getElementById('bossTimerDisplay');
+    goldDisplay = document.getElementById('goldDisplay');
+    clickDamageDisplay = document.getElementById('clickDamageDisplay');
     enemyEffectiveLevelDisplay = document.getElementById('enemyEffectiveLevelDisplay');
-    passiveDamageDisplay = document.getElementById('passiveDamageDisplay'); 
+    passiveDamageDisplay = document.getElementById('passiveDamageDisplay');
     currentWorldDisplay = document.getElementById('currentWorldDisplay');
     currentZoneDisplay = document.getElementById('currentZoneDisplay');
     zoneProgressDisplay = document.getElementById('zoneProgressDisplay');
-    echoShardsDisplay = document.getElementById('echoShardsDisplay'); 
+    echoShardsDisplay = document.getElementById('echoShardsDisplay');
     echoCountDisplay = document.getElementById('echoCountDisplay');
-    playerLevelDisplay = document.getElementById('playerLevelDisplay'); 
+    playerLevelDisplay = document.getElementById('playerLevelDisplay');
     talentPointsDisplay = document.getElementById('talentPointsDisplay');
-    playerXPBar = document.getElementById('playerXPBar'); 
+    playerXPBar = document.getElementById('playerXPBar');
     playerXPText = document.getElementById('playerXPText');
-    damageNumberContainer = document.getElementById('enemyContainer'); 
-    activeEffectsContainer = document.getElementById('activeEffectsContainer'); 
-    cleanseDebuffButton = document.getElementById('cleanseDebuffButton'); 
+    damageNumberContainer = document.getElementById('enemyContainer');
+    activeEffectsContainer = document.getElementById('activeEffectsContainer');
+    cleanseDebuffButton = document.getElementById('cleanseDebuffButton');
     cleanseCostDisplay = document.getElementById('cleanseCostDisplay');
-    echoButton = document.getElementById('echoButton'); 
-    echoShardsToGain = document.getElementById('echoShardsToGain'); 
-    echoConditionDisplay = document.getElementById('echoConditionDisplay'); 
+    echoButton = document.getElementById('echoButton');
+    echoShardsToGain = document.getElementById('echoShardsToGain');
+    echoConditionDisplay = document.getElementById('echoConditionDisplay');
     messageBox = document.getElementById('messageBox');
-    upgradeEchoGoldButton = document.getElementById('upgradeEchoGold'); 
+    upgradeEchoGoldButton = document.getElementById('upgradeEchoGold');
     echoGoldBonusValueDisplay = document.getElementById('echoGoldBonusValue');
-    echoGoldLevelDisplay = document.getElementById('echoGoldLevel'); 
+    echoGoldLevelDisplay = document.getElementById('echoGoldLevel');
     echoGoldCostDisplay = document.getElementById('echoGoldCostDisplay');
-    upgradeEchoDamageButton = document.getElementById('upgradeEchoDamage'); 
+    upgradeEchoDamageButton = document.getElementById('upgradeEchoDamage');
     echoDamageBonusValueDisplay = document.getElementById('echoDamageBonusValue');
-    echoDamageLevelDisplay = document.getElementById('echoDamageLevel'); 
+    echoDamageLevelDisplay = document.getElementById('echoDamageLevel');
     echoDamageCostDisplay = document.getElementById('echoDamageCostDisplay');
     openTalentTreeButton = document.getElementById('openTalentTreeButton');
     talentTreeModal = document.getElementById('talentTreeModal');
@@ -80,7 +81,7 @@ function initializeUIElements() {
     equipmentContainer = document.getElementById('equipmentContainer');
     currentTierDisplay = document.getElementById('currentTierDisplay');
     advanceTierButton = document.getElementById('advanceTierButton');
-    nextTierCostDisplay = document.getElementById('nextTierCostDisplay'); 
+    nextTierCostDisplay = document.getElementById('nextTierCostDisplay');
     mocnyUderButton = document.getElementById('mocnyUderButton');
     mocnyUderText = document.getElementById('mocnyUderText');
     mocnyUderCooldownDisplay = document.getElementById('mocnyUderCooldownDisplay');
@@ -130,12 +131,12 @@ function initializeUIElements() {
 
     resetConfirmModal = document.getElementById('resetConfirmModal');
     confirmHardResetButton = document.getElementById('confirmHardResetButton');
-    cancelHardResetButton = document.getElementById('cancelHardResetButton'); 
+    cancelHardResetButton = document.getElementById('cancelHardResetButton');
 
-    companionEssenceDisplay = document.getElementById('companionEssenceDisplay'); 
+    companionEssenceDisplay = document.getElementById('companionEssenceDisplay');
     companionSkillModal = document.getElementById('companionSkillModal');
     companionSkillModalTitle = document.getElementById('companionSkillModalTitle');
-    modalCompanionEssenceDisplay = document.getElementById('modalCompanionEssenceDisplay'); 
+    modalCompanionEssenceDisplay = document.getElementById('modalCompanionEssenceDisplay');
     companionSkillsContainer = document.getElementById('companionSkillsContainer');
     closeCompanionSkillModalButton = document.getElementById('closeCompanionSkillModalButton');
 
@@ -152,35 +153,39 @@ function initializeUIElements() {
     totalPlayTimeDisplay = document.getElementById('totalPlayTimeDisplay');
     currentRunPlayTimeDisplay = document.getElementById('currentRunPlayTimeDisplay');
     fastestBossKillDisplay = document.getElementById('fastestBossKillDisplay');
+
+    talentTooltipElement = document.getElementById('talentTooltip');
+    essenceTooltipElement = document.getElementById('essenceTooltip');
+    researchTooltipElement = document.getElementById('researchTooltip'); // Inicializace research tooltipu
 }
 
-
+// ... (zbytek funkcí v uiController.js zůstává stejný)
 function showMessageBox(message, isError = false, duration = 3500) {
     if (!messageBox) return;
     messageBox.textContent = message;
     messageBox.classList.remove('hidden');
     messageBox.className = `p-3 text-center text-sm rounded-md messageBox ${isError ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`;
     messageBox.style.maxWidth = '1000px'; messageBox.style.width = '100%';
-    setTimeout(() => messageBox.classList.add('hidden') , duration); 
+    setTimeout(() => messageBox.classList.add('hidden') , duration);
 }
 
-function showDamageNumber(damage, x, y, isCrit) { 
-    if (!gameState.gameSettings.showDamageNumbers || !damageNumberContainer) return; 
+function showDamageNumber(damage, x, y, isCrit) {
+    if (!gameState.gameSettings.showDamageNumbers || !damageNumberContainer) return;
     const damageText = document.createElement('div');
-    damageText.textContent = formatNumber(Math.ceil(damage)); 
+    damageText.textContent = formatNumber(Math.ceil(damage));
     damageText.classList.add('damage-number');
     if (isCrit) damageText.classList.add('crit');
     const containerRect = damageNumberContainer.getBoundingClientRect();
-    const approxTextWidth = (damageText.textContent.length * 10) + (isCrit ? 10:0); 
-    const approxTextHeight = 20 + (isCrit ? 5:0); 
-    damageText.style.left = `${x - containerRect.left - (approxTextWidth / 2)}px`; 
-    damageText.style.top = `${y - containerRect.top - (approxTextHeight / 2) - 15}px`; 
-    damageNumberContainer.appendChild(damageText); 
-    damageText.addEventListener('animationend', () => damageText.remove()); 
+    const approxTextWidth = (damageText.textContent.length * 10) + (isCrit ? 10:0);
+    const approxTextHeight = 20 + (isCrit ? 5:0);
+    damageText.style.left = `${x - containerRect.left - (approxTextWidth / 2)}px`;
+    damageText.style.top = `${y - containerRect.top - (approxTextHeight / 2) - 15}px`;
+    damageNumberContainer.appendChild(damageText);
+    damageText.addEventListener('animationend', () => damageText.remove());
 }
 
 function showGoldGainAnimation(amount) {
-    if (!gameState.gameSettings.showGoldAnimations || !goldDisplayContainer) return; 
+    if (!gameState.gameSettings.showGoldAnimations || !goldDisplayContainer) return;
     const goldText = document.createElement('div');
     goldText.textContent = `+${formatNumber(amount)} Z`;
     goldText.classList.add('gold-gain-animation');
@@ -193,75 +198,72 @@ function updateEquipmentButtonStates() {
         return;
     }
 
-    let validCurrentTierIndex = 0; // Výchozí hodnota, pokud nic jiného není dostupné
+    let validCurrentTierIndex = 0;
     if (typeof gameState.currentTierIndex === 'number' && gameState.currentTierIndex >= 0) {
         if (typeof tiers !== 'undefined' && Array.isArray(tiers) && gameState.currentTierIndex < tiers.length) {
             validCurrentTierIndex = gameState.currentTierIndex;
         } else if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
-            // Pokud je index mimo rozsah, ale tiers existuje, použijeme 0
-            console.warn(`updateEquipmentButtonStates: gameState.currentTierIndex (${gameState.currentTierIndex}) je mimo rozsah pro tiers. Používám 0.`);
             validCurrentTierIndex = 0;
-        } else {
-            // Pokud tiers není definováno, použijeme 0 a spolehneme se na fallback v calculateItemUpgradeCost
-            console.warn(`updateEquipmentButtonStates: tiers není definováno nebo je prázdné. Používám tier index 0 pro výpočet ceny.`);
         }
-    } else {
-        console.warn(`updateEquipmentButtonStates: gameState.currentTierIndex je '${gameState.currentTierIndex}'. Používám tier index 0.`);
     }
 
 
-    equipmentSlots.forEach(slot => { 
-        const item = gameState.equipment[slot]; 
+    equipmentSlots.forEach(slot => {
+        const item = gameState.equipment[slot];
         const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
-        
-        if (!item || typeof item.level === 'undefined') { 
+
+        if (!item || typeof item.level === 'undefined') {
             upgradeButtons.forEach(btn => {
                 btn.disabled = true;
                 const costSpan = btn.querySelector('.cost-text');
                 if (costSpan && btn.dataset.amount === "1") costSpan.textContent = '(N/A)';
             });
-            return; 
+            return;
         }
-        
+
         upgradeButtons.forEach(button => {
             const amount = button.dataset.amount;
-            let cost = 0; 
-            let canAfford = false; 
-            let isMaxLevel = item.level >= MAX_ITEM_LEVEL; 
-            
-            const costSpan = button.querySelector('.cost-text'); 
+            let cost = 0;
+            let canAfford = false;
+            let isMaxLevel = item.level >= MAX_ITEM_LEVEL;
+
+            const costSpan = button.querySelector('.cost-text');
 
             if (isMaxLevel) {
                 button.disabled = true;
-                if (amount === "1" && costSpan) { 
+                if (amount === "1" && costSpan) {
                     costSpan.textContent = '(MAX)';
                 }
-                button.classList.remove('affordable'); 
-                return; 
+                button.classList.remove('affordable');
+                return;
             }
 
-            button.disabled = false; 
-            cost = calculateItemUpgradeCost(slot, item.level, validCurrentTierIndex); 
-            canAfford = gameState.gold >= cost; 
-            
+            button.disabled = false;
+            cost = calculateItemUpgradeCost(slot, item.level, validCurrentTierIndex);
+            canAfford = gameState.gold >= cost;
+
             if (amount === "1" && costSpan) {
-                costSpan.textContent = `(${formatNumber(cost)} Z)`; 
+                costSpan.textContent = `(${formatNumber(cost)} Z)`;
                 button.classList.toggle('affordable', canAfford);
             } else {
-                button.classList.remove('affordable'); 
+                button.classList.remove('affordable');
             }
-            button.disabled = !canAfford || isMaxLevel;
+             if (amount !== "1") {
+                button.disabled = !canAfford || isMaxLevel;
+            } else {
+                 button.disabled = !canAfford || isMaxLevel;
+            }
         });
     });
 }
 
 
 function updateUI() {
-    if (!goldDisplay || !passiveDamageDisplay || !companionEssenceDisplay) { 
-        return; 
+    if (!goldDisplay || !passiveDamageDisplay || !companionEssenceDisplay) {
+        return;
     }
-    
-    let passiveDamageFromTiersArtifactsTalentsUI = gameState.passivePercentFromTiers; 
+
+    let passiveDamageFromTiersArtifactsTalentsUI = gameState.passivePercentFromTiers;
     let passiveDamageFromCompanionsUI = gameState.totalCompanionPassivePercent;
 
     if (typeof getResearchBonus === 'function') {
@@ -270,14 +272,14 @@ function updateUI() {
 
     let totalBasePassivePercentUI = passiveDamageFromTiersArtifactsTalentsUI + passiveDamageFromCompanionsUI;
 
-    if (typeof talents !== 'undefined' && talents.passivePercentMultiplierTalent && talents.passivePercentMultiplierTalent.currentLevel > 0) { 
+    if (typeof talents !== 'undefined' && talents.passivePercentMultiplierTalent && talents.passivePercentMultiplierTalent.currentLevel > 0) {
         totalBasePassivePercentUI *= (1 + talents.passivePercentMultiplierTalent.effectValue * talents.passivePercentMultiplierTalent.currentLevel);
     }
     if (typeof getEssenceBonus === 'function') {
-        totalBasePassivePercentUI *= (1 + getEssenceBonus('essence_passive_dps_multiplier_percent')); 
+        totalBasePassivePercentUI *= (1 + getEssenceBonus('essence_passive_dps_multiplier_percent'));
     }
     passiveDamageDisplay.textContent = formatNumber(totalBasePassivePercentUI * 100, 2) + "% HP/s";
-    
+
     let goldMultiplier = gameState.echoPermanentGoldBonus;
     if (typeof talents !== 'undefined' && talents.goldVeins && talents.goldVeins.currentLevel > 0) {
         goldMultiplier *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
@@ -287,32 +289,32 @@ function updateUI() {
         goldMultiplier *= (1 + artifactGoldBonus);
     }
     if (typeof getResearchBonus === 'function') {
-        goldMultiplier *= (1 + getResearchBonus('research_gold_multiplier_all_percent')); 
+        goldMultiplier *= (1 + getResearchBonus('research_gold_multiplier_all_percent'));
     }
     if (typeof getEssenceBonus === 'function') {
-        goldMultiplier *= (1 + getEssenceBonus('essence_gold_multiplier_all_percent')); 
+        goldMultiplier *= (1 + getEssenceBonus('essence_gold_multiplier_all_percent'));
     }
 
-    goldDisplay.textContent = formatNumber(Math.floor(gameState.gold)); 
-    clickDamageDisplay.textContent = formatNumber(gameState.effectiveClickDamage); 
+    goldDisplay.textContent = formatNumber(Math.floor(gameState.gold));
+    clickDamageDisplay.textContent = formatNumber(gameState.effectiveClickDamage);
     enemyEffectiveLevelDisplay.textContent = gameState.enemy.effectiveLevel;
     currentWorldDisplay.textContent = gameState.currentWorld;
     currentZoneDisplay.textContent = gameState.currentZoneInWorld;
     zoneProgressDisplay.textContent = `Postup v zóně: ${gameState.enemiesDefeatedInZone}/${ENEMIES_PER_ZONE}`;
-    echoShardsDisplay.textContent = formatNumber(gameState.echoShards); 
-    companionEssenceDisplay.textContent = formatNumber(gameState.companionEssence); 
+    echoShardsDisplay.textContent = formatNumber(gameState.echoShards);
+    companionEssenceDisplay.textContent = formatNumber(gameState.companionEssence);
     echoCountDisplay.textContent = formatNumber(gameState.echoCount);
-    playerLevelDisplay.textContent = gameState.playerLevel; 
+    playerLevelDisplay.textContent = gameState.playerLevel;
     talentPointsDisplay.textContent = formatNumber(gameState.talentPoints);
     playerXPBar.style.width = `${(gameState.playerXP / gameState.xpToNextLevel) * 100}%`;
     playerXPText.textContent = `XP: ${formatNumber(Math.floor(gameState.playerXP))} / ${formatNumber(gameState.xpToNextLevel)}`;
-    
+
     if (enemyNameDisplay) enemyNameDisplay.textContent = gameState.enemy.name;
     if (enemyHealthTextDisplay) enemyHealthTextDisplay.textContent = `${formatNumber(Math.max(0, Math.ceil(gameState.enemy.currentHealth)))} / ${formatNumber(Math.ceil(gameState.enemy.maxHealth))}`;
     if (enemyHealthBar) enemyHealthBar.style.width = `${(Math.max(0, gameState.enemy.currentHealth) / gameState.enemy.maxHealth) * 100}%`;
     if (enemyElement) {
-        enemyElement.classList.toggle('champion', gameState.enemy.isChampion); 
-        enemyElement.classList.toggle('boss', gameState.enemy.isBoss); 
+        enemyElement.classList.toggle('champion', gameState.enemy.isChampion);
+        enemyElement.classList.toggle('boss', gameState.enemy.isBoss);
     }
     if (bossTimerDisplay) {
         bossTimerDisplay.classList.toggle('hidden', !gameState.bossFightTimerActive);
@@ -320,7 +322,7 @@ function updateUI() {
     }
 
     if (activeEffectsContainer) {
-        activeEffectsContainer.innerHTML = '<h3 class="font-semibold text-gray-100">Aktivní efekty</h3>'; 
+        activeEffectsContainer.innerHTML = '<h3 class="font-semibold text-gray-100">Aktivní efekty</h3>';
         let hasActiveEffects = false;
         Object.keys(gameState.activeBuffs).forEach(buffKey => {
             hasActiveEffects = true; const buff = gameState.activeBuffs[buffKey]; const el = document.createElement('div');
@@ -343,24 +345,24 @@ function updateUI() {
         }
         activeEffectsContainer.classList.toggle('hidden', !hasActiveEffects);
     }
-    
+
     if (cleanseDebuffButton && cleanseCostDisplay) {
         cleanseDebuffButton.classList.toggle('hidden', !gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]);
-        if(gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]) { 
-            cleanseCostDisplay.textContent = formatNumber(PARASITE_CLEANSE_COST); 
-            cleanseDebuffButton.disabled = gameState.gold < PARASITE_CLEANSE_COST; 
+        if(gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]) {
+            cleanseCostDisplay.textContent = formatNumber(PARASITE_CLEANSE_COST);
+            cleanseDebuffButton.disabled = gameState.gold < PARASITE_CLEANSE_COST;
         }
     }
 
     if (echoButton && echoShardsToGain && echoConditionDisplay) {
         const canEchoNow = gameState.currentTierIndex === tiers.length - 1 && equipmentSlots.every(slot => gameState.equipment[slot] && gameState.equipment[slot].level >= MAX_ITEM_LEVEL);
         echoButton.classList.toggle('hidden', !(canEchoNow && !gameState.bossFightTimerActive));
-        if(canEchoNow && !gameState.bossFightTimerActive && typeof calculateEchoShardsToGain === 'function') { 
-            echoShardsToGain.textContent = formatNumber(calculateEchoShardsToGain()); 
-            echoConditionDisplay.textContent = "Připraveno!"; 
+        if(canEchoNow && !gameState.bossFightTimerActive && typeof calculateEchoShardsToGain === 'function') {
+            echoShardsToGain.textContent = formatNumber(calculateEchoShardsToGain());
+            echoConditionDisplay.textContent = "Připraveno!";
         }
     }
-    
+
     if (upgradeEchoGoldButton && echoGoldBonusValueDisplay && echoGoldLevelDisplay && echoGoldCostDisplay) {
         echoGoldBonusValueDisplay.textContent = (echoGoldUpgradeValue * 100).toFixed(0);
         echoGoldLevelDisplay.textContent = `(Úr. ${gameState.echoGoldLevelCount})`;
@@ -374,9 +376,9 @@ function updateUI() {
         upgradeEchoDamageButton.disabled = gameState.echoShards < gameState.echoDamageUpgradeCost;
     }
 
-    if (typeof updateEquipmentButtonStates === 'function') updateEquipmentButtonStates(); 
-    if (typeof updateCompanionButtonStates === 'function') updateCompanionButtonStates(); 
-    if (typeof renderGameStatsUI === 'function') renderGameStatsUI(); 
+    if (typeof updateEquipmentButtonStates === 'function') updateEquipmentButtonStates();
+    if (typeof updateCompanionButtonStates === 'function') updateCompanionButtonStates();
+    if (typeof renderGameStatsUI === 'function') renderGameStatsUI();
 
     if (mocnyUderButton && mocnyUderCooldownDisplay) {
         mocnyUderButton.disabled = gameState.mocnyUderActive || gameState.mocnyUderCooldownTimeLeft > 0;
@@ -390,18 +392,18 @@ function updateUI() {
 
 function renderGameStatsUI() {
     if (!gameStatsContainer) return;
-    gameStatsContainer.innerHTML = ''; 
+    gameStatsContainer.innerHTML = '';
     const statsToShow = [
         { label: "Celkem kliknutí", value: formatNumber(gameState.lifetimeStats.totalClicks) },
         { label: "Kritických zásahů", value: formatNumber(gameState.lifetimeStats.totalCrits) },
         { label: "Nejvyšší poškození", value: formatNumber(gameState.lifetimeStats.highestDamageDealt) },
-        { label: "Celkem zabitých nepřátel", value: formatNumber(gameState.lifetimeStats.totalEnemiesKilled) }, 
+        { label: "Celkem zabitých nepřátel", value: formatNumber(gameState.lifetimeStats.totalEnemiesKilled) },
         { label: "Zabitých Bossů", value: formatNumber(gameState.lifetimeStats.totalBossesKilled) },
         { label: "Zabitých Šampionů", value: formatNumber(gameState.lifetimeStats.totalChampionsKilled) },
         { label: "Celkem zlata", value: formatNumber(Math.floor(gameState.lifetimeStats.lifetimeGoldEarned)) },
         { label: "Celkem Echo Úlomků", value: formatNumber(gameState.lifetimeStats.lifetimeEchoShardsEarned) },
         { label: "Nasbíraných Esencí Spol.", value: formatNumber(gameState.lifetimeStats.companionEssenceCollectedTotal || 0)},
-        { label: "Dokončených Výprav", value: formatNumber(gameState.lifetimeStats.expeditionsCompletedTotal || 0)}, 
+        { label: "Dokončených Výprav", value: formatNumber(gameState.lifetimeStats.expeditionsCompletedTotal || 0)},
         { label: "Dosažených úrovní", value: formatNumber(gameState.lifetimeStats.lifetimePlayerLevelsGained) },
         { label: "Postoupených Tierů", value: formatNumber(gameState.lifetimeStats.lifetimeTiersAdvanced) },
         { label: "Celkový čas hraní", value: formatTime(gameState.lifetimeStats.totalPlayTimeSeconds || 0), id: "totalPlayTimeDisplay" },
@@ -432,28 +434,28 @@ function closeModal(modalElement) {
 }
 
 function openTalentTreeModalUI() {
-    if (typeof renderTalentTree === 'function') renderTalentTree(); 
-    if (typeof updateTalentResetButtonState === 'function') updateTalentResetButtonState(); 
+    if (typeof renderTalentTree === 'function') renderTalentTree();
+    if (typeof updateTalentResetButtonState === 'function') updateTalentResetButtonState();
     openModal(talentTreeModal);
 }
 
 function openResearchLabModalUI() {
-    if (typeof renderResearchUI === 'function') renderResearchUI(); 
+    if (typeof renderResearchUI === 'function') renderResearchUI();
     openModal(researchModal);
 }
 
 function openEssenceForgeModalUI() {
-    if (typeof renderEssenceForgeUI === 'function') renderEssenceForgeUI(); 
+    if (typeof renderEssenceForgeUI === 'function') renderEssenceForgeUI();
     openModal(essenceForgeModal);
 }
 
 function openDailyQuestsModalUI() {
-    if (typeof renderDailyQuestsUI === 'function') renderDailyQuestsUI(); 
+    if (typeof renderDailyQuestsUI === 'function') renderDailyQuestsUI();
     openModal(dailyQuestsModal);
 }
 
 function openMilestonesModalUI() {
-    if (typeof renderMilestonesUI === 'function') renderMilestonesUI(); 
+    if (typeof renderMilestonesUI === 'function') renderMilestonesUI();
     openModal(milestonesModal);
 }
 
@@ -462,8 +464,8 @@ function openHelpModalUI() {
 }
 
 function openAdvancedSettingsModalUI() {
-    if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameState.gameSettings.showDamageNumbers; 
-    if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameState.gameSettings.showGoldAnimations; 
+    if (toggleDamageNumbersEl) toggleDamageNumbersEl.checked = gameState.gameSettings.showDamageNumbers;
+    if (toggleGoldAnimationsEl) toggleGoldAnimationsEl.checked = gameState.gameSettings.showGoldAnimations;
     openModal(advancedSettingsModal);
 }
 
@@ -483,13 +485,13 @@ function closeResetConfirmModalUI() {
     }
 }
 
-function closeExpeditionsModalUI() { 
+function closeExpeditionsModalUI() {
     if (expeditionsModal) {
         closeModal(expeditionsModal);
     }
 }
 
-function closeExpeditionCompanionSelectModalUI() { 
+function closeExpeditionCompanionSelectModalUI() {
     if (expeditionCompanionSelectModal) {
         closeModal(expeditionCompanionSelectModal);
     }

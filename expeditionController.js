@@ -1,10 +1,10 @@
 // SOUBOR: expeditionController.js
 
 // --- DOM Elementy pro Modální Okno Expedic (budou definovány a inicializovány v uiController.js) ---
-// let expeditionsModal, expeditionsListContainer, closeExpeditionsModalButton, 
-//     expeditionCompanionSelectModal, expeditionCompanionSelectList, 
+// let expeditionsModal, expeditionsListContainer, closeExpeditionsModalButton,
+//     expeditionCompanionSelectModal, expeditionCompanionSelectList,
 //     confirmExpeditionStartButton, cancelExpeditionStartButton,
-//     expeditionSlotsDisplay; 
+//     expeditionSlotsDisplay;
 
 let currentExpeditionToStart = null;
 let selectedCompanionsForExpedition = [];
@@ -16,7 +16,7 @@ function openExpeditionsModalUI() {
     if (expeditionsModal && expeditionsListContainer && closeExpeditionsModalButton && expeditionSlotsDisplay) {
         renderAvailableExpeditions();
         expeditionSlotsDisplay.textContent = `${gameState.activeExpeditions.length} / ${gameState.expeditionSlots}`;
-        openModal(expeditionsModal); 
+        openModal(expeditionsModal);
     } else {
         console.error("DOM elementy pro modální okno expedic nebyly nalezeny/inicializovány.");
     }
@@ -33,12 +33,12 @@ function renderAvailableExpeditions() {
     // Zobrazení probíhajících expedic
     if (gameState.activeExpeditions.length > 0) {
         const runningTitle = document.createElement('h4');
-        runningTitle.classList.add('expedition-category-title'); 
+        runningTitle.classList.add('expedition-category-title');
         runningTitle.textContent = "Probíhající Výpravy";
         expeditionsListContainer.appendChild(runningTitle);
 
         gameState.activeExpeditions.forEach(activeExp => {
-            const expDef = allExpeditions[activeExp.expeditionId]; 
+            const expDef = allExpeditions[activeExp.expeditionId];
             const expDiv = document.createElement('div');
             expDiv.classList.add('expedition-item', 'running');
 
@@ -75,7 +75,7 @@ function renderAvailableExpeditions() {
             const expDiv = document.createElement('div');
             expDiv.classList.add('expedition-item');
             if (!isUnlocked) {
-                expDiv.classList.add('locked'); // Přidáme třídu pro případné odlišné stylování zamčených
+                expDiv.classList.add('locked');
             }
 
             let costString = "";
@@ -110,7 +110,7 @@ function renderAvailableExpeditions() {
             expeditionsListContainer.appendChild(expDiv);
         }
     }
-    if(expeditionsToShowCount === 0){ // Pokud by nebyly žádné expedice definované v configu
+    if(expeditionsToShowCount === 0){
         expeditionsListContainer.innerHTML += '<p class="text-xs text-gray-400 text-center">Žádné výpravy nejsou aktuálně definovány.</p>';
     }
 }
@@ -145,7 +145,6 @@ function openCompanionSelectModalForExpedition(expeditionId) {
         return;
     }
 
-    // Zkontrolujeme, zda je expedice odemčená PŘED otevřením výběru společníků
     if (typeof expDef.unlockCondition === 'function' && !expDef.unlockCondition()) {
         if (typeof showMessageBox === 'function') showMessageBox("Tato výprava ještě není odemčená!", true);
         return;
@@ -166,11 +165,18 @@ function openCompanionSelectModalForExpedition(expeditionId) {
     }
 
     currentExpeditionToStart = expeditionId;
-    selectedCompanionsForExpedition = []; 
+    selectedCompanionsForExpedition = [];
 
     if (expeditionCompanionSelectModal && expeditionCompanionSelectList && confirmExpeditionStartButton && cancelExpeditionStartButton) {
-        expeditionCompanionSelectList.innerHTML = ''; 
+        expeditionCompanionSelectList.innerHTML = '';
         let availableCompanionsCount = 0;
+
+        const warningElement = expeditionCompanionSelectModal.querySelector('.expedition-warning-message');
+        if (warningElement) {
+            warningElement.textContent = "Upozornění: Společníci vyslaní na výpravu nebudou po dobu jejího trvání přispívat k pasivnímu poškození ani nebudou dostupní pro jiné akce (např. vylepšení).";
+            warningElement.classList.remove('hidden');
+        }
+
 
         for (const compId in gameState.ownedCompanions) {
             if (gameState.ownedCompanions.hasOwnProperty(compId) && gameState.ownedCompanions[compId].level > 0) {
@@ -191,10 +197,11 @@ function openCompanionSelectModalForExpedition(expeditionId) {
 
         if (availableCompanionsCount < expDef.requiredCompanions) {
             if (typeof showMessageBox === 'function') showMessageBox(`Potřebuješ alespoň ${expDef.requiredCompanions} volných společníků pro tuto výpravu! (Máš ${availableCompanionsCount})`, true);
-            currentExpeditionToStart = null; 
+            currentExpeditionToStart = null;
+            if (warningElement) warningElement.classList.add('hidden'); // Skryj varování, pokud se modál neotevře
             return;
         }
-        
+
         const titleElement = expeditionCompanionSelectModal.querySelector('.modal-title');
         if(titleElement) titleElement.textContent = `Vyber ${expDef.requiredCompanions} společníky pro: ${expDef.name}`;
 
@@ -209,11 +216,11 @@ function openCompanionSelectModalForExpedition(expeditionId) {
  * Aktualizuje stav potvrzovacího tlačítka pro zahájení expedice.
  */
 function updateConfirmExpeditionButtonState() {
-    if (!currentExpeditionToStart || !confirmExpeditionStartButton || !expeditionCompanionSelectList) return; // Přidána kontrola pro expeditionCompanionSelectList
+    if (!currentExpeditionToStart || !confirmExpeditionStartButton || !expeditionCompanionSelectList) return;
     const expDef = allExpeditions[currentExpeditionToStart];
     const checkboxes = expeditionCompanionSelectList.querySelectorAll('.companion-checkbox:checked');
     selectedCompanionsForExpedition = Array.from(checkboxes).map(cb => cb.value);
-    
+
     confirmExpeditionStartButton.disabled = selectedCompanionsForExpedition.length !== expDef.requiredCompanions;
 }
 
@@ -235,7 +242,7 @@ function startExpedition() {
 
     const now = Date.now();
     const newActiveExpedition = {
-        id: `exp_run_${now}_${Math.random().toString(36).substring(2, 7)}`, 
+        id: `exp_run_${now}_${Math.random().toString(36).substring(2, 7)}`,
         expeditionId: currentExpeditionToStart,
         startTime: now,
         durationSeconds: expDef.durationSeconds,
@@ -245,18 +252,22 @@ function startExpedition() {
     gameState.activeExpeditions.push(newActiveExpedition);
 
     if (typeof showMessageBox === 'function') showMessageBox(`Výprava "${expDef.name}" byla zahájena!`, false);
-    if (typeof soundManager !== 'undefined') soundManager.playSound('skillActivate', 'C4', '4n'); 
+    if (typeof soundManager !== 'undefined') soundManager.playSound('skillActivate', 'C4', '4n');
 
     currentExpeditionToStart = null;
     selectedCompanionsForExpedition = [];
-    closeModal(expeditionCompanionSelectModal); 
-    renderAvailableExpeditions(); 
+    closeModal(expeditionCompanionSelectModal);
+
+    // Aktualizace stavu po zahájení výpravy
+    if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState();
+    if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats();
+    if (typeof renderCompanionsUI === 'function') renderCompanionsUI(); // Překreslí společníky (označí ty na výpravě)
+    renderAvailableExpeditions(); // Překreslí seznam výprav
     if (typeof updateUI === 'function') updateUI();
 }
 
 /**
  * Zkontroluje probíhající expedice a zpracuje ty dokončené.
- * Volá se v hlavní herní smyčce (gameTick).
  */
 function checkCompletedExpeditions() {
     if (!gameState || !gameState.activeExpeditions || gameState.activeExpeditions.length === 0) {
@@ -265,21 +276,29 @@ function checkCompletedExpeditions() {
 
     const now = Date.now();
     const completedExpeditions = [];
+    let expeditionsChanged = false;
 
     gameState.activeExpeditions = gameState.activeExpeditions.filter(activeExp => {
         if (now >= activeExp.completionTime) {
             completedExpeditions.push(activeExp);
-            return false; 
+            expeditionsChanged = true;
+            return false;
         }
-        return true; 
+        return true;
     });
 
     if (completedExpeditions.length > 0) {
         completedExpeditions.forEach(completedExp => {
             processCompletedExpedition(completedExp);
         });
-        renderAvailableExpeditions(); 
-        if (typeof updateUI === 'function') updateUI(); 
+    }
+
+    if (expeditionsChanged) { // Aktualizuj jen pokud se něco změnilo
+        if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState();
+        if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats();
+        if (typeof renderCompanionsUI === 'function') renderCompanionsUI();
+        renderAvailableExpeditions(); // Vždy překresli seznam výprav, pokud se nějaká dokončila
+        if (typeof updateUI === 'function') updateUI();
     }
 }
 
@@ -302,7 +321,7 @@ function processCompletedExpedition(completedExp) {
             if (rewardDef.type === 'gold') {
                 amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
                 gameState.gold += amount;
-                gameState.lifetimeStats.lifetimeGoldEarned += amount; 
+                gameState.lifetimeStats.lifetimeGoldEarned += amount;
                 rewardSummary.push(`- ${formatNumber(amount)} Zlata`);
             } else if (rewardDef.type === 'echo_shards') {
                 amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
@@ -311,9 +330,9 @@ function processCompletedExpedition(completedExp) {
                 rewardSummary.push(`- ${formatNumber(amount)} Echo Úlomků`);
             } else if (rewardDef.type === 'companion_essence') {
                 amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
-                gainCompanionEssence(amount); 
+                gainCompanionEssence(amount);
                 // Zpráva je již v gainCompanionEssence, ale můžeme ji zde zopakovat nebo upravit
-                // rewardSummary.push(`- ${formatNumber(amount)} Esencí Společníků`); 
+                // rewardSummary.push(`- ${formatNumber(amount)} Esencí Společníků`);
             } else if (rewardDef.type === 'artifact_chance') {
                 const availableArtifactsToDrop = Object.values(allArtifacts).filter(art => art.source === rewardDef.artifactPool);
                 if (availableArtifactsToDrop.length > 0) {
@@ -340,7 +359,7 @@ function processCompletedExpedition(completedExp) {
     });
 
     gameState.lifetimeStats.expeditionsCompletedTotal = (gameState.lifetimeStats.expeditionsCompletedTotal || 0) + 1;
-    if (typeof checkMilestones === 'function') checkMilestones(); 
+    if (typeof checkMilestones === 'function') checkMilestones();
 
     if (typeof showMessageBox === 'function') {
         if (rewardSummary.length > 1) {
@@ -364,6 +383,6 @@ function formatTime(totalSeconds) {
     let timeString = "";
     if (hours > 0) timeString += `${hours}h `;
     if (minutes > 0) timeString += `${minutes}m `;
-    if (seconds >= 0 || (hours === 0 && minutes === 0)) timeString += `${seconds}s`; 
+    if (seconds >= 0 || (hours === 0 && minutes === 0)) timeString += `${seconds}s`;
     return timeString.trim() || "0s";
 }

@@ -9,14 +9,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body> 
+<body>
     <div id="gameArea" class="game-container">
         <div class="mb-4 text-center"> <h1 class="text-2xl font-bold game-title">Echoes of Infinity</h1> <p class="text-xs game-subtitle">Clicker Prototyp</p> </div>
 
         <div class="main-content-area">
             <div class="left-column">
-                <div id="enemyDisplayContainer" class="text-center panel"> 
-                    <div id="enemyContainer" class="relative inline-block"> 
+                <div id="enemyDisplayContainer" class="text-center panel">
+                    <div id="enemyContainer" class="relative inline-block">
                         <div id="enemy" class="enemy mx-auto">
                             <div id="enemyArt" class="w-full h-full"></div> <div id="enemyName" class="enemy-name">Slime</div>
                             <div id="enemyHealthText" class="enemy-health-text">10 / 10</div>
@@ -25,13 +25,13 @@
                     <div id="enemyHealthBarContainer" class="health-bar-container">
                         <div id="enemyHealthBar" class="health-bar" style="width: 100%;"></div>
                     </div>
-                    <div id="bossTimerDisplay" class="hidden">Čas na bosse: 30s</div> 
+                    <div id="bossTimerDisplay" class="hidden">Čas na bosse: 30s</div>
                 </div>
 
-                <div id="activeEffectsContainer" class="panel text-center hidden"> 
+                <div id="activeEffectsContainer" class="panel text-center hidden">
                     <h3 class="font-semibold text-gray-100">Aktivní efekty</h3>
                     </div>
-                
+
                 <div id="echoUpgradesPanel" class="panel">
                     <h3 class="font-semibold text-gray-100 text-center">Echo Vylepšení</h3>
                     <div id="echoUpgradesList" class="space-y-2">
@@ -57,7 +57,7 @@
                             <span id="zlataHoreckaAktivniText" class="skill-text">Zlatá horečka</span>
                             <span id="zlataHoreckaAktivniCooldownDisplay" class="skill-cooldown">(Připraveno)</span>
                         </button>
-                        <button id="cleanseDebuffButton" class="action-button w-full hidden mt-2"> 
+                        <button id="cleanseDebuffButton" class="action-button w-full hidden mt-2">
                             <span class="action-text">Očistit Parazita</span>
                             <span class="action-cost">Cena: <span id="cleanseCostDisplay">30</span> Z</span>
                         </button>
@@ -71,9 +71,9 @@
 
             <div class="middle-column">
                 <div class="stats-panel panel text-center">
-                    <div class="grid grid-cols-2 gap-2 mb-2"> 
+                    <div class="grid grid-cols-2 gap-2 mb-2">
                         <div id="goldDisplayContainer">
-                            <p class="text-xs">Zlato</p> <p id="goldDisplay" class="text-value">0</p> 
+                            <p class="text-xs">Zlato</p> <p id="goldDisplay" class="text-value">0</p>
                         </div>
                         <div>
                             <p class="text-xs">Poškození kliknutím</p>
@@ -83,7 +83,7 @@
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div>
                             <p class="text-xs">Úroveň Nepř. (Efektivní)</p>
-                            <p id="enemyEffectiveLevelDisplay" class="text-value text-orange-400">1</p> 
+                            <p id="enemyEffectiveLevelDisplay" class="text-value text-orange-400">1</p>
                         </div>
                         <div> <p class="text-xs">Pasivní Poškození</p> <p id="passiveDamageDisplay" class="text-value text-red-400">0% HP/s</p> </div>
                     </div>
@@ -118,7 +118,7 @@
                         <p id="echoShardsDisplay" class="text-value">0</p>
                     </div>
                      <div class="mt-1"> <p class="text-xs">Esence Společníků</p>
-                        <p id="companionEssenceDisplay" class="text-value text-pink-400">0</p> 
+                        <p id="companionEssenceDisplay" class="text-value text-pink-400">0</p>
                     </div>
                     <div class="mt-1"> <p class="text-xs">Počet Ech</p>
                         <p id="echoCountDisplay" class="text-value text-purple-400">0</p>
@@ -135,7 +135,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <div class="right-column">
                  <button id="openExpeditionsButton" class="modal-trigger-button !bg-yellow-500 hover:!bg-yellow-600">
                     <span class="modal-trigger-text">Výpravy</span>
@@ -149,7 +149,7 @@
                 <button id="openAdvancedSettingsButton" class="modal-trigger-button advanced-settings-button">
                     <span class="advanced-settings-button-text">Pokročilá Nastavení</span>
                 </button>
-                <button id="openHelpButton" class="modal-trigger-button help-button"> 
+                <button id="openHelpButton" class="modal-trigger-button help-button">
                     <span class="help-button-text">Nápověda</span>
                 </button>
                 <button id="openDailyQuestsButton" class="modal-trigger-button">
@@ -170,8 +170,6 @@
                 </div>
                 <div id="gameStatsPanel" class="panel game-stats-panel"> <h3>Herní Statistiky</h3>
                     <div id="gameStatsContainer">
-                        <!-- Následující elementy jsou přidány pro nové statistiky, 
-                             ale jejich obsah bude řízen z renderGameStatsUI -->
                         <div class="stat-item">
                             <span class="stat-label">Celkový čas hraní:</span>
                             <span class="stat-value" id="totalPlayTimeDisplay">N/A</span>
@@ -190,6 +188,11 @@
         </div>
 
         <div id="messageBox" class="text-center text-sm rounded-md hidden"></div>
+
+        <div id="talentTooltip" class="tooltip-base hidden"></div>
+        <div id="essenceTooltip" class="tooltip-base hidden"></div>
+        <div id="researchTooltip" class="tooltip-base hidden"></div>
+
 
         <div id="essenceForgeModal" class="modal hidden">
             <div class="modal-content">
@@ -246,14 +249,14 @@
                     </div>
                     <div class="setting-item">
                         <label for="volumeSlider">Hlasitost:</label>
-                        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" class="w-1/2"> 
+                        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5" class="w-1/2">
                     </div>
                     <div class="setting-item">
-                        <label for="muteButtonControl">Ztlumit hru:</label> 
-                        <button id="muteButton" class="mute-button !w-auto px-4 py-1 text-sm">Ztlumit</button> 
+                        <label for="muteButtonControl">Ztlumit hru:</label>
+                        <button id="muteButton" class="mute-button !w-auto px-4 py-1 text-sm">Ztlumit</button>
                     </div>
                      <div class="mt-6 pt-3 border-t border-gray-600">
-                         <button id="resetGameButtonAdvanced" class="reset-game-button w-full"> 
+                         <button id="resetGameButtonAdvanced" class="reset-game-button w-full">
                             <span class="reset-game-text">Restartovat Hru (HARD RESET)</span>
                         </button>
                     </div>
@@ -367,7 +370,7 @@
                     <h2 class="modal-title">Denní Výzvy</h2>
                     <button id="closeDailyQuestsButton" class="modal-close-button">&times;</button>
                 </div>
-                <div id="dailyQuestsListModal" class="space-y-2 mt-2"> 
+                <div id="dailyQuestsListModal" class="space-y-2 mt-2">
                     </div>
             </div>
         </div>
@@ -378,7 +381,7 @@
                     <h2 class="modal-title">Milníky</h2>
                     <button id="closeMilestonesButton" class="modal-close-button">&times;</button>
                 </div>
-                <div id="milestonesListModal" class="space-y-1 mt-2 max-h-72 overflow-y-auto"> 
+                <div id="milestonesListModal" class="space-y-1 mt-2 max-h-72 overflow-y-auto">
                     </div>
             </div>
         </div>
@@ -429,6 +432,7 @@
                 <div class="modal-header">
                     <h2 class="modal-title">Vybrat Společníky pro Výpravu</h2>
                 </div>
+                <p class="text-xs text-yellow-400 mb-2 text-center hidden expedition-warning-message"></p>
                 <ul id="expeditionCompanionSelectList" class="space-y-2 mt-3 mb-4 max-h-60 overflow-y-auto">
                 </ul>
                 <div class="flex justify-around mt-4">
@@ -448,9 +452,9 @@
     <script src="researchController.js"></script>
     <script src="essenceController.js"></script>
     <script src="artifactController.js"></script>
-    <script src="companionSkillController.js"></script> 
+    <script src="companionSkillController.js"></script>
     <script src="companionController.js"></script>
-    <script src="expeditionController.js"></script> 
+    <script src="expeditionController.js"></script>
     <script src="equipmentController.js"></script>
     <script src="playerController.js"></script>
     <script src="enemyController.js"></script>
