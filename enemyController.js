@@ -5,270 +5,255 @@
  * Aktualizuje globální objekt 'enemy' v gameState.js.
  */
 function spawnNewEnemy() {
-    const worldZoneBaseLevel = ((gameState.currentWorld - 1) * ZONES_PER_WORLD * 10) + ((gameState.currentZoneInWorld - 1) * 10); 
-    const levelOffsetInZone = Math.floor(gameState.enemiesDefeatedInZone / (ENEMIES_PER_ZONE / 10)); 
-    
+    const worldZoneBaseLevel = ((gameState.currentWorld - 1) * ZONES_PER_WORLD * 10) + ((gameState.currentZoneInWorld - 1) * 10);
+    const levelOffsetInZone = Math.floor(gameState.enemiesDefeatedInZone / (ENEMIES_PER_ZONE / 10));
+
     gameState.enemy.effectiveLevel = worldZoneBaseLevel + levelOffsetInZone + 1;
 
     if (gameState.enemy.effectiveLevel > gameState.highestEffectiveLevelReachedThisEcho) {
         gameState.highestEffectiveLevelReachedThisEcho = gameState.enemy.effectiveLevel;
     }
 
-    const monsterNumberInZone = gameState.enemiesDefeatedInZone + 1; 
-    gameState.enemy.isBoss = (monsterNumberInZone >= ENEMIES_PER_ZONE); 
-    gameState.enemy.isChampion = !gameState.enemy.isBoss && (monsterNumberInZone % 10 === 0); 
-    
-    let healthMultiplier = 1; 
+    const monsterNumberInZone = gameState.enemiesDefeatedInZone + 1;
+    gameState.enemy.isBoss = (monsterNumberInZone >= ENEMIES_PER_ZONE);
+    gameState.enemy.isChampion = !gameState.enemy.isBoss && (monsterNumberInZone % 10 === 0);
+
+    let healthMultiplier = 1;
     let goldMultiplier = 1;
 
-    if (gameState.enemy.isBoss) { 
-        healthMultiplier = 10; 
-        goldMultiplier = 5; 
-        gameState.bossFightTimerActive = true; 
-        gameState.bossFightTimeLeft = BOSS_FIGHT_DURATION; 
+    if (gameState.enemy.isBoss) {
+        healthMultiplier = 10;
+        goldMultiplier = 5;
+        gameState.bossFightTimerActive = true;
+        gameState.bossFightTimeLeft = BOSS_FIGHT_DURATION;
         gameState.bossFightInitialDuration = BOSS_FIGHT_DURATION;
-    } else {
-        if (gameState.bossFightTimerActive && !gameState.enemy.isBoss) {
-            gameState.bossFightTimerActive = false;
-            gameState.bossFightTimeLeft = 0;
-            gameState.bossFightInitialDuration = 0;
-        }
+        if (typeof showMessageBox === 'function') showMessageBox("Boss se objevil!", false, 2000);
+        if (typeof soundManager !== 'undefined') soundManager.playSound('bossDefeat', 'C3', '2n'); // Použijeme zvuk pro objevení bosse
+    } else if (gameState.enemy.isChampion) {
+        healthMultiplier = 3;
+        goldMultiplier = 2.5;
+        if (typeof showMessageBox === 'function') showMessageBox("Šampion se objevil!", false, 1500);
+         if (typeof soundManager !== 'undefined') soundManager.playSound('championDefeat', undefined, '4n');
     }
 
-    if (gameState.enemy.isChampion) { 
-        healthMultiplier = 5;  
-        goldMultiplier = 3; 
-    }
+    const baseHealth = 10 * Math.pow(1.25, gameState.enemy.effectiveLevel -1) * healthMultiplier;
+    const baseGold = 5 * Math.pow(1.10, gameState.enemy.effectiveLevel -1) * goldMultiplier;
 
-    healthMultiplier *= Math.max(0.5, 1 - (gameState.echoCount * 0.04)); 
-    
-    let tierPassiveBonus = 0;
-    let tierCostMultiplier = 1;
-
-    if (typeof tiers !== 'undefined' && Array.isArray(tiers) && tiers.length > 0) {
-        const tierIndex = (typeof gameState.currentTierIndex === 'number' && gameState.currentTierIndex >= 0 && gameState.currentTierIndex < tiers.length) 
-                          ? gameState.currentTierIndex 
-                          : 0; // Fallback na tier 0
-        if (tiers[tierIndex]) {
-            tierPassiveBonus = tiers[tierIndex].passivePercentBonus || 0;
-            tierCostMultiplier = tiers[tierIndex].costMultiplier || 1;
-        } else {
-            console.warn(`spawnNewEnemy: tiers[${tierIndex}] je undefined. Používám defaultní hodnoty pro bonusy tieru.`);
-        }
-    } else {
-        console.error("spawnNewEnemy: Pole 'tiers' není dostupné. Používám defaultní hodnoty pro bonusy tieru.");
-    }
-    
-    gameState.enemy.maxHealth = Math.ceil(
-        8 * Math.pow(1.13 + (gameState.currentWorld * 0.0008) + (tierPassiveBonus * 10) + (gameState.currentTierIndex * 0.0025) , gameState.enemy.effectiveLevel -1) * healthMultiplier
-    ); 
+    gameState.enemy.maxHealth = Math.ceil(baseHealth);
     gameState.enemy.currentHealth = gameState.enemy.maxHealth;
-    gameState.enemy.goldReward = Math.ceil(
-        15 * Math.pow(1.15 + (gameState.currentWorld * 0.002) + (tierCostMultiplier * 0.001) + (gameState.currentTierIndex * 0.0045), gameState.enemy.effectiveLevel -1) * goldMultiplier
-    ); 
-    
-    let baseNameIndex = (gameState.enemy.effectiveLevel - 1 + enemyNames.length) % enemyNames.length; 
-    let baseName = enemyNames[baseNameIndex];
-    gameState.enemy.name = gameState.enemy.isBoss ? `BOSS ${baseName}` : (gameState.enemy.isChampion ? `Šampion ${baseName}` : baseName);
-    
-    if (typeof enemyArtElement !== 'undefined' && typeof enemySVGs !== 'undefined' && enemySVGs.length > 0) { 
-        enemyArtElement.innerHTML = enemySVGs[baseNameIndex % enemySVGs.length]; 
+    gameState.enemy.goldReward = Math.ceil(baseGold);
+
+    // Nastavení jména a vzhledu nepřítele
+    // enemyNames a enemySVGs jsou pole z config.js
+    const baseNameIndex = (gameState.enemy.effectiveLevel - 1 + enemyNames.length) % enemyNames.length;
+    gameState.enemy.name = (gameState.enemy.isBoss ? "Boss: " : (gameState.enemy.isChampion ? "Šampion: " : "")) + enemyNames[baseNameIndex];
+
+    if (enemyArtElement) { // enemyArtElement je DOM element z uiController.js
+        if (enemyNames[baseNameIndex] === "Slizoun" || baseNameIndex === 0) { // Pokud je to první/defaultní nepřítel "Slizoun"
+            enemyArtElement.innerHTML = '<img src="/assets/slizoun_Normal.gif" alt="Slizoun" style="width:100%; height:100%; object-fit:contain;">';
+        } else if (typeof enemySVGs !== 'undefined' && enemySVGs.length > 0) {
+            enemyArtElement.innerHTML = enemySVGs[baseNameIndex % enemySVGs.length];
+        } else {
+            enemyArtElement.innerHTML = ''; // Fallback, pokud nic není definováno
+        }
     }
+
+    if (typeof updateUI === 'function') updateUI(); // Funkce z uiController.js
 }
 
+
 /**
- * Zpracuje útok hráče na nepřítele.
- * Volá se z hlavní herní smyčky nebo event listeneru.
- * @param {MouseEvent} event - Událost kliknutí myší (pro zobrazení čísla poškození).
+ * Zpracuje kliknutí na nepřítele.
+ * @param {MouseEvent} event - Událost kliknutí.
  */
 function handleEnemyClick(event) {
-    if (!gameState.enemy || gameState.enemy.currentHealth <= 0) return; 
-    
-    gameState.lifetimeStats.totalClicks++; 
-    
-    let currentGoldMultiplierOnClick = gameState.echoPermanentGoldBonus; 
-    if (talents.goldVeins.currentLevel > 0) { 
-        currentGoldMultiplierOnClick *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
-    }
-    if (typeof getResearchBonus === 'function') currentGoldMultiplierOnClick *= (1 + getResearchBonus('research_gold_multiplier_all_percent')); 
-    if (typeof getEssenceBonus === 'function') currentGoldMultiplierOnClick *= (1 + getEssenceBonus('essence_gold_multiplier_all_percent')); 
+    if (!gameState.enemy || gameState.enemy.currentHealth <= 0) return;
 
-
-    if (gameState.activeBuffs[BUFF_TYPE_GOLD_RUSH]) currentGoldMultiplierOnClick *= GOLD_RUSH_MULTIPLIER; 
-    if (gameState.zlataHoreckaAktivniActive) currentGoldMultiplierOnClick *= ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER; 
-    
-    let artifactGoldBonus = 0;
-    if (typeof getArtifactBonus === 'function') artifactGoldBonus = getArtifactBonus('gold_bonus_percent_additive') / 100; 
-    currentGoldMultiplierOnClick *= (1 + artifactGoldBonus);
-
-    let currentDamageDealt = gameState.effectiveClickDamage; 
+    let damageDealt = gameState.effectiveClickDamage;
     let isCrit = false;
 
-    if (talents.ultimateCritMastery.currentLevel > 0) {
-        gameState.clicksSinceLastGuaranteedCrit++; 
-        if (gameState.clicksSinceLastGuaranteedCrit >= talents.ultimateCritMastery.effectValue) { 
-            isCrit = true; 
-            gameState.clicksSinceLastGuaranteedCrit = 0; 
+    // Zvýšení počtu kliknutí
+    gameState.lifetimeStats.totalClicks++;
+    gameState.clicksSinceLastGuaranteedCrit++;
+
+    // Kontrola garantovaného kritického zásahu z talentu
+    let guaranteedCritTalentActive = false;
+    if (talents.ultimateCritMastery && talents.ultimateCritMastery.currentLevel > 0) {
+        if (gameState.clicksSinceLastGuaranteedCrit >= talents.ultimateCritMastery.effectValue) {
+            isCrit = true;
+            guaranteedCritTalentActive = true;
+            gameState.clicksSinceLastGuaranteedCrit = 0; // Reset počítadla
         }
     }
-    if (!isCrit) {
-        isCrit = Math.random() < gameState.effectiveCritChance; 
+
+    // Pokud nebyl garantovaný krit, zkusíme normální šanci na krit
+    if (!isCrit && Math.random() < gameState.effectiveCritChance) {
+        isCrit = true;
     }
 
     if (isCrit) {
-        let actualCritMultiplier = critDamageMultiplier; 
+        let currentCritMultiplier = critDamageMultiplier; // Základní násobek z configu
         if (talents.critDamageBoost.currentLevel > 0) {
-            actualCritMultiplier *= (1 + talents.critDamageBoost.effectValue * talents.critDamageBoost.currentLevel);
+            currentCritMultiplier *= (1 + talents.critDamageBoost.effectValue * talents.critDamageBoost.currentLevel);
         }
-        currentDamageDealt *= actualCritMultiplier; 
-        gameState.lifetimeStats.totalCrits++; 
+        damageDealt *= currentCritMultiplier;
+        gameState.lifetimeStats.totalCrits++;
         if (typeof soundManager !== 'undefined') soundManager.playSound('critClick', 'E5', '16n');
     } else {
         if (typeof soundManager !== 'undefined') soundManager.playSound('click', 'C4', '16n');
     }
 
+    // Aplikace Mocného úderu
     if (gameState.mocnyUderActive) {
-        currentDamageDealt *= MOCNY_UDER_DAMAGE_MULTIPLIER; 
-    }
-    if (gameState.activeBuffs[BUFF_TYPE_POWER_SHARD]) { 
-        currentDamageDealt *= POWER_SHARD_MULTIPLIER;
+        damageDealt *= MOCNY_UDER_DAMAGE_MULTIPLIER;
     }
 
-    if (currentDamageDealt > gameState.lifetimeStats.highestDamageDealt) {
-        gameState.lifetimeStats.highestDamageDealt = Math.ceil(currentDamageDealt);
-    }
-    
-    gameState.enemy.currentHealth -= currentDamageDealt;
-    
-    if (gameState.gameSettings.showDamageNumbers && typeof showDamageNumber === 'function') { 
-        showDamageNumber(currentDamageDealt, event.clientX, event.clientY, isCrit); 
+    damageDealt = Math.ceil(damageDealt);
+    gameState.enemy.currentHealth -= damageDealt;
+
+    if (typeof showDamageNumber === 'function') { // showDamageNumber z uiController.js
+        const clickX = event.clientX;
+        const clickY = event.clientY;
+        showDamageNumber(damageDealt, clickX, clickY, isCrit);
     }
 
-    if (typeof getCompanionSkillBonus === 'function' && typeof allCompanions !== 'undefined' && typeof gameState.ownedCompanions !== 'undefined') {
+    if (damageDealt > gameState.lifetimeStats.highestDamageDealt) {
+        gameState.lifetimeStats.highestDamageDealt = damageDealt;
+    }
+
+    if (gameState.enemy.currentHealth <= 0) {
+        onEnemyDefeated();
+    }
+
+    if (typeof updateUI === 'function') updateUI();
+}
+
+/**
+ * Zpracuje poražení nepřítele.
+ */
+function onEnemyDefeated() {
+    let goldEarned = gameState.enemy.goldReward;
+    let xpEarned = gameState.enemy.effectiveLevel; // Základní XP
+
+    // Aplikace Zlaté horečky (aktivní)
+    if (gameState.zlataHoreckaAktivniActive) {
+        goldEarned *= ZLATA_HORECKA_AKTIVNI_GOLD_MULTIPLIER;
+    }
+    // Aplikace Zlaté horečky (pasivní buff)
+    if (gameState.activeBuffs[BUFF_TYPE_GOLD_RUSH]) {
+        goldEarned *= GOLD_RUSH_MULTIPLIER;
+    }
+
+    // Bonus zlata z talentů a artefaktů se aplikuje v updateUI/gameTick, ale zde můžeme přidat multiplikátor pro zobrazení
+    let goldMultiplierForDisplay = gameState.echoPermanentGoldBonus;
+     if (talents.goldVeins.currentLevel > 0) {
+        goldMultiplierForDisplay *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
+    }
+    if (typeof getArtifactBonus === 'function') {
+        goldMultiplierForDisplay *= (1 + (getArtifactBonus('gold_bonus_percent_additive') / 100));
+    }
+     if (typeof getResearchBonus === 'function') {
+        goldMultiplierForDisplay *= (1 + getResearchBonus('research_gold_multiplier_all_percent'));
+    }
+    if (typeof getEssenceBonus === 'function') {
+        goldMultiplierForDisplay *= (1 + getEssenceBonus('essence_gold_multiplier_all_percent'));
+    }
+
+    // Aplikace globálních bonusů od společníků
+    if (gameState.ownedCompanions) {
         for (const companionId in gameState.ownedCompanions) {
             if (gameState.ownedCompanions.hasOwnProperty(companionId) && gameState.ownedCompanions[companionId].level > 0) {
-                const companionDef = allCompanions[companionId];
-                const goldOnHitChance = getCompanionSkillBonus(companionId, 'companion_gold_on_hit_chance');
-                if (goldOnHitChance > 0 && Math.random() < goldOnHitChance) {
-                    let goldAmountFromSkill = 0;
-                    if (companionDef.skillTree) {
-                        for (const skillId in companionDef.skillTree) {
-                            if (companionDef.skillTree[skillId].effectType === 'companion_gold_on_hit_chance' && typeof companionDef.skillTree[skillId].goldAmount === 'function') {
-                                goldAmountFromSkill = companionDef.skillTree[skillId].goldAmount(gameState.ownedCompanions[companionId].level);
-                                break;
-                            }
-                        }
-                    }
-                    if (goldAmountFromSkill > 0) {
-                        const actualGoldGained = Math.ceil(goldAmountFromSkill * currentGoldMultiplierOnClick); 
-                        gameState.gold += actualGoldGained;
-                        gameState.lifetimeStats.lifetimeGoldEarned += actualGoldGained;
-                        gameState.totalGoldEarnedThisEcho += actualGoldGained;
-                        if (typeof showGoldGainAnimation === 'function') showGoldGainAnimation(actualGoldGained);
-                        if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('goldEarnedQuest', actualGoldGained);
-                    }
+                const globalGoldBonusFromCompanion = getCompanionSkillBonus(companionId, 'global_player_gold_multiplier_percent_if_active');
+                if (globalGoldBonusFromCompanion > 0) {
+                    goldMultiplierForDisplay *= (1 + globalGoldBonusFromCompanion);
                 }
             }
         }
     }
 
+    goldEarned = Math.floor(goldEarned * goldMultiplierForDisplay);
 
-    if (gameState.enemy.currentHealth <= 0) {
-        onEnemyDefeated(currentGoldMultiplierOnClick); 
-    } else {
-        if (typeof updateUI === 'function') updateUI(); 
-        if (typeof checkMilestones === 'function') checkMilestones(); 
-    } 
-}
 
-/**
- * Zpracuje logiku po poražení nepřítele.
- * @param {number} currentGoldMultiplier - Aktuální multiplikátor zlata pro tohoto nepřítele.
- */
-function onEnemyDefeated(currentGoldMultiplier) {
-    const goldFromKill = gameState.enemy.goldReward * currentGoldMultiplier;
-    gameState.gold += goldFromKill; 
-    gameState.lifetimeStats.lifetimeGoldEarned += goldFromKill;
-    gameState.totalGoldEarnedThisEcho += goldFromKill; 
-    
-    if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('goldEarnedQuest', goldFromKill); 
-    if (typeof showGoldGainAnimation === 'function') showGoldGainAnimation(goldFromKill); 
+    gameState.gold += goldEarned;
+    gameState.lifetimeStats.lifetimeGoldEarned += goldEarned;
+    gameState.totalGoldEarnedThisEcho += goldEarned;
+    gameState.dailyQuestData.goldEarnedForQuestToday += goldEarned;
 
-    if (gameState.enemy.isBoss) { 
-        if (typeof soundManager !== 'undefined') soundManager.playSound('bossDefeat', 'G2', '1n');
-        
-        const timeTakenToKillBoss = gameState.bossFightInitialDuration - gameState.bossFightTimeLeft;
-        if (timeTakenToKillBoss < gameState.lifetimeStats.fastestBossKillSeconds) {
-            gameState.lifetimeStats.fastestBossKillSeconds = timeTakenToKillBoss;
-            if (typeof showMessageBox === 'function') {
-                showMessageBox(`Nový rekord v poražení bosse: ${formatTime(timeTakenToKillBoss)}!`, false, 2500);
-            }
-        }
 
-        gameState.bossFightTimerActive = false; 
-        gameState.bossFightTimeLeft = 0;       
-        gameState.bossFightInitialDuration = 0; 
+    if (typeof gainXP === 'function') gainXP(xpEarned); // gainXP je v playerController.js
+
+    if (typeof showGoldGainAnimation === 'function') showGoldGainAnimation(goldEarned);
+
+    gameState.enemiesDefeatedInZone++;
+    gameState.lifetimeStats.totalEnemiesKilled++;
+    gameState.enemiesKilledThisEcho++;
+
+    if (typeof updateDailyQuestProgress === 'function') {
+        updateDailyQuestProgress('enemyKill', 1);
+        if (gameState.enemy.isChampion) updateDailyQuestProgress('championKill', 1);
+    }
+
+
+    if (gameState.enemy.isBoss) {
         gameState.lifetimeStats.totalBossesKilled++;
-        if (typeof tryDropArtifact === 'function') tryDropArtifact(); 
+        if (typeof soundManager !== 'undefined') soundManager.playSound('bossDefeat', 'C4', '1n');
+        if (typeof showMessageBox === 'function') showMessageBox(`Boss poražen! Získal jsi ${formatNumber(goldEarned)} zlata.`, false);
+
+        // Šance na drop artefaktu
+        if (typeof tryDropArtifact === 'function') tryDropArtifact();
+
+        // Šance na drop esence společníků
         if (Math.random() < COMPANION_ESSENCE_DROP_CHANCE_FROM_BOSS) {
-            const essenceAmount = Math.floor(Math.random() * 4) + 2; 
-            if (typeof gainCompanionEssence === 'function') gainCompanionEssence(essenceAmount);
+            if (typeof gainCompanionEssence === 'function') gainCompanionEssence(1);
         }
-    } else if (gameState.enemy.isChampion) { 
-        if (typeof soundManager !== 'undefined') soundManager.playSound('championDefeat', 'A3', '8n');
-        gameState.lifetimeStats.totalChampionsKilled++;
-        if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('championKill', 1);
-        if (Math.random() < COMPANION_ESSENCE_DROP_CHANCE_FROM_CHAMPION) {
-            if (typeof gainCompanionEssence === 'function') gainCompanionEssence(1); 
-        }
-    } else { 
-        if (typeof soundManager !== 'undefined') soundManager.playSound('enemyDefeat', 'C3', '16n');
-    }
-    
-    gameState.lifetimeStats.totalEnemiesKilled++; 
-    
-    let xpFromKill = gameState.enemy.effectiveLevel; 
-    if(gameState.enemy.isChampion) xpFromKill += Math.floor(gameState.enemy.effectiveLevel * 1.5); 
-    if(gameState.enemy.isBoss) xpFromKill += Math.floor(gameState.enemy.effectiveLevel * 4.0); 
-    if (typeof gainXP === 'function') gainXP(xpFromKill); 
-    
-    gameState.enemiesKilledThisEcho++; 
-    gameState.enemiesDefeatedInZone++; 
-    if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('enemyKill', 1);
-    
-    if (gameState.enemiesDefeatedInZone >= ENEMIES_PER_ZONE) {
-        gameState.enemiesDefeatedInZone = 0; 
-        gameState.currentZoneInWorld++; 
-        if (typeof updateDailyQuestProgress === 'function') updateDailyQuestProgress('zoneReached', gameState.currentZoneInWorld); 
-        
+
+
+        // Reset pro další zónu/svět
+        gameState.enemiesDefeatedInZone = 0;
+        gameState.currentZoneInWorld++;
         if (gameState.currentZoneInWorld > ZONES_PER_WORLD) {
-            gameState.currentZoneInWorld = 1; 
-            gameState.currentWorld++; 
-            if (gameState.currentWorld > MAX_WORLDS) { 
-                if (typeof showMessageBox === 'function') showMessageBox("Gratulujeme! Dosáhl jsi konce známého multiversa!", false, 7000); 
-                gameState.currentWorld = MAX_WORLDS; 
-                gameState.currentZoneInWorld = ZONES_PER_WORLD;
-            } else {
-                if (typeof showMessageBox === 'function') showMessageBox(`Postup do Světa ${gameState.currentWorld}!`, false, 3000);
+            gameState.currentZoneInWorld = 1;
+            gameState.currentWorld++;
+            if (gameState.currentWorld > MAX_WORLDS) {
+                // Hráč dosáhl maximálního světa - co dál? Možná Echo nebo speciální zpráva.
+                // Prozatím necháme hráče v posledním světě.
+                gameState.currentWorld = MAX_WORLDS;
+                if (typeof showMessageBox === 'function') showMessageBox("Gratulujeme! Dosáhl jsi posledního světa!", false, 5000);
             }
-        } else {
-            if (typeof showMessageBox === 'function') showMessageBox(`Postup do Zóny ${gameState.currentZoneInWorld} (Svět ${gameState.currentWorld})!`, false, 2500);
+            if (typeof showMessageBox === 'function') showMessageBox(`Postupuješ do Světa ${gameState.currentWorld}!`, false, 2500);
+            gameState.lifetimeStats.lifetimeTiersAdvanced++; // Počítáme jako "tier" postupu
         }
+        gameState.bossFightTimerActive = false;
+        gameState.bossFightTimeLeft = 0;
+
+    } else if (gameState.enemy.isChampion) {
+        gameState.lifetimeStats.totalChampionsKilled++;
+        if (typeof soundManager !== 'undefined') soundManager.playSound('championDefeat', undefined, '2n');
+
+        // Šance na drop esence společníků
+        if (Math.random() < COMPANION_ESSENCE_DROP_CHANCE_FROM_CHAMPION) {
+            if (typeof gainCompanionEssence === 'function') gainCompanionEssence(1);
+        }
+
+    } else {
+        if (typeof soundManager !== 'undefined') soundManager.playSound('enemyDefeat', undefined, '8n');
     }
-    
-    if (Math.random() < POWER_SHARD_DROP_CHANCE) { 
-        if (typeof activateBuff === 'function') activateBuff(BUFF_TYPE_POWER_SHARD, POWER_SHARD_DURATION); 
+
+
+    // Náhodné buffy/debuffy
+    if (Math.random() < POWER_SHARD_DROP_CHANCE) {
+        if (typeof activateBuff === 'function') activateBuff(BUFF_TYPE_POWER_SHARD, POWER_SHARD_DURATION);
     }
-    if (gameState.echoCount > 0 && Math.random() < GOLD_RUSH_DROP_CHANCE) { 
+    if (gameState.echoCount > 0 && Math.random() < GOLD_RUSH_DROP_CHANCE) {
         if (typeof activateBuff === 'function') activateBuff(BUFF_TYPE_GOLD_RUSH, GOLD_RUSH_DURATION);
     }
-    if (Math.random() < PARASITE_APPLY_CHANCE && !gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]) { 
-        if (typeof applyDebuff === 'function') applyDebuff(DEBUFF_TYPE_PARASITE, PARASITE_DURATION, PARASITE_GOLD_DRAIN_PER_SECOND); 
+    if (Math.random() < PARASITE_APPLY_CHANCE && !gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]) {
+        if (typeof applyDebuff === 'function') applyDebuff(DEBUFF_TYPE_PARASITE, PARASITE_DURATION, PARASITE_GOLD_DRAIN_PER_SECOND);
     }
-    
-    spawnNewEnemy(); 
-    if (typeof updateUI === 'function') updateUI(); 
-    if (typeof checkMilestones === 'function') checkMilestones(); 
+
+    spawnNewEnemy();
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof checkMilestones === 'function') checkMilestones();
 }
 
 
@@ -276,14 +261,10 @@ function onEnemyDefeated(currentGoldMultiplier) {
  * Zpracuje situaci, kdy vyprší čas na poražení bosse.
  */
 function handleBossFightTimeout() {
-    if (typeof showMessageBox === 'function') showMessageBox(`Boss nebyl poražen včas! Zóna ${gameState.currentZoneInWorld} (Svět ${gameState.currentWorld}) se restartuje.`, true, 4000);
-    if (typeof soundManager !== 'undefined') soundManager.playSound('debuffApply', 'A2', '4n'); 
-    
-    gameState.bossFightTimerActive = false; 
-    gameState.bossFightTimeLeft = 0;       
-    gameState.bossFightInitialDuration = 0; 
-    gameState.enemiesDefeatedInZone = 0;  
-    
-    spawnNewEnemy(); 
+    if (typeof showMessageBox === 'function') showMessageBox(`Boss nebyl poražen včas! Zóna ${gameState.currentZoneInWorld} (Svět ${gameState.currentWorld}) se restartuje.`, true, 3000);
+    gameState.bossFightTimerActive = false;
+    gameState.bossFightTimeLeft = 0;
+    gameState.enemiesDefeatedInZone = 0; // Reset postupu v zóně
+    spawnNewEnemy(); // Spawn nového (pravděpodobně ne-boss) nepřítele
     if (typeof updateUI === 'function') updateUI();
 }

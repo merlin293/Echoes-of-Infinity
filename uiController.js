@@ -57,7 +57,7 @@ function initializeUIElements() {
     talentPointsDisplay = document.getElementById('talentPointsDisplay');
     playerXPBar = document.getElementById('playerXPBar');
     playerXPText = document.getElementById('playerXPText');
-    damageNumberContainer = document.getElementById('enemyContainer');
+    damageNumberContainer = document.getElementById('enemyContainer'); // Kontejner pro čísla poškození
     activeEffectsContainer = document.getElementById('activeEffectsContainer');
     cleanseDebuffButton = document.getElementById('cleanseDebuffButton');
     cleanseCostDisplay = document.getElementById('cleanseCostDisplay');
@@ -161,10 +161,23 @@ function initializeUIElements() {
 function showMessageBox(message, isError = false, duration = 3500) {
     if (!messageBox) return;
     messageBox.textContent = message;
-    messageBox.classList.remove('hidden');
-    messageBox.className = `p-3 text-center text-sm rounded-md messageBox ${isError ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`;
-    messageBox.style.maxWidth = '1000px'; messageBox.style.width = '100%';
-    setTimeout(() => messageBox.classList.add('hidden') , duration);
+    messageBox.className = 'messageBox';
+    messageBox.classList.remove('visible');
+
+    if (isError) {
+        messageBox.classList.add('bg-red-500', 'text-white');
+    } else {
+        messageBox.classList.add('bg-green-500', 'text-white');
+    }
+    void messageBox.offsetWidth;
+    messageBox.classList.add('visible');
+
+    if (messageBox.hideTimeout) {
+        clearTimeout(messageBox.hideTimeout);
+    }
+    messageBox.hideTimeout = setTimeout(() => {
+        messageBox.classList.remove('visible');
+    }, duration);
 }
 
 function showDamageNumber(damage, x, y, isCrit) {
@@ -173,14 +186,27 @@ function showDamageNumber(damage, x, y, isCrit) {
     damageText.textContent = formatNumber(Math.ceil(damage));
     damageText.classList.add('damage-number');
     if (isCrit) damageText.classList.add('crit');
+
     const containerRect = damageNumberContainer.getBoundingClientRect();
-    const approxTextWidth = (damageText.textContent.length * 10) + (isCrit ? 10:0);
-    const approxTextHeight = 20 + (isCrit ? 5:0);
-    damageText.style.left = `${x - containerRect.left - (approxTextWidth / 2)}px`;
-    damageText.style.top = `${y - containerRect.top - (approxTextHeight / 2) - 15}px`;
+    // Náhodný horizontální posun pro rozptýlení čísel
+    const randomOffsetX = Math.random() * 50 - 25; // -25px až +25px
+    const initialOffsetY = -30; // Začíná výše nad středem kliku
+
+    // Pozice X je relativní k viewportu, takže ji musíme upravit o pozici kontejneru
+    // Pozice Y je také relativní k viewportu
+    damageText.style.left = `${x - containerRect.left + randomOffsetX}px`;
+    damageText.style.top = `${y - containerRect.top + initialOffsetY}px`;
+
+
     damageNumberContainer.appendChild(damageText);
-    damageText.addEventListener('animationend', () => damageText.remove());
+
+    damageText.addEventListener('animationend', () => {
+        if (damageText.parentNode) {
+            damageText.parentNode.removeChild(damageText);
+        }
+    });
 }
+
 
 function showGoldGainAnimation(amount) {
     if (!gameState.gameSettings.showGoldAnimations || !goldDisplayContainer) return;
@@ -188,7 +214,11 @@ function showGoldGainAnimation(amount) {
     goldText.textContent = `+${formatNumber(amount)} Z`;
     goldText.classList.add('gold-gain-animation');
     goldDisplayContainer.appendChild(goldText);
-    goldText.addEventListener('animationend', () => goldText.remove());
+    goldText.addEventListener('animationend', () => {
+        if (goldText.parentNode) {
+            goldText.parentNode.removeChild(goldText);
+        }
+    });
 }
 
 function updateEquipmentButtonStates() {
@@ -392,29 +422,22 @@ function renderGameStatsUI() {
     });
 }
 
-// Uložíme si referenci na aktuálně otevřený modál, abychom věděli, který zavřít
 let currentOpenModal = null;
 let currentBackdropClickHandler = null;
 
 function openModal(modalElement) {
     if (modalElement) {
-        // Pokud je již nějaký modál otevřený, nejdříve ho zavřeme (pro případ překrývání)
         if (currentOpenModal && currentOpenModal !== modalElement) {
             closeModal(currentOpenModal);
         }
-
         modalElement.classList.remove('hidden');
         currentOpenModal = modalElement;
-
-        // Definujeme handler pro tento konkrétní modál
         currentBackdropClickHandler = function(event) {
-            if (event.target === modalElement) { // Kliknuto na pozadí (overlay)
+            if (event.target === modalElement) {
                 closeModal(modalElement);
             }
         };
-        // Přidáme listener na pozadí modálu
         modalElement.addEventListener('click', currentBackdropClickHandler);
-
         if (typeof soundManager !== 'undefined') soundManager.playSound('openModal');
     }
 }
@@ -422,13 +445,12 @@ function openModal(modalElement) {
 function closeModal(modalElement) {
     if (modalElement) {
         modalElement.classList.add('hidden');
-        // Pokud se zavírá aktuálně otevřený modál, odstraníme jeho listener
         if (modalElement === currentOpenModal && currentBackdropClickHandler) {
             modalElement.removeEventListener('click', currentBackdropClickHandler);
             currentBackdropClickHandler = null;
         }
         if (modalElement === currentOpenModal) {
-            currentOpenModal = null; // Resetujeme referenci
+            currentOpenModal = null;
         }
         if (typeof soundManager !== 'undefined') soundManager.playSound('closeModal');
     }
