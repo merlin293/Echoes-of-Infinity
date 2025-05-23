@@ -1,11 +1,13 @@
+// SOUBOR: utils.js
+
 // --- Utility Functions ---
 function formatNumber(num, precision = 2) {
     const absNum = Math.abs(num);
     if (absNum < 1000) {
-        if (num !== 0 && absNum < 0.01 && precision === 2) { 
-            return num.toFixed(4); 
+        if (num !== 0 && absNum < 0.01 && precision === 2) {
+            return num.toFixed(4);
         }
-        return parseFloat(num.toFixed(precision)).toString(); 
+        return parseFloat(num.toFixed(precision)).toString();
     }
     const si = [
         { value: 1, symbol: "" }, { value: 1E3, symbol: "K" }, { value: 1E6, symbol: "M" },
@@ -20,7 +22,7 @@ function formatNumber(num, precision = 2) {
         }
     }
     let formattedNum = (num / si[i].value).toFixed(precision);
-    formattedNum = formattedNum.replace(rx, "$1"); 
+    formattedNum = formattedNum.replace(rx, "$1");
     return formattedNum + si[i].symbol;
 }
 
@@ -28,9 +30,9 @@ function formatNumber(num, precision = 2) {
 const soundManager = {
     isMuted: false,
     volume: 0.5,
-    audioContextInitialized: false, 
-    synthsInitialized: false, 
-    synthConfigs: { 
+    audioContextInitialized: false,
+    synthsInitialized: false,
+    synthConfigs: {
         click: { type: 'Synth', options: { oscillator: { type: "triangle" }, envelope: { attack: 0.005, decay: 0.05, sustain: 0, release: 0.1 }, volume: -18 } },
         critClick: { type: 'Synth', options: { oscillator: { type: "sawtooth" }, envelope: { attack: 0.01, decay: 0.1, sustain: 0.05, release: 0.2 }, volume: -12 } },
         enemyDefeat: { type: 'NoiseSynth', options: { noise: { type: "white" }, envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }, volume: -20 } },
@@ -48,8 +50,7 @@ const soundManager = {
     },
     sounds: {},
 
-    init() { 
-        // Načtení se děje v loadGame nebo initializeNewGameVariablesAndUI
+    init() {
     },
 
     async _startAudioContextAndInitialize() {
@@ -63,14 +64,14 @@ const soundManager = {
                 this.audioContextInitialized = true;
             } catch (e) {
                 console.error("Error starting AudioContext in _startAudioContextAndInitialize:", e);
-                this.audioContextInitialized = false; 
-                return; 
+                this.audioContextInitialized = false;
+                return;
             }
         } else {
             this.audioContextInitialized = true;
         }
         this._initializeSynthsInternal();
-        this.loadSettingsFromGameState(); 
+        this.loadSettingsFromGameState();
     },
 
     _initializeSynthsInternal() {
@@ -94,13 +95,11 @@ const soundManager = {
 
     async playSound(soundName, note = 'C4', duration = '8n') {
         if (!this.audioContextInitialized || !this.synthsInitialized) {
-            // firstGestureMade je globální proměnná, která by měla být definována v main.js
-            if (typeof firstGestureMade !== 'undefined' && !firstGestureMade) { 
-                // firstUserGestureHandler je také globální funkce z main.js
-                if (typeof firstUserGestureHandler === 'function') await firstUserGestureHandler(); 
+            if (typeof firstGestureMade !== 'undefined' && !firstGestureMade) {
+                if (typeof firstUserGestureHandler === 'function') await firstUserGestureHandler();
             }
             if (!this.audioContextInitialized || !this.synthsInitialized) {
-                 console.warn(`playSound(${soundName}) called, but audio still not fully initialized.`);
+                // console.warn(`playSound(${soundName}) called, but audio still not fully initialized.`);
                 return;
             }
         }
@@ -111,38 +110,40 @@ const soundManager = {
             return;
         }
         try {
-            if (this.sounds[soundName] instanceof Tone.Synth ||
-                this.sounds[soundName] instanceof Tone.NoiseSynth ||
-                this.sounds[soundName] instanceof Tone.MembraneSynth ||
-                this.sounds[soundName] instanceof Tone.MetalSynth) {
-                this.sounds[soundName].triggerAttackRelease(note, duration, Tone.now());
-            } else if (this.sounds[soundName] instanceof Tone.PluckSynth) {
-                this.sounds[soundName].triggerAttack(note, Tone.now());
+            const synth = this.sounds[soundName];
+            if (synth instanceof Tone.Synth || synth instanceof Tone.MetalSynth) {
+                synth.triggerAttackRelease(note, duration, Tone.now());
+            } else if (synth instanceof Tone.NoiseSynth || synth instanceof Tone.MembraneSynth) {
+                // Pro NoiseSynth a MembraneSynth není argument 'note' vždy relevantní nebo může způsobit problémy.
+                // Použijeme jen trvání. Pokud je potřeba výška tónu pro MembraneSynth,
+                // je lepší ji nastavit v konfiguraci nebo použít specifické volání.
+                synth.triggerAttackRelease(duration, Tone.now());
+            } else if (synth instanceof Tone.PluckSynth) {
+                synth.triggerAttack(note, Tone.now());
             }
         } catch (e) {
             console.error(`Error playing sound ${soundName}:`, e, this.sounds[soundName]);
         }
     },
-    
+
     setVolume(volumeValue, internalCall = false) {
         this.volume = parseFloat(volumeValue);
-        if (this.audioContextInitialized && !this.isMuted) { 
+        if (this.audioContextInitialized && !this.isMuted) {
             Tone.Destination.volume.value = Tone.gainToDb(this.volume);
         }
-        if (!internalCall && typeof gameState !== 'undefined' && gameState.gameSettings) { 
-             gameState.gameSettings.soundVolume = this.volume; 
+        if (!internalCall && typeof gameState !== 'undefined' && gameState.gameSettings) {
+             gameState.gameSettings.soundVolume = this.volume;
         }
     },
-    
+
     applyMuteState() {
         if (this.audioContextInitialized) {
              Tone.Destination.mute = this.isMuted;
-             if (!this.isMuted) { 
+             if (!this.isMuted) {
                 Tone.Destination.volume.value = Tone.gainToDb(this.volume);
              }
         }
-        // muteButton je globální DOM element (nebo by měl být přístupný přes uiController)
-        if (typeof muteButton !== 'undefined' && muteButton) { 
+        if (typeof muteButton !== 'undefined' && muteButton) {
             muteButton.textContent = this.isMuted ? "Odtlumit" : "Ztlumit";
             muteButton.classList.toggle('muted', this.isMuted);
         }
@@ -150,25 +151,24 @@ const soundManager = {
 
     toggleMute() {
         this.isMuted = !this.isMuted;
-        this.applyMuteState(); 
-        
-        if (typeof gameState !== 'undefined' && gameState.gameSettings) { 
-            gameState.gameSettings.soundMuted = this.isMuted; 
+        this.applyMuteState();
+
+        if (typeof gameState !== 'undefined' && gameState.gameSettings) {
+            gameState.gameSettings.soundMuted = this.isMuted;
         }
         return this.isMuted;
     },
 
-    loadSettingsFromGameState() { 
+    loadSettingsFromGameState() {
         if (typeof gameState !== 'undefined' && gameState.gameSettings) {
             this.volume = gameState.gameSettings.soundVolume !== undefined ? gameState.gameSettings.soundVolume : 0.5;
             this.isMuted = gameState.gameSettings.soundMuted !== undefined ? gameState.gameSettings.soundMuted : false;
         }
-        
-        if (this.audioContextInitialized) { 
-            this.setVolume(this.volume, true); 
-            this.applyMuteState(); 
-        } 
-        // volumeSlider je globální DOM element (nebo by měl být přístupný přes uiController)
+
+        if (this.audioContextInitialized) {
+            this.setVolume(this.volume, true);
+            this.applyMuteState();
+        }
         else if (typeof muteButton !== 'undefined' && muteButton && typeof volumeSlider !== 'undefined' && volumeSlider) {
              muteButton.textContent = this.isMuted ? "Odtlumit" : "Ztlumit";
              muteButton.classList.toggle('muted', this.isMuted);
