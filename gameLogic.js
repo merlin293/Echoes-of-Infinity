@@ -189,6 +189,11 @@ function calculateEffectiveStats() {
         }
     }
             
+    // Aplikace buffu Úlomek Síly, pokud je aktivní
+    if (gameState.activeBuffs && gameState.activeBuffs[BUFF_TYPE_POWER_SHARD] && typeof POWER_SHARD_MULTIPLIER !== 'undefined') {
+        calculatedDamage *= POWER_SHARD_MULTIPLIER;
+    }
+            
     gameState.effectiveClickDamage = Math.ceil(calculatedDamage);
     
     let calculatedCritChance = gameState.baseCritChance; 

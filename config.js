@@ -144,7 +144,7 @@ const allCompanions = {
     'bat_companion': {
         id: 'bat_companion', name: "Věrný Netopýr", icon: '🦇', description: "Malý netopýr, který ti pomáhá útočit.",
         basePassivePercent: 0.0002, passivePercentPerLevel: 0.0001, maxLevel: 50,
-        unlockCost: 5000,  upgradeBaseCost: 20, upgradeCostMultiplier: 1.15, source: 'shop',
+        unlockCost: 1000,  upgradeBaseCost: 20, upgradeCostMultiplier: 1.15, source: 'shop',
         skillTree: {
             'bat_faster_attacks': {
                 id: 'bat_faster_attacks', name: "Rychlejší Útoky",
@@ -171,7 +171,7 @@ const allCompanions = {
     'wolf_companion': {
         id: 'wolf_companion', name: "Mystický Vlk", icon: '🐺', description: "Silný vlk, který způsobuje značné poškození.",
         basePassivePercent: 0.001, passivePercentPerLevel: 0.0004, maxLevel: 30,
-        unlockCost: 25000, upgradeBaseCost: 100, upgradeCostMultiplier: 1.20, source: 'shop',
+        unlockCost: 15000, upgradeBaseCost: 100, upgradeCostMultiplier: 1.20, source: 'shop',
         skillTree: {
             'wolf_stronger_fangs': {
                 id: 'wolf_stronger_fangs', name: "Silnější Tesáky",
@@ -197,7 +197,7 @@ const allCompanions = {
     'golem_guardian': {
         id: 'golem_guardian', name: "Golem Strážce", icon: '🛡️', description: "Robustní golem s vysokým základním poškozením.",
         basePassivePercent: 0.0015, passivePercentPerLevel: 0.0003, maxLevel: 25,
-        unlockCost: 75000, upgradeBaseCost: 250, upgradeCostMultiplier: 1.22, source: 'shop',
+        unlockCost: 30000, upgradeBaseCost: 250, upgradeCostMultiplier: 1.22, source: 'shop',
         skillTree: {
             'golem_fortitude': {
                 id: 'golem_fortitude', name: "Opevnění",
