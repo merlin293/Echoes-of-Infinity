@@ -1,13 +1,60 @@
 /* SOUBOR: style.css */
+html {
+    height: 100%; /* Zajistí, že html element zabírá celou výšku viewportu */
+}
+
 body {
     font-family: 'Inter', sans-serif;
     touch-action: manipulation;
-    background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%);
+    /* Původní pozadí: background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); */
+    background-image: url('assets/game_Background.png'); /* Nové pozadí obrázkem */
+    background-size: cover; /* Obrázek pokryje celou plochu, může se oříznout, aby se vešel */
+    background-position: center center; /* Vycentruje obrázek */
+    background-repeat: no-repeat; /* Zabrání opakování obrázku */
+    background-attachment: fixed; /* Pozadí zůstane fixní při scrollování (volitelné) */
     color: #F3F4F6;
     overflow-y: auto;
     overflow-x: hidden;
     margin: 0;
+    min-height: 100%; /* Zajistí, že body zabírá alespoň celou výšku viewportu */
 }
+
+#splashScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('assets/main_Background.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: 9999;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Přidáno pro plynulý přechod při skrytí */
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
+}
+
+#splashScreen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
+}
+
+.splash-text {
+    font-size: 2rem;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+    padding: 1rem;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 0.5rem;
+}
+
 .game-container {
     min-height: 100vh;
     display: flex;
@@ -15,7 +62,16 @@ body {
     align-items: center;
     padding: 12px;
     box-sizing: border-box;
+    /* Přidáno pro plynulý přechod při zobrazení */
+    opacity: 0;
+    transition: opacity 0.5s ease-in;
 }
+
+.game-container:not(.hidden) { /* Styl pro zobrazenou herní plochu */
+    opacity: 1;
+}
+
+
 .main-content-area {
     display: flex;
     flex-direction: row;
@@ -23,6 +79,11 @@ body {
     width: 100%;
     max-width: 1024px;
     align-items: flex-start;
+    /* Přidání mírného pozadí pro lepší čitelnost obsahu nad obrázkem na pozadí */
+    /* Můžeš si pohrát s barvou a průhledností */
+    /* background-color: rgba(31, 41, 55, 0.3);  Příklad: Tmavě šedá s 30% průhledností */
+    /* padding: 1rem; */
+    /* border-radius: 0.5rem; */
 }
 .left-column, .middle-column, .right-column {
     display: flex;
@@ -73,8 +134,9 @@ body {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
 }
 .panel {
-    background-color: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08);
-    padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    background-color: rgba(31, 41, 55, 0.65); /* Tmavší a více průhledné pozadí panelů */
+    border: 1px solid rgba(75, 85, 99, 0.5); /* Mírně výraznější okraj */
+    padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.25); /* Výraznější stín */
     width: 100%;
 }
 .panel h3 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; text-align:center; }
@@ -109,9 +171,9 @@ body {
 #playerXPBar { height: 100%; background-color: #34D399; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
 
 .equipment-item, .companion-item {
-    background-color: rgba(255,255,255,0.05);
-    padding: 0.6rem; border-radius: 0.375rem; margin-bottom: 0.5rem;
-    border: 1px solid rgba(255,255,255,0.1);
+    background-color: rgba(55, 65, 81, 0.6); /* Mírně tmavší pro položky */
+    padding: 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem;
+    border: 1px solid rgba(75, 85, 99, 0.4);
     display: grid; grid-template-columns: auto 1fr; gap-x-3; align-items: center;
 }
 .companion-item.on-expedition {
@@ -146,101 +208,334 @@ body {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
 }
 
+/* --- Button Base Styles --- */
+.button-base {
+    color: white;
+    font-weight: 500;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+.button-base:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.button-base:active:not(:disabled) {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.button-base:disabled {
+    background-color: #374151 !important;
+    color: #6B7280 !important;
+    cursor: not-allowed;
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+/* --- Specific Button Categories --- */
 
 .equipment-level-button, .companion-button {
     background-color: #4A5568;
     color: white;
     font-weight: 500;
     padding: 0.3rem;
-    border-radius: 0.25rem;
-    transition: background-color 0.2s ease, transform 0.1s ease;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
     cursor: pointer;
     border: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     font-size: 0.7rem;
-    text-align: center;
     line-height: 1.2;
+    text-align: center;
+    margin-bottom: 0;
 }
-.equipment-level-button.affordable {
-    background-color: #10B981;
+.equipment-level-button:hover:not(:disabled), .companion-button:hover:not(:disabled) {
+    background-color: #5A6578;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
 }
-.equipment-level-button.affordable:hover {
-    background-color: #059669;
+.equipment-level-button:active:not(:disabled), .companion-button:active:not(:disabled) {
+    transform: scale(0.97);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
 }
-.equipment-level-button:hover, .companion-button:hover { background-color: #5A6578; transform: translateY(-1px); }
 .equipment-level-button:disabled, .companion-button:disabled {
-    background-color: #2D3748;
-    color: #718096;
-    cursor: not-allowed; transform: translateY(0);
+    background-color: #2D3748 !important;
+    color: #718096 !important;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.7;
 }
-.equipment-level-button .cost-text, .companion-button .cost-text {
-    font-size: 0.6rem;
-    display: block;
-    opacity: 0.8;
-}
+.equipment-level-button.affordable { background-color: #10B981; }
+.equipment-level-button.affordable:hover:not(:disabled) { background-color: #059669; }
 .companion-button.unlock { background-color: #10B981; }
-.companion-button.unlock:hover { background-color: #059669; }
+.companion-button.unlock:hover:not(:disabled) { background-color: #059669; }
 .companion-button.open-skills-companion { background-color: #8B5CF6; }
-.companion-button.open-skills-companion:hover { background-color: #7C3AED; }
-
-#advanceTierButton {
-    background-color: #10B981; color: white;
-     grid-column: span 2;
-    margin-top: 0.5rem;
-    padding: 0.3rem 0.5rem; border-radius: 0.375rem;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    font-size: 0.75rem;
-    display: flex; justify-content: center; align-items: center;
+.companion-button.open-skills-companion:hover:not(:disabled) { background-color: #7C3AED; }
+.equipment-level-button .cost-text, .companion-button .cost-text {
+    font-size: 0.6rem; display: block; opacity: 0.8;
 }
-#advanceTierButton:hover { background-color: #059669; }
-#advanceTierButton:disabled { background-color: #4B5563; }
 
-
-.action-button, .skill-button, .echo-upgrade-button, .talent-tree-button, .echo-button, .reset-game-button, .modal-trigger-button, .research-button, .essence-forge-button {
-    background-color: #3B82F6; color: white; font-weight: 500;
-    padding: 0.4rem 0.6rem; border-radius: 0.375rem;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    cursor: pointer; border: none; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    display: flex; justify-content: space-between; align-items: center;
+.action-button, .skill-button, .echo-upgrade-button, .talent-tree-button,
+.echo-button, .reset-game-button, .modal-trigger-button, .research-button,
+.essence-forge-button, .help-button, .advanced-settings-button, #advanceTierButton,
+.expedition-button {
+    color: white;
+    font-weight: 500;
+    padding: 0.4rem 0.6rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
     font-size: 0.8rem;
     width: 100%;
     margin-bottom: 0.5rem;
+    text-align: center;
 }
+.action-button, .skill-button, .echo-upgrade-button, .echo-button {
+    justify-content: space-between;
+}
+.talent-tree-button, .reset-game-button, .modal-trigger-button,
+.research-button, .essence-forge-button, .help-button,
+.advanced-settings-button, #advanceTierButton, .expedition-button {
+    justify-content: center;
+}
+
+
+.action-button:hover:not(:disabled), .skill-button:hover:not(:disabled),
+.echo-upgrade-button:hover:not(:disabled), .talent-tree-button:hover:not(:disabled),
+.echo-button:hover:not(:disabled), .reset-game-button:hover:not(:disabled),
+.modal-trigger-button:hover:not(:disabled), .research-button:hover:not(:disabled),
+.essence-forge-button:hover:not(:disabled), .help-button:hover:not(:disabled),
+.advanced-settings-button:hover:not(:disabled), #advanceTierButton:hover:not(:disabled),
+.expedition-button:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.action-button:active:not(:disabled), .skill-button:active:not(:disabled),
+.echo-upgrade-button:active:not(:disabled), .talent-tree-button:active:not(:disabled),
+.echo-button:active:not(:disabled), .reset-game-button:active:not(:disabled),
+.modal-trigger-button:active:not(:disabled), .research-button:active:not(:disabled),
+.essence-forge-button:active:not(:disabled), .help-button:active:not(:disabled),
+.advanced-settings-button:active:not(:disabled), #advanceTierButton:active:not(:disabled),
+.expedition-button:active:not(:disabled) {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.action-button:disabled, .skill-button:disabled, .echo-upgrade-button:disabled,
+.talent-tree-button:disabled, .echo-button:disabled, .reset-game-button:disabled,
+.modal-trigger-button:disabled, .research-button:disabled, .essence-forge-button:disabled,
+.help-button:disabled, .advanced-settings-button:disabled, #advanceTierButton:disabled,
+.expedition-button:disabled {
+    background-color: #374151 !important;
+    color: #6B7280 !important;
+    cursor: not-allowed;
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+    opacity: 0.7;
+}
+
 .action-button { background-color: #F59E0B; }
-.action-button:hover { background-color: #D97706; }
+.action-button:hover:not(:disabled) { background-color: #D97706; }
 .skill-button { background-color: #EC4899; }
-.skill-button:hover { background-color: #DB2777; }
+.skill-button:hover:not(:disabled) { background-color: #DB2777; }
 .echo-button { background-color: #8B5CF6; }
-.echo-button:hover { background-color: #7C3AED; }
+.echo-button:hover:not(:disabled) { background-color: #7C3AED; }
 .echo-upgrade-button { background-color: #6D28D9; }
-.echo-upgrade-button:hover { background-color: #5B21B6; }
+.echo-upgrade-button:hover:not(:disabled) { background-color: #5B21B6; }
 .talent-tree-button { background-color: #10B981; }
-.talent-tree-button:hover { background-color: #059669; }
+.talent-tree-button:hover:not(:disabled) { background-color: #059669; }
 .reset-game-button { background-color: #EF4444; }
-.reset-game-button:hover { background-color: #DC2626; }
+.reset-game-button:hover:not(:disabled) { background-color: #DC2626; }
 .modal-trigger-button { background-color: #6366F1; }
-.modal-trigger-button:hover { background-color: #4F46E5; }
+.modal-trigger-button:hover:not(:disabled) { background-color: #4F46E5; }
+#openExpeditionsButton { background-color: #FBBF24; }
+#openExpeditionsButton:hover:not(:disabled) { background-color: #F59E0B; }
 .help-button { background-color: #0EA5E9; }
-.help-button:hover { background-color: #0284C7; }
+.help-button:hover:not(:disabled) { background-color: #0284C7; }
 .advanced-settings-button { background-color: #F97316; }
-.advanced-settings-button:hover { background-color: #EA580C; }
+.advanced-settings-button:hover:not(:disabled) { background-color: #EA580C; }
 .research-button { background-color: #D946EF; }
-.research-button:hover { background-color: #C026D3; }
+.research-button:hover:not(:disabled) { background-color: #C026D3; }
 .essence-forge-button { background-color: #A855F7; }
-.essence-forge-button:hover { background-color: #9333EA; }
+.essence-forge-button:hover:not(:disabled) { background-color: #9333EA; }
+#advanceTierButton { background-color: #10B981; font-size: 0.75rem; }
+#advanceTierButton:hover:not(:disabled) { background-color: #059669; }
+.expedition-button { background-color: #22c55e; }
+.expedition-button:hover:not(:disabled) { background-color: #16a34a; }
+.expedition-button.start-expedition-btn {}
 
 
-.action-button:disabled, .skill-button:disabled, .echo-upgrade-button:disabled, .talent-tree-button:disabled, .echo-button:disabled, .reset-game-button:disabled, .modal-trigger-button:disabled, .help-button:disabled, .advanced-settings-button:disabled, .research-button:disabled, .essence-forge-button:disabled {
-    background-color: #4B5563; color: #9CA3AF;
-    cursor: not-allowed; transform: translateY(0); box-shadow: none;
+.action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text,
+.modal-trigger-text, .help-button-text, .advanced-settings-button-text,
+.research-button-text, .essence-forge-button-text {
+    flex-grow: 1;
 }
-.action-text, .skill-text, .echo-upgrade-text, .talent-tree-text, .reset-game-text, .modal-trigger-text, .help-button-text, .advanced-settings-button-text, .research-button-text, .essence-forge-button-text {
-    flex-grow: 1; text-align: center;
+.action-button .action-text, .skill-button .skill-text,
+.echo-upgrade-button .echo-upgrade-text, .echo-button .action-text {
+    text-align: left;
+    padding-left: 0.25rem;
 }
+
 .action-cost, .skill-cooldown, .echo-upgrade-cost {
     font-size: 0.65rem; opacity: 0.9; margin-left: 4px; white-space: nowrap;
 }
 .echo-upgrade-level { font-size: 0.6rem; opacity: 0.7; margin-left: 6px; }
+
+.talent-upgrade-button, .research-upgrade-button, .essence-upgrade-button,
+#confirmExpeditionStartButton, #cancelExpeditionStartButton {
+    color: white;
+    font-weight: 500;
+    padding: 0.3rem 0.6rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    font-size: 0.75rem;
+    width: 100%;
+    margin-top: 0.4rem;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.talent-upgrade-button:hover:not(:disabled), .research-upgrade-button:hover:not(:disabled),
+.essence-upgrade-button:hover:not(:disabled),
+#confirmExpeditionStartButton:hover:not(:disabled), #cancelExpeditionStartButton:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.talent-upgrade-button:active:not(:disabled), .research-upgrade-button:active:not(:disabled),
+.essence-upgrade-button:active:not(:disabled),
+#confirmExpeditionStartButton:active:not(:disabled), #cancelExpeditionStartButton:active:not(:disabled) {
+    transform: translateY(0px) scale(0.98);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.talent-upgrade-button:disabled, .research-upgrade-button:disabled,
+.essence-upgrade-button:disabled,
+#confirmExpeditionStartButton:disabled, #cancelExpeditionStartButton:disabled {
+    background-color: #374151 !important;
+    color: #6B7280 !important;
+    cursor: not-allowed;
+    transform: translateY(0) scale(1);
+    box-shadow: none;
+    opacity: 0.7;
+}
+
+.talent-upgrade-button, .research-upgrade-button, .essence-upgrade-button { background-color: #2563eb; }
+.talent-upgrade-button:hover:not(:disabled), .research-upgrade-button:hover:not(:disabled),
+.essence-upgrade-button:hover:not(:disabled) { background-color: #1D4ED8; }
+
+#confirmExpeditionStartButton { background-color: #10B981; padding: 0.4rem 0.8rem; width: auto !important; }
+#confirmExpeditionStartButton:hover:not(:disabled) { background-color: #059669; }
+#cancelExpeditionStartButton { background-color: #6B7280; padding: 0.4rem 0.8rem; width: auto !important; }
+#cancelExpeditionStartButton:hover:not(:disabled) { background-color: #4B5563; }
+
+.claim-quest-button {
+    background-color: #10B981;
+    color: white;
+    font-weight: 500;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    margin-top: 0.25rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.claim-quest-button:hover:not(:disabled) { background-color: #059669; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.15); }
+.claim-quest-button:active:not(:disabled) { transform: scale(0.97); }
+.claim-quest-button:disabled {
+    background-color: #374151 !important;
+    color: #6B7280 !important;
+    cursor: not-allowed; transform: none; box-shadow: none; opacity: 0.7;
+}
+.claim-quest-button.claimed {
+    background-color: #374151 !important; color: #6B7280 !important; cursor: default; opacity: 0.8; transform: none; box-shadow: none;
+}
+.claim-quest-button.claimed:hover { background-color: #374151 !important; }
+
+.advanced-settings-modal-content .mute-button {
+    background-color: #F59E0B;
+    color: white;
+    font-weight: 500;
+    padding: 0.2rem 0.8rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    width: auto !important;
+    font-size: 0.75rem;
+    margin-bottom: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+.advanced-settings-modal-content .mute-button:hover:not(:disabled) { background-color: #D97706; transform: translateY(-1px); }
+.advanced-settings-modal-content .mute-button.muted { background-color: #EF4444 !important; color: #FEE2E2 !important; }
+.advanced-settings-modal-content .mute-button.muted:hover:not(:disabled) { background-color: #DC2626 !important; }
+
+#requestTalentResetButton { background-color: #D97706; border-radius: 0.5rem; }
+#requestTalentResetButton:hover:not(:disabled) { background-color: #B45309; }
+#resetTalentsWithShardsButton { background-color: #7C3AED; border-radius: 0.5rem; }
+#resetTalentsWithShardsButton:hover:not(:disabled) { background-color: #6D28D9; }
+#resetTalentsWithGoldButton { background-color: #FBBF24; color: #1F2937; border-radius: 0.5rem; }
+#resetTalentsWithGoldButton:hover:not(:disabled) { background-color: #F59E0B;}
+#cancelTalentResetButton { background-color: #6B7280; border-radius: 0.5rem; }
+#cancelTalentResetButton:hover:not(:disabled) { background-color: #4B5563; }
+
+#confirmHardResetButton {
+    background-color: #DC2626;
+    color: white;
+    font-weight: 500;
+    width: auto !important; padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+#confirmHardResetButton:hover:not(:disabled) { background-color: #B91C1C; transform: translateY(-1px); }
+#cancelHardResetButton {
+    background-color: #6B7280;
+    color: white;
+    font-weight: 500;
+    width: auto !important; padding: 0.5rem 1.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+#cancelHardResetButton:hover:not(:disabled) { background-color: #4B5563; transform: translateY(-1px); }
 
 .damage-number {
     position: absolute; font-size: 1.15rem; font-weight: bold; color: #FBBF24;
@@ -253,10 +548,13 @@ body {
     border-radius: 0.5rem; font-weight: 500; width: 100%; max-width: 1000px;
     margin-top: 1rem; position: fixed; bottom: 10px; left: 50%;
     transform: translateX(-50%); z-index: 1000;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
+#messageBox.hidden { opacity: 0; transform: translate(-50%, 20px); pointer-events: none; }
+
 .buff-display, .debuff-display, .skill-active-display {
     margin-top: 0.3rem; padding: 0.3rem; background-color: rgba(75, 85, 99, 0.5);
-    border-radius: 0.25rem; font-size: 0.7rem; font-weight: 500;
+    border-radius: 0.375rem; font-size: 0.7rem; font-weight: 500;
     animation: effectFlash 0.5s ease-in-out;
 }
 @keyframes effectFlash {
@@ -269,7 +567,7 @@ body {
 .gold-rush-buff { color: #FDE047; background-color: rgba(250, 204, 21, 0.2); border: 1px solid #FBBF24;}
 
 .milestone, .artifact-item-display {
-    padding: 0.3rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.375rem;
+    padding: 0.3rem 0.5rem; margin-bottom: 0.3rem; border-radius: 0.5rem;
     font-size: 0.7rem; text-align: left;
 }
 .milestone.achieved, .artifact-item-display { background-color: rgba(16, 185, 129, 0.2); color: #A7F3D0; border: 1px solid rgba(16, 185, 129, 0.4); }
@@ -286,15 +584,24 @@ body {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0,0,0,0.7); display: flex;
     align-items: center; justify-content: center; z-index: 2000;
+    transition: opacity 0.2s ease-in-out;
 }
+.modal.hidden { opacity: 0; pointer-events: none; }
 .modal-content {
-    background-color: #2d3748; padding: 1.2rem; border-radius: 0.5rem;
+    background-color: #2d3748; padding: 1.2rem; border-radius: 0.75rem;
     width: 90%; max-width: 550px;
     max-height: 80vh; overflow-y: auto; border: 1px solid #4A5568;
+    transition: transform 0.2s ease-in-out, opacity 0.2s ease-in-out;
+    transform: scale(0.95);
+    opacity: 0;
+}
+.modal:not(.hidden) .modal-content {
+    transform: scale(1);
+    opacity: 1;
 }
 .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; }
 .modal-title { font-size: 1.1rem; font-weight: 600; color: #E2E8F0; }
-.modal-close-button { background: none; border: none; color: #A0AEC0; font-size: 1.3rem; cursor: pointer; }
+.modal-close-button { background: none; border: none; color: #A0AEC0; font-size: 1.3rem; cursor: pointer; transition: color 0.2s ease; }
 .modal-close-button:hover { color: #FFFFFF; }
 
 .talent-branch-title, .research-category-title, .essence-category-title, .expedition-category-title {
@@ -308,13 +615,17 @@ body {
 }
 .talent-item, .research-item, .essence-item, .expedition-item {
     background-color: rgba(255,255,255,0.05); padding: 0.6rem;
-    border-radius: 0.375rem; margin-bottom: 0.6rem;
+    border-radius: 0.5rem; margin-bottom: 0.6rem;
     border: 1px solid rgba(255,255,255,0.1);
     position: relative;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
-.talent-item.is-ultimate {
-    border-color: #FBBF24;
+.talent-item:hover, .research-item:hover, .essence-item:hover, .expedition-item:hover {
+    background-color: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.15);
 }
+
+.talent-item.is-ultimate { border-color: #FBBF24; }
 .talent-name, .research-name, .essence-name, .expedition-name {
     font-weight: 600; color: #CBD5E0; font-size: 0.85rem;
 }
@@ -322,19 +633,6 @@ body {
     font-size: 0.75rem; color: #A0AEC0; margin: 0.2rem 0;
 }
 .talent-level-cost, .research-level-cost, .essence-level-cost { font-size: 0.7rem; color: #718096; }
-.talent-upgrade-button, .research-upgrade-button, .essence-upgrade-button, .expedition-button {
-    background-color: #2563eb;
-    color: white; font-size: 0.75rem;
-    padding: 0.3rem 0.6rem; border-radius: 0.25rem; margin-top: 0.4rem;
-    transition: background-color 0.2s ease;
-    width: 100%;
-}
-.talent-upgrade-button:hover:not(:disabled), .research-upgrade-button:hover:not(:disabled), .essence-upgrade-button:hover:not(:disabled), .expedition-button:hover:not(:disabled) {
-    background-color: #1D4ED8;
-}
-.talent-upgrade-button:disabled, .research-upgrade-button:disabled, .essence-upgrade-button:disabled, .expedition-button:disabled {
-    background-color: #4A5568; cursor: not-allowed;
-}
 
 /* Styly specifické pro expedice */
 .expedition-item .expedition-header { display: flex; align-items: center; margin-bottom: 0.3rem; }
@@ -343,7 +641,7 @@ body {
 .expedition-item .expedition-timer { font-weight: 600; color: #F59E0B; }
 .expedition-item.running { border-left: 3px solid #F59E0B; }
 .expedition-item.locked { opacity: 0.6; border-left: 3px solid #6B7280; }
-.expedition-item.locked .expedition-button { background-color: #374151; color: #6B7280; }
+.expedition-item.locked .expedition-button { background-color: #374151 !important; color: #6B7280 !important; }
 .expedition-unlock-condition { font-size: 0.7rem; color: #F87171; margin-top: 0.3rem; font-style: italic; }
 
 /* Modál pro výběr společníků */
@@ -355,23 +653,13 @@ body {
 
 
 #talentResetSection { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #4A5568; }
-#requestTalentResetButton { background-color: #D97706; }
-#requestTalentResetButton:hover:not(:disabled) { background-color: #B45309; }
-#talentResetCostOptions .talent-upgrade-button { width: 100%; margin-bottom: 0.5rem; }
-#resetTalentsWithShardsButton { background-color: #7C3AED; }
-#resetTalentsWithShardsButton:hover:not(:disabled) { background-color: #6D28D9; }
-#resetTalentsWithGoldButton { background-color: #FBBF24; color: #1F2937;}
-#resetTalentsWithGoldButton:hover:not(:disabled) { background-color: #F59E0B;}
-#cancelTalentResetButton { background-color: #6B7280; }
-#cancelTalentResetButton:hover:not(:disabled) { background-color: #4B5563; }
-
 
 /* Styly pro Denní Výzvy */
 .daily-quest-item {
     background-color: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.5rem;
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     margin-bottom: 0.5rem;
 }
 .daily-quest-item.completed {
@@ -381,18 +669,7 @@ body {
 .daily-quest-item .description { font-weight: 600; color: #E5E7EB; font-size: 0.8rem; }
 .daily-quest-item .progress { font-size: 0.7rem; color: #9CA3AF; margin: 0.1rem 0; }
 .daily-quest-item .reward { font-size: 0.7rem; color: #FBBF24; font-style: italic;}
-.claim-quest-button {
-    background-color: #10B981; color: white;
-    font-size: 0.7rem; padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem; margin-top: 0.25rem;
-    width: 100%;
-}
-.claim-quest-button:disabled {
-    background-color: #4B5563; color: #9CA3AF; cursor: not-allowed;
-}
-.claim-quest-button.claimed {
-    background-color: #374151; color: #6B7280; cursor: default;
-}
+
 /* Styly pro Herní Statistiky */
 .game-stats-panel .stat-item {
     display: flex;
@@ -400,198 +677,63 @@ body {
     padding: 0.2rem 0;
     border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-.game-stats-panel .stat-item:last-child {
-    border-bottom: none;
-}
+.game-stats-panel .stat-item:last-child { border-bottom: none; }
 .game-stats-panel .stat-label { font-size: 0.75rem; color: #D1D5DB; }
 .game-stats-panel .stat-value { font-size: 0.8rem; font-weight: 600; color: #FFFFFF; }
 
 /* Styly pro ovládání zvuku v Pokročilých Nastaveních */
 .advanced-settings-modal-content label {
-    font-size: 0.75rem;
-    color: #D1D5DB;
-    margin-bottom: 0.25rem;
-    display: block;
+    font-size: 0.75rem; color: #D1D5DB; margin-bottom: 0.25rem; display: block;
 }
-.advanced-settings-modal-content .setting-item label {
-    margin-bottom: 0;
-    display: inline;
-}
-
-.advanced-settings-modal-content input[type="range"] {
-    width: 100%;
-    cursor: pointer;
-}
-.advanced-settings-modal-content .setting-item input[type="range"].w-1\/2 {
-    width: 50%;
-}
-
- .advanced-settings-modal-content .setting-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    padding: 0.3rem 0;
+.advanced-settings-modal-content .setting-item label { margin-bottom: 0; display: inline; }
+.advanced-settings-modal-content input[type="range"] { width: 100%; cursor: pointer; }
+.advanced-settings-modal-content .setting-item input[type="range"].w-1\/2 { width: 50%; }
+.advanced-settings-modal-content .setting-item {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.5rem; padding: 0.3rem 0;
     border-bottom: 1px solid rgba(255,255,255,0.08);
 }
- .advanced-settings-modal-content .setting-item:last-of-type {
+.advanced-settings-modal-content .setting-item-divider {
+    padding-top: 0.75rem; margin-top: 0.75rem;
+    border-top-width: 1px; border-color: #4A5568;
 }
- .advanced-settings-modal-content .setting-item-divider {
-    padding-top: 0.75rem;
-    margin-top: 0.75rem;
-    border-top-width: 1px;
-    border-color: #4A5568;
+.advanced-settings-modal-content .setting-item-divider h4 {
+    font-size: 0.875rem; font-weight: 600; color: #9CA3AF; margin-bottom: 0.5rem;
 }
- .advanced-settings-modal-content .setting-item-divider h4 {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #9CA3AF;
-    margin-bottom: 0.5rem;
- }
-
 
 /* Custom Switch Toggle */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 40px;
-  height: 20px;
-}
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.switch input { opacity: 0; width: 0; height: 0; }
 .slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #4A5568;
-  transition: .4s;
-  border-radius: 20px;
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #4A5568; transition: .4s; border-radius: 20px;
 }
 .slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: .4s;
-  border-radius: 50%;
+  position: absolute; content: ""; height: 14px; width: 14px;
+  left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%;
 }
-input:checked + .slider {
-  background-color: #10B981;
-}
-input:focus + .slider {
-  box-shadow: 0 0 1px #10B981;
-}
-input:checked + .slider:before {
-  transform: translateX(20px);
-}
-
-/* Mute button v Pokročilých Nastaveních */
-.advanced-settings-modal-content .mute-button {
-    background-color: #F59E0B;
-    color: white;
-    font-weight: 500;
-    padding: 0.2rem 0.5rem;
-    border-radius: 0.375rem;
-    transition: background-color 0.2s ease, color 0.2s ease;
-    cursor: pointer;
-    border: none;
-    font-size: 0.75rem;
-}
-.advanced-settings-modal-content .mute-button:hover {
-    background-color: #D97706;
-}
-.advanced-settings-modal-content .mute-button.muted {
-    background-color: #EF4444;
-    color: #FEE2E2;
-}
-.advanced-settings-modal-content .mute-button.muted:hover {
-    background-color: #DC2626;
-}
+input:checked + .slider { background-color: #10B981; }
+input:focus + .slider { box-shadow: 0 0 1px #10B981; }
+input:checked + .slider:before { transform: translateX(20px); }
 
 /* Styly pro Nápovědu */
-.help-modal-section {
-    margin-bottom: 1rem;
-}
+.help-modal-section { margin-bottom: 1rem; }
 .help-modal-section h4 {
-    font-size: 1rem;
-    font-weight: 700;
-    color: #A0AEC0;
-    margin-bottom: 0.4rem;
-    border-bottom: 1px solid #4A5568;
-    padding-bottom: 0.2rem;
+    font-size: 1rem; font-weight: 700; color: #A0AEC0; margin-bottom: 0.4rem;
+    border-bottom: 1px solid #4A5568; padding-bottom: 0.2rem;
 }
 .help-modal-section p, .help-modal-section ul {
-    font-size: 0.8rem;
-    color: #D1D5DB;
-    margin-bottom: 0.3rem;
-    line-height: 1.5;
+    font-size: 0.8rem; color: #D1D5DB; margin-bottom: 0.3rem; line-height: 1.5;
 }
- .help-modal-section ul {
-    list-style-type: disc;
-    padding-left: 1.2rem;
- }
- .help-modal-section strong {
-    color: #FBBF24;
- }
+.help-modal-section ul { list-style-type: disc; padding-left: 1.2rem; }
+.help-modal-section strong { color: #FBBF24; }
 
 /* Styly pro Reset Confirm Modal */
-#resetConfirmModal .modal-content {
-    max-width: 400px;
-    text-align: center;
-}
-#resetConfirmModal .modal-header {
-    justify-content: center;
-}
-#resetConfirmModal .modal-title {
-    color: #F87171;
-}
-#resetConfirmModal p {
-    margin-bottom: 0.75rem;
-}
-#resetConfirmModal .flex {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 1.5rem;
-}
-
-#confirmHardResetButton {
-    background-color: #DC2626;
-    color: white;
-    padding: 0.5rem 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-    border: none;
-    cursor: pointer;
-    width: auto;
-}
-#confirmHardResetButton:hover {
-    background-color: #B91C1C;
-}
-
-#cancelHardResetButton {
-    background-color: #6B7280;
-    color: white;
-    padding: 0.5rem 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: background-color 0.2s ease;
-    border: none;
-    cursor: pointer;
-    width: auto;
-}
-#cancelHardResetButton:hover {
-    background-color: #4B5563;
-}
+#resetConfirmModal .modal-content { max-width: 400px; text-align: center; border-radius: 0.75rem; }
+#resetConfirmModal .modal-header { justify-content: center; }
+#resetConfirmModal .modal-title { color: #F87171; }
+#resetConfirmModal p { margin-bottom: 0.75rem; }
+#resetConfirmModal .flex { display: flex; justify-content: space-around; margin-top: 1.5rem; }
 
 /* Tooltip Styles (Generic - can be reused or specialized) */
 .tooltip-base {
@@ -599,7 +741,7 @@ input:checked + .slider:before {
     background-color: #1f2937;
     color: #e5e7eb;
     border: 1px solid #4b5563;
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
     padding: 0.75rem;
     font-size: 0.75rem;
     z-index: 3000;
@@ -612,7 +754,7 @@ input:checked + .slider:before {
     transition: opacity 0.1s ease-in-out;
 }
 .tooltip-base.hidden {
-    display: none;
+    display: none !important;
     opacity: 0;
 }
 .tooltip-name-base {
@@ -646,38 +788,57 @@ input:checked + .slider:before {
 .tooltip-effect-current-base { color: #a7f3d0; }
 .tooltip-effect-next-base { color: #60A5FA; }
 
-
 /* Talent Tooltip Styles */
-#talentTooltip { /* Inherits from .tooltip-base if that class is added in HTML */
-    /* Specific overrides for talentTooltip if needed, or just use .tooltip-base styles */
-}
-.talent-tooltip-name { /* Inherits from .tooltip-name-base */
-    color: #FBBF24; /* Talent-specific color */
-}
-/* Other .talent-tooltip-* classes can inherit or override .tooltip-*-base */
-.talent-tooltip-effect { color: #a7f3d0; }
-.talent-tooltip-effect-next { color: #60A5FA; }
+#talentTooltip.tooltip-base .talent-tooltip-name { color: #FBBF24; }
+#talentTooltip.tooltip-base .talent-tooltip-effect { color: #a7f3d0; }
+#talentTooltip.tooltip-base .talent-tooltip-effect-next { color: #60A5FA; }
+.talent-tooltip-name { color: #FBBF24; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.9rem;}
+.talent-tooltip-level { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem;}
+.talent-tooltip-description { font-style: italic; color: #d1d5db; margin-bottom: 0.5rem; font-size: 0.7rem;}
+.talent-tooltip-hr { border: 0; height: 1px; background-color: #374151; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+.talent-tooltip-effect { margin-bottom: 0.25rem; color: #a7f3d0; font-size: 0.75rem;}
+.talent-tooltip-effect-next { margin-bottom: 0.25rem; color: #60A5FA; font-size: 0.75rem;}
 
 
 /* Essence Tooltip Styles */
-#essenceTooltip {
-    border-color: #6D28D9; /* Essence-specific border */
-}
-.essence-tooltip-name {
-    color: #A855F7; /* Essence-specific color */
-}
-.essence-tooltip-effect { color: #a7f3d0; }
-.essence-tooltip-effect-next { color: #60A5FA; }
+#essenceTooltip.tooltip-base { border-color: #6D28D9; }
+#essenceTooltip.tooltip-base .essence-tooltip-name { color: #A855F7; }
+.essence-tooltip-name { color: #A855F7; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.9rem;}
+.essence-tooltip-level { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem;}
+.essence-tooltip-description { font-style: italic; color: #d1d5db; margin-bottom: 0.5rem; font-size: 0.7rem;}
+.essence-tooltip-hr { border: 0; height: 1px; background-color: #4A5568; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+.essence-tooltip-effect { margin-bottom: 0.25rem; color: #a7f3d0; font-size: 0.75rem;}
+.essence-tooltip-effect-next { margin-bottom: 0.25rem; color: #60A5FA; font-size: 0.75rem;}
 
 /* Research Tooltip Styles */
-#researchTooltip {
-    border-color: #D946EF; /* Research-specific border (example: magenta) */
-}
-.research-tooltip-name {
-    color: #D946EF; /* Research-specific color */
-}
-.research-tooltip-effect { color: #a7f3d0; }
-.research-tooltip-effect-next { color: #60A5FA; }
+#researchTooltip.tooltip-base { border-color: #D946EF; }
+#researchTooltip.tooltip-base .research-tooltip-name { color: #D946EF; }
+.research-tooltip-name { color: #D946EF; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.9rem;}
+.research-tooltip-level { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem;}
+.research-tooltip-description { font-style: italic; color: #d1d5db; margin-bottom: 0.5rem; font-size: 0.7rem;}
+.research-tooltip-hr { border: 0; height: 1px; background-color: #4A5568; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+.research-tooltip-effect { margin-bottom: 0.25rem; color: #a7f3d0; font-size: 0.75rem;}
+.research-tooltip-effect-next { margin-bottom: 0.25rem; color: #60A5FA; font-size: 0.75rem;}
+
+/* Companion Tooltip Styles */
+#companionTooltip.tooltip-base { border-color: #34D399; }
+#companionTooltip.tooltip-base .companion-tooltip-name { color: #34D399; }
+.companion-tooltip-name { color: #34D399; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.9rem;}
+.companion-tooltip-level { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem;}
+.companion-tooltip-hr { border: 0; height: 1px; background-color: #4A5568; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+.companion-tooltip-effect { margin-bottom: 0.25rem; color: #a7f3d0; font-size: 0.75rem;}
+.companion-tooltip-effect-next { margin-bottom: 0.25rem; color: #60A5FA; font-size: 0.75rem;}
+
+/* Companion Skill Tooltip Styles */
+#companionSkillTooltip.tooltip-base { border-color: #EC4899; }
+#companionSkillTooltip.tooltip-base .companionskill-tooltip-name { color: #EC4899; }
+.companionskill-tooltip-name { color: #EC4899; font-weight: bold; display: block; margin-bottom: 0.3rem; font-size: 0.9rem;}
+.companionskill-tooltip-level { font-size: 0.7rem; color: #9ca3af; margin-bottom: 0.5rem;}
+.companionskill-tooltip-hr { border: 0; height: 1px; background-color: #4A5568; margin-top: 0.5rem; margin-bottom: 0.5rem;}
+.companionskill-tooltip-effect { margin-bottom: 0.25rem; color: #a7f3d0; font-size: 0.75rem;}
+.companionskill-tooltip-effect-next { margin-bottom: 0.25rem; color: #60A5FA; font-size: 0.75rem;}
+.companionskill-tooltip-cost { margin-top: 0.5rem; color: #cbd5e0; font-weight: 500; font-size: 0.7rem;}
+
 
 
 @media (max-width: 900px) {

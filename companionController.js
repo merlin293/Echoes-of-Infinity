@@ -1,40 +1,45 @@
 // SOUBOR: companionController.js
 
+// Globální proměnná pro tooltip element (bude inicializována v uiController.js)
+// let companionTooltipElement;
+
 /**
  * Vypočítá pasivní poškození (%HP/s) daného společníka na základě jeho úrovně a dovedností.
  * @param {string} companionId - ID společníka.
+ * @param {number} [forcedLevel] - Volitelná úroveň pro výpočet náhledu.
  * @returns {number} - Pasivní poškození v procentech (např. 0.0002 pro 0.02%).
  */
-function calculateCompanionPassivePercent(companionId) {
-    // Kontrola, zda je společník na aktivní výpravě
-    if (gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(companionId))) {
-        return 0; // Společník je na výpravě, nepřispívá k pasivnímu DPS
+function calculateCompanionPassivePercent(companionId, forcedLevel = null) {
+    const companionDef = allCompanions[companionId];
+    const companionInstance = gameState.ownedCompanions[companionId];
+
+    // Pokud je společník na aktivní výpravě a nepočítáme náhled pro jinou úroveň, DPS je 0
+    if (forcedLevel === null && gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(companionId))) {
+        return 0;
     }
 
-    const companionDef = allCompanions[companionId]; // Z config.js
-    const companionInstance = gameState.ownedCompanions[companionId]; // Z gameState.js
+    if (companionDef && companionInstance) {
+        const levelToUse = forcedLevel !== null ? forcedLevel : companionInstance.level;
+        if (levelToUse <= 0) return 0; // Pokud je úroveň 0 nebo méně, DPS je 0
 
-    if (companionDef && companionInstance && companionInstance.level > 0) {
         let currentBasePassivePercent = companionDef.basePassivePercent;
 
-        // Aplikace bonusu z dovednosti, která zvyšuje základní pasivní poškození
-        if (typeof getCompanionSkillBonus === 'function') { // getCompanionSkillBonus z companionSkillController.js
+        if (typeof getCompanionSkillBonus === 'function') {
             const baseDamageIncreaseBonus = getCompanionSkillBonus(companionId, 'companion_base_damage_increase_percent');
             currentBasePassivePercent *= (1 + baseDamageIncreaseBonus);
         }
 
-        let finalPassivePercent = currentBasePassivePercent + (companionInstance.level - 1) * companionDef.passivePercentPerLevel;
+        let finalPassivePercent = currentBasePassivePercent + (levelToUse - 1) * companionDef.passivePercentPerLevel;
 
-        // Aplikace multiplikativního bonusu z dovednosti na celkové poškození společníka
         if (typeof getCompanionSkillBonus === 'function') {
             const damageMultiplierBonus = getCompanionSkillBonus(companionId, 'companion_damage_multiplier_percent');
             finalPassivePercent *= (1 + damageMultiplierBonus);
         }
-
         return finalPassivePercent;
     }
     return 0;
 }
+
 
 /**
  * Vypočítá celkové pasivní poškození (%HP/s) od všech vlastněných společníků.
@@ -45,7 +50,7 @@ function calculateTotalCompanionPassivePercent() {
     if (!gameState.ownedCompanions) return 0;
     for (const id in gameState.ownedCompanions) {
         if (gameState.ownedCompanions.hasOwnProperty(id)) {
-            totalPercent += calculateCompanionPassivePercent(id); // Tato funkce již zohledňuje výpravy
+            totalPercent += calculateCompanionPassivePercent(id);
         }
     }
     return totalPercent;
@@ -59,6 +64,105 @@ function updateTotalCompanionPassivePercentOnGameState() {
 }
 
 /**
+ * Generuje texty pro náhled vylepšení společníka.
+ * @param {string} companionId - ID společníka.
+ * @returns {object} - Objekt s texty pro tooltip.
+ */
+function getCompanionUpgradePreviewText(companionId) {
+    const companionDef = allCompanions[companionId];
+    const companionInstance = gameState.ownedCompanions[companionId];
+
+    if (!companionDef || !companionInstance) {
+        return { name: "Neznámý společník", currentLevelText: "", currentEffectText: "Chyba", nextEffectText: "" };
+    }
+
+    const currentLevel = companionInstance.level;
+    const isOnExpedition = gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(companionId));
+
+    let currentDps = calculateCompanionPassivePercent(companionId);
+    let currentEffectText = `Nyní: ${formatNumber(currentDps * 100, 3)}% HP/s`;
+    if (isOnExpedition) {
+        currentEffectText += " (Na výpravě - 0% DPS)";
+    }
+
+    let nextEffectText = "";
+    if (isOnExpedition) {
+        nextEffectText = "Nelze vylepšit na výpravě.";
+    } else if (currentLevel < companionDef.maxLevel) {
+        const nextLevelDps = calculateCompanionPassivePercent(companionId, currentLevel + 1);
+        nextEffectText = `Další úr. (${currentLevel + 1}): ${formatNumber(nextLevelDps * 100, 3)}% HP/s`;
+    } else {
+        nextEffectText = "Maximální úroveň";
+    }
+
+    return {
+        name: companionDef.name,
+        currentLevelText: `Úroveň: ${currentLevel}/${companionDef.maxLevel}`,
+        currentEffectText,
+        nextEffectText,
+    };
+}
+
+/**
+ * Zobrazí tooltip s informacemi o vylepšení společníka.
+ * @param {string} companionId - ID společníka.
+ * @param {MouseEvent} event - Událost myši pro pozicování.
+ */
+function showCompanionTooltip(companionId, event) {
+    if (!companionTooltipElement) { // companionTooltipElement z uiController.js
+        return;
+    }
+
+    const preview = getCompanionUpgradePreviewText(companionId);
+    let tooltipHTML = `
+        <strong class="companion-tooltip-name">${preview.name}</strong>
+        <p class="companion-tooltip-level">${preview.currentLevelText}</p>
+        <hr class="companion-tooltip-hr">
+        <p class="companion-tooltip-effect">${preview.currentEffectText}</p>`;
+    if (preview.nextEffectText) {
+        tooltipHTML += `<p class="companion-tooltip-effect-next">${preview.nextEffectText}</p>`;
+    }
+
+    companionTooltipElement.innerHTML = tooltipHTML;
+    companionTooltipElement.classList.remove('hidden');
+    updateCompanionTooltipPosition(event);
+}
+
+/**
+ * Skryje tooltip společníka.
+ */
+function hideCompanionTooltip() {
+    if (companionTooltipElement) {
+        companionTooltipElement.classList.add('hidden');
+    }
+}
+
+/**
+ * Aktualizuje pozici tooltipu společníka.
+ * @param {MouseEvent} event - Událost myši.
+ */
+function updateCompanionTooltipPosition(event) {
+    if (!companionTooltipElement || companionTooltipElement.classList.contains('hidden')) return;
+    const tooltipWidth = companionTooltipElement.offsetWidth;
+    const tooltipHeight = companionTooltipElement.offsetHeight;
+    let x = event.clientX + 15;
+    let y = event.clientY + 15;
+    const viewportRight = window.innerWidth;
+    const viewportBottom = window.innerHeight;
+    if (x + tooltipWidth > viewportRight - 10) {
+        x = event.clientX - tooltipWidth - 15;
+    }
+    if (y + tooltipHeight > viewportBottom - 10) {
+        y = event.clientY - tooltipHeight - 15;
+    }
+    x = Math.max(10, x);
+    y = Math.max(10, y);
+    companionTooltipElement.style.left = `${x}px`;
+    companionTooltipElement.style.top = `${y}px`;
+}
+
+
+/**
  * Vykreslí společníky v jejich panelu v UI.
  */
 function renderCompanionsUI() {
@@ -66,15 +170,9 @@ function renderCompanionsUI() {
         console.error("renderCompanionsUI ERROR: Companions container (companionsContainer) not found for rendering.");
         return;
     }
-    // console.log("renderCompanionsUI: companionsContainer found.");
-    // console.log("renderCompanionsUI: gameState.ownedCompanions:", JSON.stringify(gameState.ownedCompanions || {}));
-    // console.log("renderCompanionsUI: gameState.activeExpeditions:", JSON.stringify(gameState.activeExpeditions || []));
-
-
     companionsContainer.innerHTML = '';
 
     if (typeof allCompanions !== 'object' || allCompanions === null || Object.keys(allCompanions).length === 0) {
-        // console.warn("renderCompanionsUI: allCompanions is not a populated object or is empty.");
         companionsContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Žádní společníci nejsou definováni v konfiguraci.</p>';
         return;
     }
@@ -87,14 +185,13 @@ function renderCompanionsUI() {
             const isOnExpedition = gameState.activeExpeditions && gameState.activeExpeditions.some(exp => exp.assignedCompanionIds.includes(id));
 
             if (!companionDef) {
-                // console.warn(`renderCompanionsUI: companionDef for id '${id}' is undefined. Skipping.`);
                 continue;
             }
 
             const companionDiv = document.createElement('div');
             companionDiv.classList.add('companion-item');
             if (isOnExpedition) {
-                companionDiv.classList.add('on-expedition'); // Pro případné specifické stylování
+                companionDiv.classList.add('on-expedition');
             }
 
             let companionHTML = `
@@ -104,7 +201,7 @@ function renderCompanionsUI() {
                     <span class="text-xs text-gray-400">${companionDef.description || 'Popis chybí.'}</span>`;
 
             if (companionInstance) {
-                const currentPassivePerc = calculateCompanionPassivePercent(id); // Již vrací 0, pokud je na výpravě
+                const currentPassivePerc = calculateCompanionPassivePercent(id);
                 companionHTML += `
                     <span class="companion-level">Úroveň: ${companionInstance.level} / ${companionDef.maxLevel || 'N/A'}</span>
                     <span class="companion-dps">%HP/s: ${formatNumber(currentPassivePerc * 100, 3)}%</span>`;
@@ -115,12 +212,30 @@ function renderCompanionsUI() {
                 </div>
                 <div class="companion-upgrade-options">`;
 
+                const upgradeButton = document.createElement('button');
+                upgradeButton.dataset.id = id;
+                upgradeButton.classList.add('companion-button', 'upgrade-companion');
+                upgradeButton.disabled = isOnExpedition || companionInstance.level >= (companionDef.maxLevel || Infinity);
+                const upgradeCost = Math.ceil((companionDef.upgradeBaseCost || 0) * Math.pow(companionDef.upgradeCostMultiplier || 1, companionInstance.level -1));
+                upgradeButton.innerHTML = `Vylepšit <span class="cost-text">(${formatNumber(upgradeCost)} Z)</span>`;
+
+                if (!isOnExpedition && companionInstance.level < (companionDef.maxLevel || Infinity)) {
+                    upgradeButton.addEventListener('mouseenter', (event) => showCompanionTooltip(id, event));
+                    upgradeButton.addEventListener('mouseleave', hideCompanionTooltip);
+                    upgradeButton.addEventListener('mousemove', updateCompanionTooltipPosition);
+                }
+                
+                const tempDiv = document.createElement('div'); // Pomocný div pro parsování HTML
+                tempDiv.appendChild(upgradeButton);
+
+
                 if (companionInstance.level < (companionDef.maxLevel || Infinity)) {
-                    const upgradeCost = Math.ceil((companionDef.upgradeBaseCost || 0) * Math.pow(companionDef.upgradeCostMultiplier || 1, companionInstance.level -1));
-                    companionHTML += `<button data-id="${id}" class="companion-button upgrade-companion" ${isOnExpedition ? 'disabled' : ''}>Vylepšit <span class="cost-text">(${formatNumber(upgradeCost)} Z)</span></button>`;
+                     companionHTML += tempDiv.innerHTML;
                 } else {
                     companionHTML += `<button class="companion-button" disabled>Max. úroveň</button>`;
                 }
+
+
                 if (companionDef.skillTree && Object.keys(companionDef.skillTree).length > 0) {
                     companionHTML += `<button data-id="${id}" class="companion-button open-skills-companion" ${isOnExpedition ? 'disabled' : ''}>Dovednosti</button>`;
                 } else {
@@ -136,26 +251,33 @@ function renderCompanionsUI() {
             }
             companionDiv.innerHTML = companionHTML;
             companionsContainer.appendChild(companionDiv);
+
+            // Znovu připojení event listenerů pro dynamicky vytvořené tlačítko vylepšení
+            if (companionInstance && !isOnExpedition && companionInstance.level < (companionDef.maxLevel || Infinity)) {
+                const newUpgradeButton = companionDiv.querySelector(`.upgrade-companion[data-id="${id}"]`);
+                if (newUpgradeButton) {
+                    newUpgradeButton.addEventListener('mouseenter', (event) => showCompanionTooltip(id, event));
+                    newUpgradeButton.addEventListener('mouseleave', hideCompanionTooltip);
+                    newUpgradeButton.addEventListener('mousemove', updateCompanionTooltipPosition);
+                }
+            }
+
             appendedCount++;
         }
     }
-    // console.log(`renderCompanionsUI: Appended ${appendedCount} companion items.`);
 
     if (appendedCount === 0 && Object.keys(allCompanions).length > 0) {
-        // console.warn("renderCompanionsUI: allCompanions has items, but nothing was appended.");
         companionsContainer.innerHTML = '<p class="text-xs text-gray-400 text-center">Společníci jsou definováni, ale nepodařilo se je zobrazit.</p>';
     }
 
     if (typeof updateCompanionButtonStates === 'function') updateCompanionButtonStates();
 }
 
-
 /**
  * Odemkne společníka, pokud má hráč dostatek zlata.
  * @param {string} companionId - ID společníka k odemčení.
  */
 function unlockCompanion(companionId) {
-    // console.log(`UNLOCK_COMPANION: Attempting to unlock companion '${companionId}'. Current gold: ${gameState.gold}`);
     const companionDef = allCompanions[companionId];
 
     if (!companionDef) {
@@ -166,16 +288,12 @@ function unlockCompanion(companionId) {
     const isAlreadyOwned = gameState.ownedCompanions && gameState.ownedCompanions[companionId];
     const canAfford = gameState.gold >= (companionDef.unlockCost || 0);
 
-    // console.log(`UNLOCK_COMPANION: companionDef.name: ${companionDef.name}, unlockCost: ${companionDef.unlockCost}, isAlreadyOwned: ${isAlreadyOwned}, canAfford: ${canAfford}`);
-
     if (!isAlreadyOwned && canAfford) {
         gameState.gold -= (companionDef.unlockCost || 0);
         if (!gameState.ownedCompanions) {
             gameState.ownedCompanions = {};
-            // console.log("UNLOCK_COMPANION: gameState.ownedCompanions was undefined, initialized to {}.");
         }
         gameState.ownedCompanions[companionId] = { level: 1 };
-        // console.log(`UNLOCK_COMPANION: Companion '${companionId}' unlocked. gameState.ownedCompanions NOW:`, JSON.stringify(gameState.ownedCompanions));
 
         if (companionDef.skillTree && typeof gameState.companionSkillLevels !== 'undefined') {
             if (!gameState.companionSkillLevels[companionId]) {
@@ -192,16 +310,13 @@ function unlockCompanion(companionId) {
         if (typeof soundManager !== 'undefined') soundManager.playSound('upgrade', 'D5', '8n');
 
         updateTotalCompanionPassivePercentOnGameState();
-        // console.log("UNLOCK_COMPANION: Calling renderCompanionsUI after unlock.");
         renderCompanionsUI();
         if (typeof updateUI === 'function') updateUI();
         if (typeof checkMilestones === 'function') checkMilestones();
     } else if (isAlreadyOwned) {
         if (typeof showMessageBox === 'function') showMessageBox("Tento společník je již odemčen.", true);
-        // console.log(`UNLOCK_COMPANION: Companion '${companionId}' is already owned.`);
     } else if (!canAfford) {
         if (typeof showMessageBox === 'function') showMessageBox("Nedostatek zlata!", true);
-        // console.log(`UNLOCK_COMPANION: Not enough gold to unlock '${companionId}'. Needed: ${companionDef.unlockCost}, Has: ${gameState.gold}`);
     }
 }
 
@@ -258,7 +373,7 @@ function updateCompanionButtonStates() {
         const costSpan = button.querySelector('.cost-text');
 
         if (button.classList.contains('unlock')) {
-            button.disabled = gameState.gold < (companionDef.unlockCost || 0) || !!companionInstance; // Unlock by neměl být ovlivněn výpravou, protože ještě není vlastněn
+            button.disabled = gameState.gold < (companionDef.unlockCost || 0) || !!companionInstance;
             if (costSpan) costSpan.textContent = `(${formatNumber(companionDef.unlockCost || 0)} Z)`;
         } else if (button.classList.contains('upgrade-companion')) {
             if (companionInstance && companionInstance.level < (companionDef.maxLevel || Infinity)) {

@@ -32,13 +32,22 @@ let goldDisplayContainer, enemyElement, enemyArtElement, enemyNameDisplay, enemy
     expeditionSlotsDisplay, expeditionCompanionSelectModal, expeditionCompanionSelectList,
     confirmExpeditionStartButton, cancelExpeditionStartButton,
     totalPlayTimeDisplay, currentRunPlayTimeDisplay, fastestBossKillDisplay,
-    talentTooltipElement, essenceTooltipElement, researchTooltipElement; // Přidáno researchTooltipElement
+    talentTooltipElement, essenceTooltipElement, researchTooltipElement, companionTooltipElement,
+    companionSkillTooltipElement; // Přidáno companionSkillTooltipElement
 
 
 function initializeUIElements() {
     goldDisplayContainer = document.getElementById('goldDisplayContainer');
     enemyElement = document.getElementById('enemy');
     enemyArtElement = document.getElementById('enemyArt');
+    // ... (ostatní inicializace)...
+    talentTooltipElement = document.getElementById('talentTooltip');
+    essenceTooltipElement = document.getElementById('essenceTooltip');
+    researchTooltipElement = document.getElementById('researchTooltip');
+    companionTooltipElement = document.getElementById('companionTooltip');
+    companionSkillTooltipElement = document.getElementById('companionSkillTooltip'); // Inicializace companionSkill tooltipu
+
+    // Zbytek inicializací DOM elementů
     enemyNameDisplay = document.getElementById('enemyName');
     enemyHealthTextDisplay = document.getElementById('enemyHealthText');
     enemyHealthBar = document.getElementById('enemyHealthBar');
@@ -128,18 +137,15 @@ function initializeUIElements() {
     essenceForgeModal = document.getElementById('essenceForgeModal');
     essenceContainer = document.getElementById('essenceContainer');
     modalEchoShardsEssence = document.getElementById('modalEchoShardsEssence');
-
     resetConfirmModal = document.getElementById('resetConfirmModal');
     confirmHardResetButton = document.getElementById('confirmHardResetButton');
     cancelHardResetButton = document.getElementById('cancelHardResetButton');
-
     companionEssenceDisplay = document.getElementById('companionEssenceDisplay');
     companionSkillModal = document.getElementById('companionSkillModal');
     companionSkillModalTitle = document.getElementById('companionSkillModalTitle');
     modalCompanionEssenceDisplay = document.getElementById('modalCompanionEssenceDisplay');
     companionSkillsContainer = document.getElementById('companionSkillsContainer');
     closeCompanionSkillModalButton = document.getElementById('closeCompanionSkillModalButton');
-
     openExpeditionsButton = document.getElementById('openExpeditionsButton');
     expeditionsModal = document.getElementById('expeditionsModal');
     expeditionsListContainer = document.getElementById('expeditionsListContainer');
@@ -149,14 +155,9 @@ function initializeUIElements() {
     expeditionCompanionSelectList = document.getElementById('expeditionCompanionSelectList');
     confirmExpeditionStartButton = document.getElementById('confirmExpeditionStartButton');
     cancelExpeditionStartButton = document.getElementById('cancelExpeditionStartButton');
-
     totalPlayTimeDisplay = document.getElementById('totalPlayTimeDisplay');
     currentRunPlayTimeDisplay = document.getElementById('currentRunPlayTimeDisplay');
     fastestBossKillDisplay = document.getElementById('fastestBossKillDisplay');
-
-    talentTooltipElement = document.getElementById('talentTooltip');
-    essenceTooltipElement = document.getElementById('essenceTooltip');
-    researchTooltipElement = document.getElementById('researchTooltip'); // Inicializace research tooltipu
 }
 
 // ... (zbytek funkcí v uiController.js zůstává stejný)

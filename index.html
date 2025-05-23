@@ -10,8 +10,10 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="gameArea" class="game-container">
-        <div class="mb-4 text-center"> <h1 class="text-2xl font-bold game-title">Echoes of Infinity</h1> <p class="text-xs game-subtitle">Clicker Prototyp</p> </div>
+    <div id="splashScreen">
+        </div>
+
+    <div id="gameArea" class="game-container hidden"> <div class="mb-4 text-center"> <h1 class="text-2xl font-bold game-title">Echoes of Infinity</h1> <p class="text-xs game-subtitle">Clicker Prototyp</p> </div>
 
         <div class="main-content-area">
             <div class="left-column">
@@ -33,36 +35,36 @@
                     </div>
 
                 <div id="echoUpgradesPanel" class="panel">
-                    <h3 class="font-semibold text-gray-100 text-center">Echo Vylepšení</h3>
+                    <h3 class="font-semibold text-gray-100 text-center">🔮 Echo Vylepšení</h3>
                     <div id="echoUpgradesList" class="space-y-2">
                         <button id="upgradeEchoGold" class="echo-upgrade-button w-full">
-                            <span class="echo-upgrade-text">+<span id="echoGoldBonusValue">5</span>% Zlato <span id="echoGoldLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
+                            <span class="echo-upgrade-text">💰 +<span id="echoGoldBonusValue">5</span>% Zlato <span id="echoGoldLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
                             <span class="echo-upgrade-cost">Cena: <span id="echoGoldCostDisplay">10</span> EÚ</span>
                         </button>
                         <button id="upgradeEchoDamage" class="echo-upgrade-button w-full">
-                            <span class="echo-upgrade-text">+<span id="echoDamageBonusValue">5</span>% Poškození <span id="echoDamageLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
+                            <span class="echo-upgrade-text">⚔️ +<span id="echoDamageBonusValue">5</span>% Poškození <span id="echoDamageLevel" class="echo-upgrade-level">(Úr. 0)</span></span>
                             <span class="echo-upgrade-cost">Cena: <span id="echoDamageCostDisplay">10</span> EÚ</span>
                         </button>
                     </div>
                 </div>
 
                 <div id="actionsPanel" class="panel">
-                    <h3 class="font-semibold text-gray-100 text-center">Akce a Schopnosti</h3>
+                    <h3 class="font-semibold text-gray-100 text-center">⚡ Akce a Schopnosti</h3>
                     <div class="space-y-2">
                         <button id="mocnyUderButton" class="skill-button w-full">
-                            <span id="mocnyUderText" class="skill-text">Mocný úder</span>
+                            <span id="mocnyUderText" class="skill-text">💥 Mocný úder</span>
                             <span id="mocnyUderCooldownDisplay" class="skill-cooldown">(Připraveno)</span>
                         </button>
                         <button id="zlataHoreckaAktivniButton" class="skill-button w-full">
-                            <span id="zlataHoreckaAktivniText" class="skill-text">Zlatá horečka</span>
+                            <span id="zlataHoreckaAktivniText" class="skill-text">💰 Zlatá horečka</span>
                             <span id="zlataHoreckaAktivniCooldownDisplay" class="skill-cooldown">(Připraveno)</span>
                         </button>
                         <button id="cleanseDebuffButton" class="action-button w-full hidden mt-2">
-                            <span class="action-text">Očistit Parazita</span>
+                            <span class="action-text">💧 Očistit Parazita</span>
                             <span class="action-cost">Cena: <span id="cleanseCostDisplay">30</span> Z</span>
                         </button>
                         <button id="echoButton" class="echo-button w-full hidden mt-2">
-                            <span class="action-text">Echo (Získat <span id="echoShardsToGain">0</span> EÚ)</span>
+                            <span class="action-text">🌀 Echo (Získat <span id="echoShardsToGain">0</span> EÚ)</span>
                             <span id="echoConditionDisplay" class="action-cost">Připraveno</span>
                         </button>
                     </div>
@@ -73,27 +75,27 @@
                 <div class="stats-panel panel text-center">
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div id="goldDisplayContainer">
-                            <p class="text-xs">Zlato</p> <p id="goldDisplay" class="text-value">0</p>
+                            <p class="text-xs">💰 Zlato</p> <p id="goldDisplay" class="text-value">0</p>
                         </div>
                         <div>
-                            <p class="text-xs">Poškození kliknutím</p>
+                            <p class="text-xs">⚔️ Poškození kliknutím</p>
                             <p id="clickDamageDisplay" class="text-value">1</p>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div>
-                            <p class="text-xs">Úroveň Nepř. (Efektivní)</p>
+                            <p class="text-xs">🎯 Úroveň Nepř. (Efektivní)</p>
                             <p id="enemyEffectiveLevelDisplay" class="text-value text-orange-400">1</p>
                         </div>
-                        <div> <p class="text-xs">Pasivní Poškození</p> <p id="passiveDamageDisplay" class="text-value text-red-400">0% HP/s</p> </div>
+                        <div> <p class="text-xs">🔥 Pasivní Poškození</p> <p id="passiveDamageDisplay" class="text-value text-red-400">0% HP/s</p> </div>
                     </div>
                     <div class="grid grid-cols-2 gap-2 mb-2">
                         <div>
-                            <p class="text-xs">Svět</p>
+                            <p class="text-xs">🌍 Svět</p>
                             <p id="currentWorldDisplay" class="text-value">1</p>
                         </div>
                         <div>
-                            <p class="text-xs">Zóna</p>
+                            <p class="text-xs">📍 Zóna</p>
                             <p id="currentZoneDisplay" class="text-value">1</p>
                         </div>
                     </div>
@@ -101,11 +103,11 @@
 
                     <div class="grid grid-cols-2 gap-2 mt-2">
                         <div>
-                            <p class="text-xs">Úroveň Hráče</p>
+                            <p class="text-xs">👤 Úroveň Hráče</p>
                             <p id="playerLevelDisplay" class="text-value">1</p>
                         </div>
                         <div>
-                            <p class="text-xs">Talentové Body</p>
+                            <p class="text-xs">⭐ Talentové Body</p>
                             <p id="talentPointsDisplay" class="text-value text-indigo-400">0</p>
                         </div>
                     </div>
@@ -114,61 +116,61 @@
                     </div>
                     <p id="playerXPText" class="text-xs mt-1 text-gray-400">XP: 0 / 100</p>
 
-                    <div class="mt-2"> <p class="text-xs">Echo Úlomky</p>
+                    <div class="mt-2"> <p class="text-xs">🔮 Echo Úlomky</p>
                         <p id="echoShardsDisplay" class="text-value">0</p>
                     </div>
-                     <div class="mt-1"> <p class="text-xs">Esence Společníků</p>
+                     <div class="mt-1"> <p class="text-xs">🐾 Esence Společníků</p>
                         <p id="companionEssenceDisplay" class="text-value text-pink-400">0</p>
                     </div>
-                    <div class="mt-1"> <p class="text-xs">Počet Ech</p>
+                    <div class="mt-1"> <p class="text-xs">🌀 Počet Ech</p>
                         <p id="echoCountDisplay" class="text-value text-purple-400">0</p>
                     </div>
                 </div>
                 <button id="openTalentTreeButton" class="talent-tree-button w-full">
-                    <span class="talent-tree-text">Cesta Věčnosti (Talenty)</span>
+                    <span class="talent-tree-text">✨ Cesta Věčnosti (Talenty)</span>
                 </button>
                 <div id="equipmentPanel" class="panel">
-                    <h3>Vybavení (<span id="currentTierDisplay">T0 Plátěné</span>)</h3>
+                    <h3>🛡️ Vybavení (<span id="currentTierDisplay">T0 Plátěné</span>)</h3>
                     <div id="equipmentContainer" class="space-y-2">
                         </div>
-                    <button id="advanceTierButton" class="w-full"> Postoupit na další Tier (<span id="nextTierCostDisplay">N/A</span>)
+                    <button id="advanceTierButton" class="w-full">🚀 Postoupit na další Tier (<span id="nextTierCostDisplay">N/A</span>)
                     </button>
                 </div>
             </div>
 
             <div class="right-column">
                  <button id="openExpeditionsButton" class="modal-trigger-button !bg-yellow-500 hover:!bg-yellow-600">
-                    <span class="modal-trigger-text">Výpravy</span>
+                    <span class="modal-trigger-text">🗺️ Výpravy</span>
                 </button>
                  <button id="openEssenceForgeButton" class="modal-trigger-button essence-forge-button">
-                    <span class="essence-forge-button-text">Kovárna Esencí</span>
+                    <span class="essence-forge-button-text">💎 Kovárna Esencí</span>
                 </button>
                  <button id="openResearchLabButton" class="modal-trigger-button research-button">
-                    <span class="research-button-text">Výzkumné Laboratoře</span>
+                    <span class="research-button-text">🔬 Výzkumné Laboratoře</span>
                 </button>
                 <button id="openAdvancedSettingsButton" class="modal-trigger-button advanced-settings-button">
-                    <span class="advanced-settings-button-text">Pokročilá Nastavení</span>
+                    <span class="advanced-settings-button-text">⚙️ Pokročilá Nastavení</span>
                 </button>
                 <button id="openHelpButton" class="modal-trigger-button help-button">
-                    <span class="help-button-text">Nápověda</span>
+                    <span class="help-button-text">❓ Nápověda</span>
                 </button>
                 <button id="openDailyQuestsButton" class="modal-trigger-button">
-                    <span class="modal-trigger-text">Denní Výzvy</span>
+                    <span class="modal-trigger-text">📅 Denní Výzvy</span>
                 </button>
                 <button id="openMilestonesButton" class="modal-trigger-button">
-                    <span class="modal-trigger-text">Milníky</span>
+                    <span class="modal-trigger-text">🏆 Milníky</span>
                 </button>
 
-                <div id="artifactsPanel" class="panel hidden"> <h3 class="font-semibold text-gray-100 text-center">Artefakty</h3>
+                <div id="artifactsPanel" class="panel hidden"> <h3 class="font-semibold text-gray-100 text-center">📜 Artefakty</h3>
                     <div id="artifactsList" class="space-y-1 max-h-40 overflow-y-auto">
                         </div>
                 </div>
                  <div id="companionsPanel" class="panel">
-                    <h3>Společníci</h3>
+                    <h3>🐾 Společníci</h3>
                     <div id="companionsContainer" class="space-y-2">
                         </div>
                 </div>
-                <div id="gameStatsPanel" class="panel game-stats-panel"> <h3>Herní Statistiky</h3>
+                <div id="gameStatsPanel" class="panel game-stats-panel"> <h3>📊 Herní Statistiky</h3>
                     <div id="gameStatsContainer">
                         <div class="stat-item">
                             <span class="stat-label">Celkový čas hraní:</span>
@@ -192,12 +194,14 @@
         <div id="talentTooltip" class="tooltip-base hidden"></div>
         <div id="essenceTooltip" class="tooltip-base hidden"></div>
         <div id="researchTooltip" class="tooltip-base hidden"></div>
+        <div id="companionTooltip" class="tooltip-base hidden"></div>
+        <div id="companionSkillTooltip" class="tooltip-base hidden"></div>
 
 
         <div id="essenceForgeModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Kovárna Esencí</h2>
+                    <h2 class="modal-title">💎 Kovárna Esencí</h2>
                     <button id="closeEssenceForgeButton" class="modal-close-button">&times;</button>
                 </div>
                 <div class="mb-4 text-center">
@@ -211,7 +215,7 @@
         <div id="researchModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Výzkumné Laboratoře</h2>
+                    <h2 class="modal-title">🔬 Výzkumné Laboratoře</h2>
                     <button id="closeResearchModalButton" class="modal-close-button">&times;</button>
                 </div>
                 <div class="mb-4 text-center">
@@ -225,7 +229,7 @@
         <div id="advancedSettingsModal" class="modal hidden">
             <div class="modal-content advanced-settings-modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Pokročilá Nastavení Hry</h2>
+                    <h2 class="modal-title">⚙️ Pokročilá Nastavení Hry</h2>
                     <button id="closeAdvancedSettingsButton" class="modal-close-button">&times;</button>
                 </div>
                 <div class="space-y-3 mt-2">
@@ -257,7 +261,7 @@
                     </div>
                      <div class="mt-6 pt-3 border-t border-gray-600">
                          <button id="resetGameButtonAdvanced" class="reset-game-button w-full">
-                            <span class="reset-game-text">Restartovat Hru (HARD RESET)</span>
+                            <span class="reset-game-text">♻️ Restartovat Hru (HARD RESET)</span>
                         </button>
                     </div>
                 </div>
@@ -267,7 +271,7 @@
         <div id="helpModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Nápověda ke Hře</h2>
+                    <h2 class="modal-title">❓ Nápověda ke Hře</h2>
                     <button id="closeHelpButton" class="modal-close-button">&times;</button>
                 </div>
                 <div id="helpContentContainer" class="space-y-3 mt-2">
@@ -339,7 +343,7 @@
         <div id="talentTreeModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Cesta Věčnosti - Strom Talentů</h2>
+                    <h2 class="modal-title">✨ Cesta Věčnosti - Strom Talentů</h2>
                     <button id="closeTalentTreeButton" class="modal-close-button">&times;</button>
                 </div>
                 <div class="mb-4 text-center">
@@ -349,7 +353,7 @@
                 <div id="talentsContainer" class="space-y-3">
                     </div>
                 <div id="talentResetSection" class="mt-4 pt-4 border-t border-gray-600 text-center">
-                    <button id="requestTalentResetButton" class="talent-upgrade-button">Resetovat Talentové Body</button>
+                    <button id="requestTalentResetButton" class="talent-upgrade-button">♻️ Resetovat Talentové Body</button>
                     <div id="talentResetCostOptions" class="hidden mt-2 space-y-1">
                         <p class="text-xs text-gray-400 mb-2">Vyberte způsob platby pro reset:</p>
                         <button id="resetTalentsWithShardsButton" class="talent-upgrade-button w-full">
@@ -367,7 +371,7 @@
         <div id="dailyQuestsModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Denní Výzvy</h2>
+                    <h2 class="modal-title">📅 Denní Výzvy</h2>
                     <button id="closeDailyQuestsButton" class="modal-close-button">&times;</button>
                 </div>
                 <div id="dailyQuestsListModal" class="space-y-2 mt-2">
@@ -378,7 +382,7 @@
         <div id="milestonesModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Milníky</h2>
+                    <h2 class="modal-title">🏆 Milníky</h2>
                     <button id="closeMilestonesButton" class="modal-close-button">&times;</button>
                 </div>
                 <div id="milestonesListModal" class="space-y-1 mt-2 max-h-72 overflow-y-auto">
@@ -405,7 +409,7 @@
         <div id="companionSkillModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 id="companionSkillModalTitle" class="modal-title">Strom Dovedností Společníka</h2>
+                    <h2 id="companionSkillModalTitle" class="modal-title">🐾 Strom Dovedností Společníka</h2>
                     <button id="closeCompanionSkillModalButton" class="modal-close-button">&times;</button>
                 </div>
                 <div class="mb-4 text-center">
@@ -419,7 +423,7 @@
         <div id="expeditionsModal" class="modal hidden">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 class="modal-title">Výpravy (<span id="expeditionSlotsDisplay">0/0</span>)</h2>
+                    <h2 class="modal-title">🗺️ Výpravy (<span id="expeditionSlotsDisplay">0/0</span>)</h2>
                     <button id="closeExpeditionsModalButton" class="modal-close-button">&times;</button>
                 </div>
                 <div id="expeditionsListContainer" class="space-y-3 mt-2">
