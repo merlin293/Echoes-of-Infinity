@@ -31,30 +31,35 @@ function initializeGame() {
 
     const splashScreen = document.getElementById('splashScreen');
     const gameArea = document.getElementById('gameArea');
+    const splashClickText = document.getElementById('splashClickText'); // Získání reference na text
 
-    if (!splashScreen || !gameArea) {
-        console.error("Splash screen or game area element not found!");
-        // If splash is missing, try to show gameArea directly to avoid getting stuck
-        if (gameArea) gameArea.classList.remove('hidden');
-        // Proceed with the rest of initialization if possible
+    if (!splashScreen || !gameArea || !splashClickText) {
+        console.error("Splash screen, game area or splash click text element not found!");
+        if (gameArea) gameArea.classList.remove('hidden'); // Alespoň zkusit zobrazit hru
     } else {
-        // Game area is initially hidden by class in HTML
-        // splashScreen.classList.remove('hidden'); // Splash is visible by default
+        // Event listener pro pohyb myši na splash screenu
+        splashScreen.addEventListener('mousemove', (event) => {
+            if (!splashScreen.classList.contains('hidden')) { // Jen pokud je splash screen viditelný
+                splashClickText.classList.remove('hidden'); // Zobrazit text
+                splashClickText.style.left = `${event.clientX}px`;
+                splashClickText.style.top = `${event.clientY}px`;
+            }
+        });
+
+        // Event listener pro opuštění splash screenu myší (volitelné, pokud chceme text skrýt)
+        splashScreen.addEventListener('mouseleave', () => {
+            splashClickText.classList.add('hidden');
+        });
 
         splashScreen.addEventListener('click', async () => {
             console.log("Splash screen clicked.");
-            await firstUserGestureHandler(); // Ensure audio context is started on this first click
+            await firstUserGestureHandler();
             splashScreen.classList.add('hidden');
+            splashClickText.classList.add('hidden'); // Skrýt i text při kliknutí
             gameArea.classList.remove('hidden');
             console.log("Game area shown.");
-            // After the game is visible, we might want to trigger an initial UI update
-            // if it hasn't happened yet or if some elements depend on visibility.
-            if (typeof updateUI === 'function') {
-                // updateUI(); // Consider if needed here, or if loadGame handles it.
-            }
-        }, { once: true }); // Event listener to run only once
+        }, { once: true });
     }
-
 
     if (typeof initializeUIElements === 'function') {
         initializeUIElements();
@@ -74,6 +79,7 @@ function initializeGame() {
         enemyElement.addEventListener('click', handleEnemyClick);
     }
 
+    // ... (zbytek vašich event listenerů v initializeGame) ...
     if (cleanseDebuffButton && typeof onCleanseParasite === 'function') {
         cleanseDebuffButton.addEventListener('click', onCleanseParasite);
     }
@@ -250,11 +256,6 @@ function initializeGame() {
         });
     }
 
-    // Odebráno: Listenery pro první interakci jsou nyní na splash screenu
-    // document.body.addEventListener('click', firstUserGestureHandler, { capture: true, once: true });
-    // document.body.addEventListener('touchstart', firstUserGestureHandler, { capture: true, once: true });
-    // document.body.addEventListener('keydown', firstUserGestureHandler, { capture: true, once: true });
-
     if (typeof gameTick === 'function' && typeof saveGame === 'function' && typeof checkCompletedExpeditions === 'function') {
         setInterval(() => {
             gameTick();
@@ -263,9 +264,9 @@ function initializeGame() {
         setInterval(saveGame, 15000);
         console.log("Game loops started (including expedition check).");
     } else {
-        // ... (stávající chybové hlášky) ...
+        console.error("Herní smyčky nebyly spuštěny.");
     }
-
+    
     console.log("Echoes of Infinity initialized!");
 }
 

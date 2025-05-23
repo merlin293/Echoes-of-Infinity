@@ -1,22 +1,21 @@
 /* SOUBOR: style.css */
 html {
-    height: 100%; /* Zajistí, že html element zabírá celou výšku viewportu */
+    height: 100%;
 }
 
 body {
     font-family: 'Inter', sans-serif;
     touch-action: manipulation;
-    /* Původní pozadí: background: linear-gradient(135deg, #4B5563 0%, #1F2937 100%); */
-    background-image: url('assets/game_Background.png'); /* Nové pozadí obrázkem */
-    background-size: cover; /* Obrázek pokryje celou plochu, může se oříznout, aby se vešel */
-    background-position: center center; /* Vycentruje obrázek */
-    background-repeat: no-repeat; /* Zabrání opakování obrázku */
-    background-attachment: fixed; /* Pozadí zůstane fixní při scrollování (volitelné) */
+    background-image: url('assets/game_Background.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     color: #F3F4F6;
     overflow-y: auto;
     overflow-x: hidden;
     margin: 0;
-    min-height: 100%; /* Zajistí, že body zabírá alespoň celou výšku viewportu */
+    min-height: 100%;
 }
 
 #splashScreen {
@@ -34,26 +33,36 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Přidáno pro plynulý přechod při skrytí */
     opacity: 1;
     visibility: visible;
-    transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
+    transition: opacity 0.5s ease-out, visibility 0s linear 0s; /* Okamžitá změna visibility po dokončení opacity transition */
 }
 
 #splashScreen.hidden {
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
+    transition: opacity 0.5s ease-out, visibility 0s linear 0.5s; /* Skryje po dokončení animace opacity */
+    pointer-events: none; /* Důležité, aby neblokoval kliknutí na hru pod ním */
 }
 
-.splash-text {
-    font-size: 2rem;
-    color: white;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-    padding: 1rem;
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 0.5rem;
+#splashClickText {
+    position: fixed; /* Fixní pozice pro sledování kurzoru */
+    font-size: 2.5rem; /* Větší text */
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.8); /* Mírně průhledná bílá */
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 0 20px rgba(0,0,0,0.5); /* Záře a stín */
+    pointer-events: none; /* Aby text neblokoval kliknutí na splash screen */
+    z-index: 10000; /* Nad splash screen pozadím, ale pod případným jiným UI na splash */
+    transform: translate(-50%, -50%); /* Pro centrování textu na kurzor */
+    white-space: nowrap;
+    transition: opacity 0.2s ease-in-out; /* Plynulé zobrazení/skrytí textu */
 }
+
+
+.hidden {
+    display: none !important;
+}
+
 
 .game-container {
     min-height: 100vh;
@@ -62,12 +71,11 @@ body {
     align-items: center;
     padding: 12px;
     box-sizing: border-box;
-    /* Přidáno pro plynulý přechod při zobrazení */
     opacity: 0;
-    transition: opacity 0.5s ease-in;
+    transition: opacity 0.5s ease-in 0.3s; /* Zpoždění pro zobrazení po skrytí splash */
 }
 
-.game-container:not(.hidden) { /* Styl pro zobrazenou herní plochu */
+.game-container:not(.hidden) {
     opacity: 1;
 }
 
@@ -79,11 +87,6 @@ body {
     width: 100%;
     max-width: 1024px;
     align-items: flex-start;
-    /* Přidání mírného pozadí pro lepší čitelnost obsahu nad obrázkem na pozadí */
-    /* Můžeš si pohrát s barvou a průhledností */
-    /* background-color: rgba(31, 41, 55, 0.3);  Příklad: Tmavě šedá s 30% průhledností */
-    /* padding: 1rem; */
-    /* border-radius: 0.5rem; */
 }
 .left-column, .middle-column, .right-column {
     display: flex;
@@ -134,9 +137,9 @@ body {
     text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
 }
 .panel {
-    background-color: rgba(31, 41, 55, 0.65); /* Tmavší a více průhledné pozadí panelů */
-    border: 1px solid rgba(75, 85, 99, 0.5); /* Mírně výraznější okraj */
-    padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.25); /* Výraznější stín */
+    background-color: rgba(31, 41, 55, 0.65);
+    border: 1px solid rgba(75, 85, 99, 0.5);
+    padding: 0.7rem; border-radius: 0.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.25);
     width: 100%;
 }
 .panel h3 { font-size: 0.95rem; margin-bottom: 0.5rem; font-weight: 600; text-align:center; }
@@ -171,7 +174,7 @@ body {
 #playerXPBar { height: 100%; background-color: #34D399; transition: width 0.2s ease-in-out; border-radius: 0.25rem; }
 
 .equipment-item, .companion-item {
-    background-color: rgba(55, 65, 81, 0.6); /* Mírně tmavší pro položky */
+    background-color: rgba(55, 65, 81, 0.6);
     padding: 0.6rem; border-radius: 0.5rem; margin-bottom: 0.5rem;
     border: 1px solid rgba(75, 85, 99, 0.4);
     display: grid; grid-template-columns: auto 1fr; gap-x-3; align-items: center;
