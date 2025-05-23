@@ -299,11 +299,11 @@ const allExpeditions = {
         requiredCompanions: 2,
         difficulty: 3,
         possibleRewards: [
-            { type: 'echo_shards', baseAmountMin: 5, baseAmountMax: 15, chance: 0.7 },
-            { type: 'gold', baseAmountMin: 10000, baseAmountMax: 30000, chance: 0.3 }
+            { type: 'echo_shards', baseAmountMin: 10, baseAmountMax: 25, chance: 0.8 }, // Mírně upraveno pro vyšší level
+            { type: 'gold', baseAmountMin: 15000, baseAmountMax: 40000, chance: 0.2 }
         ],
-        unlockCondition: () => gameState.playerLevel >= 10 && gameState.echoCount >= 1,
-        unlockConditionText: "Vyžaduje Úroveň Hráče: 10 & Počet Ech: 1"
+        unlockCondition: () => gameState.playerLevel >= 30 && gameState.currentZoneInWorld >= 5,
+        unlockConditionText: "Vyžaduje Úroveň Hráče: 30 & Dosažení Zóny 5 (v aktuálním světě)"
     },
     'exp_long_artifact_recon': {
         id: 'exp_long_artifact_recon',
@@ -319,8 +319,8 @@ const allExpeditions = {
             { type: 'companion_essence', baseAmountMin: 3, baseAmountMax: 7, chance: 0.5 },
             { type: 'echo_shards', baseAmountMin: 20, baseAmountMax: 50, chance: 0.4 }
         ],
-        unlockCondition: () => gameState.playerLevel >= 20 && gameState.echoCount >= 2 && Object.keys(gameState.ownedArtifactsData).length > 0,
-        unlockConditionText: "Vyžaduje Úr. Hráče: 20, Počet Ech: 2 & Alespoň 1 Artefakt"
+        unlockCondition: () => gameState.playerLevel >= 20 && gameState.currentWorld >= 2 && Object.keys(gameState.ownedArtifactsData).length > 0,
+        unlockConditionText: "Vyžaduje Úr. Hráče: 20, Svět: 2 & Alespoň 1 Artefakt"
     }
 };
 
