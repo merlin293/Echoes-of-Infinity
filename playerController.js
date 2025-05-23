@@ -55,8 +55,10 @@ function calculateTotalEffectivePassivePercentForPreview() {
 
     let totalBasePassive = passiveFromTiersArtifactsTalents + passiveFromCompanions;
 
-    if (talents.passivePercentMultiplierTalent && (talents.passivePercentMultiplierTalent.currentLevel || 0) > 0) {
-        totalBasePassive *= (1 + talents.passivePercentMultiplierTalent.effectValue * (talents.passivePercentMultiplierTalent.currentLevel || 0));
+    // Zde se ujistíme, že přistupujeme k talents[id].currentLevel bezpečně
+    const passiveMultiplierTalent = talents.passivePercentMultiplierTalent;
+    if (passiveMultiplierTalent && (passiveMultiplierTalent.currentLevel || 0) > 0) {
+        totalBasePassive *= (1 + passiveMultiplierTalent.effectValue * (passiveMultiplierTalent.currentLevel || 0));
     }
     if (typeof getEssenceBonus === 'function') {
         totalBasePassive *= (1 + getEssenceBonus('essence_passive_dps_multiplier_percent'));
@@ -75,28 +77,38 @@ function getEffectiveStatsWithTempTalentLevel(talentIdToMod, tempLevel) {
     const originalLevel = talents[talentIdToMod].currentLevel || 0;
     talents[talentIdToMod].currentLevel = tempLevel;
 
-    // Tyto funkce by měly být schopny pracovat s aktuálním (dočasně změněným) stavem 'talents'
-    if (typeof updateCurrentTierBonuses === 'function') {
-        updateCurrentTierBonuses();
+    // Přepočet statistik, které mohou být ovlivněny talenty
+    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses(); // Může být ovlivněno talenty
+    if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats(); // Hlavní přepočet
+    // Přepočet pro expedice a offline, pokud jsou relevantní pro tento talent
+    let tempExpeditionSlots = gameState.expeditionSlots;
+    if (talentIdToMod === 'expeditionSlotsTalent' && talents.expeditionSlotsTalent) {
+         // Musíme simulovat, jak by se změnily sloty
+        let baseSlots = 1; // Nebo nějaká jiná základní hodnota, pokud ji máte
+        // Najdeme původní příspěvek talentu a odečteme ho, pak přičteme nový
+        let otherTalentSlots = 0;
+        for (const id in talents) {
+            if (talents[id].effectType === 'expedition_slots_additive' && id !== talentIdToMod) {
+                otherTalentSlots += (talents[id].currentLevel || 0) * talents[id].effectValue;
+            }
+        }
+        tempExpeditionSlots = baseSlots + otherTalentSlots + (tempLevel * talents.expeditionSlotsTalent.effectValue);
     }
-    if (typeof calculateEffectiveStats === 'function') {
-        calculateEffectiveStats();
-    }
+
 
     const previewStats = {
         clickDamage: gameState.effectiveClickDamage,
         critChance: gameState.effectiveCritChance,
         totalPassivePercent: calculateTotalEffectivePassivePercentForPreview(),
+        expeditionSlots: tempExpeditionSlots,
+        // Pro offline bonusy se náhled zobrazuje přímo jako procento talentu
     };
 
     // Obnovení původního stavu
     talents[talentIdToMod].currentLevel = originalLevel;
-    if (typeof updateCurrentTierBonuses === 'function') {
-        updateCurrentTierBonuses();
-    }
-    if (typeof calculateEffectiveStats === 'function') {
-        calculateEffectiveStats();
-    }
+    if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses();
+    if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats();
+    // Není potřeba explicitně obnovovat gameState.expeditionSlots zde, protože se mění jen dočasná proměnná
 
     return previewStats;
 }
@@ -143,25 +155,35 @@ function getTalentEffectPreviewText(talentId) {
                 nextEffectText = `Další úr.: ${formatNumber(previewStatsNextLevel.totalPassivePercent * 100, 2)}% Max HP/s (celkem)`;
             }
             break;
+        // Talenty s přímým procentuálním efektem
         case 'gold_multiplier_all_percent':
-            currentEffectText = `Nyní: +${formatNumber(currentLevel * talent.effectValue * 100, 0)}% k zisku zlata (z tohoto talentu)`;
-            if (currentLevel < talent.maxLevel) {
-                nextEffectText = `Další úr.: +${formatNumber((currentLevel + 1) * talent.effectValue * 100, 0)}% (z tohoto talentu)`;
-            }
-            break;
         case 'echo_shard_multiplier_percent':
-            currentEffectText = `Nyní: +${formatNumber(currentLevel * talent.effectValue * 100, 0)}% k zisku EÚ (z tohoto talentu)`;
+        case 'crit_damage_multiplier_bonus_percent':
+        case 'expedition_duration_reduction_percent':
+        case 'expedition_extra_reward_chance_percent':
+        case 'expedition_cost_reduction_percent':
+            currentEffectText = `Nyní: +${formatNumber(currentLevel * talent.effectValue * 100, 0)}%`;
             if (currentLevel < talent.maxLevel) {
-                nextEffectText = `Další úr.: +${formatNumber((currentLevel + 1) * talent.effectValue * 100, 0)}% (z tohoto talentu)`;
+                nextEffectText = `Další úr.: +${formatNumber((currentLevel + 1) * talent.effectValue * 100, 0)}%`;
             }
             break;
-        case 'crit_damage_multiplier_bonus_percent':
-            // Výpočet aktuálního celkového násobku krit. poškození by byl komplexní, zobrazujeme příspěvek talentu
-            let currentCritDamageBonus = talent.currentLevel * talent.effectValue;
-            currentEffectText = `Nyní: +${formatNumber(currentCritDamageBonus * 100, 0)}% k násobku krit. poškození (z tohoto talentu)`;
+        case 'offline_gold_earn_percentage_additive_talent':
+        case 'offline_xp_earn_percentage_additive_talent':
+            currentEffectText = `Nyní: +${formatNumber(currentLevel * talent.effectValue * 100, 0)}% (k základu offline)`;
             if (currentLevel < talent.maxLevel) {
-                 let nextCritDamageBonus = (talent.currentLevel + 1) * talent.effectValue;
-                nextEffectText = `Další úr.: +${formatNumber(nextCritDamageBonus * 100, 0)}% (z tohoto talentu)`;
+                nextEffectText = `Další úr.: +${formatNumber((currentLevel + 1) * talent.effectValue * 100, 0)}% (k základu offline)`;
+            }
+            break;
+        case 'max_offline_time_increase_hours_additive':
+            currentEffectText = `Nyní: +${formatNumber(currentLevel * talent.effectValue, 0)} hod. (k max. offline času)`;
+            if (currentLevel < talent.maxLevel) {
+                nextEffectText = `Další úr.: +${formatNumber((currentLevel + 1) * talent.effectValue, 0)} hod.`;
+            }
+            break;
+        case 'expedition_slots_additive':
+            currentEffectText = `Nyní: ${gameState.expeditionSlots} slotů pro výpravy`;
+            if (previewStatsNextLevel) { // previewStatsNextLevel zde obsahuje .expeditionSlots
+                nextEffectText = `Další úr.: ${previewStatsNextLevel.expeditionSlots} slotů pro výpravy`;
             }
             break;
         case 'guaranteed_crit_every_x_hits':
@@ -177,7 +199,6 @@ function getTalentEffectPreviewText(talentId) {
             nextEffectText = currentLevel < talent.maxLevel ? `Další úr.: Aktivuje auru.` : "";
             break;
         default:
-            // Fallback pro jiné typy talentů - zobrazí jejich přímý příspěvek
             let genericCurrentBonus = currentLevel * (talent.effectValue || 0);
             currentEffectText = `Nyní (přímý efekt): ${formatNumber(genericCurrentBonus, 2)}`;
             if (currentLevel < talent.maxLevel) {
@@ -191,7 +212,7 @@ function getTalentEffectPreviewText(talentId) {
     }
 
     return {
-        name: talent.name,
+        name: `${talent.icon || '⭐'} ${talent.name}`,
         description: talent.description,
         currentLevelText: `Úroveň: ${currentLevel}/${talent.maxLevel}`,
         currentEffectText,
@@ -257,6 +278,7 @@ function updateTalentTooltipPosition(event) {
     talentTooltipElement.style.top = `${y}px`;
 }
 
+
 /**
  * Vykreslí strom talentů v modálním okně.
  */
@@ -270,7 +292,7 @@ function renderTalentTree() {
     modalTalentPoints.textContent = formatNumber(gameState.talentPoints);
 
     const branches = {};
-    const talentDefinitions = talents; // Globální objekt 'talents' z config.js
+    const talentDefinitions = talents;
 
     for (const id in talentDefinitions) {
         if (talentDefinitions.hasOwnProperty(id)) {
@@ -289,6 +311,8 @@ function renderTalentTree() {
         if (branchName === 'basic') readableBranchName = "Základní Vylepšení";
         if (branchName === 'crit') readableBranchName = "Kritické Zásahy";
         if (branchName === 'passive_dps') readableBranchName = "Pasivní Poškození (%HP)";
+        if (branchName === 'expedition_mastery') readableBranchName = "🗺️ Mistrovství Výprav";
+        if (branchName === 'temporal_echoes') readableBranchName = "⏳ Časové Ozvěny (Offline)";
         branchTitle.textContent = readableBranchName;
         talentsContainer.appendChild(branchTitle);
 
@@ -303,7 +327,7 @@ function renderTalentTree() {
 
             const nameP = document.createElement('p');
             nameP.classList.add('talent-name');
-            nameP.textContent = `${talent.name} (Úr. ${talent.currentLevel || 0}/${talent.maxLevel})`;
+            nameP.textContent = `${talent.icon || '⭐'} ${talent.name} (Úr. ${talent.currentLevel || 0}/${talent.maxLevel})`;
             talentDiv.appendChild(nameP);
 
             const descP = document.createElement('p');
@@ -325,18 +349,14 @@ function renderTalentTree() {
                 let prerequisiteMet = true;
                 if (talent.requires) {
                     const prerequisiteTalentDef = talentDefinitions[talent.requires];
-                    // Předpokládáme, že prerequisiteTalentDef.currentLevel je také aktualizováno
                     const prerequisiteTalentCurrentLevel = talents[talent.requires]?.currentLevel || 0;
 
-
                     if (prerequisiteTalentDef) {
-                        if (prerequisiteTalentDef.isUltimate) {
-                            prerequisiteMet = prerequisiteTalentCurrentLevel > 0;
-                        } else {
-                            prerequisiteMet = prerequisiteTalentCurrentLevel >= prerequisiteTalentDef.maxLevel;
-                        }
-                         if (!prerequisiteMet) {
-                            costP.innerHTML += `<br><span class="text-xs text-red-400">Vyžaduje: ${prerequisiteTalentDef.name} (${prerequisiteTalentDef.isUltimate ? 'aktivní' : 'max. úr.'})</span>`;
+                        const requiredLevelForPrereq = prerequisiteTalentDef.isUltimate ? 1 : prerequisiteTalentDef.maxLevel;
+                        prerequisiteMet = prerequisiteTalentCurrentLevel >= requiredLevelForPrereq;
+
+                        if (!prerequisiteMet) {
+                            costP.innerHTML += `<br><span class="text-xs text-red-400">Vyžaduje: ${prerequisiteTalentDef.icon || ''} ${prerequisiteTalentDef.name} (${prerequisiteTalentDef.isUltimate ? 'aktivní' : `úr. ${requiredLevelForPrereq}`})</span>`;
                         }
                     } else {
                         prerequisiteMet = false;
@@ -376,6 +396,12 @@ function upgradeTalent(talentId) {
             soundManager.playSound('upgrade', 'G5', '16n');
         }
 
+        // Specifické akce po vylepšení talentu
+        if (talent.effectType === 'expedition_slots_additive') {
+            gameState.expeditionSlots += talent.effectValue; // Přidáme sloty
+            if (typeof renderAvailableExpeditions === 'function') renderAvailableExpeditions(); // Aktualizujeme UI expedic
+        }
+
         if (talent.effectType === 'passive_percent_flat_boost_talent' || talent.effectType === 'all_passive_percent_multiplier_talent') {
             if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses();
         }
@@ -397,7 +423,7 @@ function updateTalentResetButtonState() {
     if (!requestTalentResetButton || !talentResetCostOptions) return;
     const anyTalentAllocated = Object.values(talents).some(t => (t.currentLevel || 0) > 0);
     requestTalentResetButton.disabled = !anyTalentAllocated;
-    requestTalentResetButton.textContent = anyTalentAllocated ? "Resetovat Talentové Body" : "Žádné talenty k resetu";
+    requestTalentResetButton.textContent = anyTalentAllocated ? "♻️ Resetovat Talentové Body" : "Žádné talenty k resetu";
     talentResetCostOptions.classList.add('hidden');
     requestTalentResetButton.classList.remove('hidden');
 }
@@ -487,9 +513,16 @@ function performTalentReset(paymentType) {
     gameState.talentPoints += actualPointsRefunded;
     for (const id in talents) {
         if (talents.hasOwnProperty(id)) {
+            // Resetujeme i sloty expedic, pokud byly přidány talentem
+            if (talents[id].effectType === 'expedition_slots_additive' && talents[id].currentLevel > 0) {
+                gameState.expeditionSlots -= (talents[id].currentLevel * talents[id].effectValue);
+            }
             talents[id].currentLevel = 0;
         }
     }
+    // Zajistíme, aby počet slotů neklesl pod základní hodnotu
+    gameState.expeditionSlots = Math.max(1, gameState.expeditionSlots);
+
 
     if (typeof showMessageBox === 'function') showMessageBox(`Talentové body byly úspěšně resetovány! Získal jsi zpět ${formatNumber(actualPointsRefunded)} talentových bodů.`, false, 3500);
     if (typeof soundManager !== 'undefined') {
@@ -500,6 +533,7 @@ function performTalentReset(paymentType) {
     if (typeof updateCurrentTierBonuses === 'function') updateCurrentTierBonuses();
     renderTalentTree();
     if (typeof updateUI === 'function') updateUI();
+    if (typeof renderAvailableExpeditions === 'function') renderAvailableExpeditions(); // Aktualizujeme UI expedic po resetu slotů
     cancelTalentReset();
     updateTalentResetButtonState();
 }

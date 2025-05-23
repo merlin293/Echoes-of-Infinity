@@ -75,7 +75,7 @@ const gameState = {
     companionEssence: 0,
     companionSkillLevels: {},
     activeExpeditions: [],
-    expeditionSlots: 1,
+    expeditionSlots: 1, // Základní počet slotů pro expedice
     lastSaveTime: Date.now(),
     lastTickTime: Date.now(),
     lastActiveTime: Date.now()
@@ -83,7 +83,7 @@ const gameState = {
 
 // Funkce pro inicializaci/reset proměnných pro novou hru nebo po načtení defaultních hodnot
 function initializeDefaultGameStateVariables() {
-    // console.log("initializeDefaultGameStateVariables CALLED!"); // Ponecháno pro základní info
+    // console.log("initializeDefaultGameStateVariables CALLED!");
 
     gameState.gold = 0;
     gameState.baseClickDamage = 10;
@@ -135,25 +135,25 @@ function initializeDefaultGameStateVariables() {
     gameState.enemiesKilledThisEcho = 0;
     gameState.currentRunPlayTimeSeconds = 0;
     gameState.ownedArtifactsData = {};
-    gameState.ownedCompanions = {}; // Reset
+    gameState.ownedCompanions = {};
     gameState.baseCritChance = 0.05;
     gameState.effectiveCritChance = 0.05;
     gameState.dailyQuestData = { quests: [], lastResetDate: null, goldEarnedForQuestToday: 0 };
-    // gameSettings se záměrně neresetují
     gameState.playerResearchProgress = {};
     gameState.playerEssences = {};
     gameState.companionEssence = 0;
     gameState.companionSkillLevels = {};
     gameState.activeExpeditions = [];
-    gameState.expeditionSlots = 1;
+    gameState.expeditionSlots = 1; // Reset i zde
     gameState.lastSaveTime = Date.now();
     gameState.lastTickTime = Date.now();
     gameState.lastActiveTime = Date.now();
 
-    if (typeof talents !== 'undefined') {
+    // Reset úrovní talentů (včetně nových)
+    if (typeof talents !== 'undefined') { // 'talents' je objekt s definicemi z config.js
         for (const id in talents) {
             if (talents.hasOwnProperty(id)) {
-                talents[id].currentLevel = 0;
+                talents[id].currentLevel = 0; // Resetujeme currentLevel přímo v definicích pro novou hru
             }
         }
     }

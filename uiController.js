@@ -33,21 +33,13 @@ let goldDisplayContainer, enemyElement, enemyArtElement, enemyNameDisplay, enemy
     confirmExpeditionStartButton, cancelExpeditionStartButton,
     totalPlayTimeDisplay, currentRunPlayTimeDisplay, fastestBossKillDisplay,
     talentTooltipElement, essenceTooltipElement, researchTooltipElement, companionTooltipElement,
-    companionSkillTooltipElement; // Přidáno companionSkillTooltipElement
+    companionSkillTooltipElement;
 
 
 function initializeUIElements() {
     goldDisplayContainer = document.getElementById('goldDisplayContainer');
     enemyElement = document.getElementById('enemy');
     enemyArtElement = document.getElementById('enemyArt');
-    // ... (ostatní inicializace)...
-    talentTooltipElement = document.getElementById('talentTooltip');
-    essenceTooltipElement = document.getElementById('essenceTooltip');
-    researchTooltipElement = document.getElementById('researchTooltip');
-    companionTooltipElement = document.getElementById('companionTooltip');
-    companionSkillTooltipElement = document.getElementById('companionSkillTooltip'); // Inicializace companionSkill tooltipu
-
-    // Zbytek inicializací DOM elementů
     enemyNameDisplay = document.getElementById('enemyName');
     enemyHealthTextDisplay = document.getElementById('enemyHealthText');
     enemyHealthBar = document.getElementById('enemyHealthBar');
@@ -158,9 +150,14 @@ function initializeUIElements() {
     totalPlayTimeDisplay = document.getElementById('totalPlayTimeDisplay');
     currentRunPlayTimeDisplay = document.getElementById('currentRunPlayTimeDisplay');
     fastestBossKillDisplay = document.getElementById('fastestBossKillDisplay');
+    talentTooltipElement = document.getElementById('talentTooltip');
+    essenceTooltipElement = document.getElementById('essenceTooltip');
+    researchTooltipElement = document.getElementById('researchTooltip');
+    companionTooltipElement = document.getElementById('companionTooltip');
+    companionSkillTooltipElement = document.getElementById('companionSkillTooltip');
 }
 
-// ... (zbytek funkcí v uiController.js zůstává stejný)
+
 function showMessageBox(message, isError = false, duration = 3500) {
     if (!messageBox) return;
     messageBox.textContent = message;
@@ -198,7 +195,6 @@ function updateEquipmentButtonStates() {
     if (!equipmentContainer || typeof gameState === 'undefined' || typeof gameState.equipment === 'undefined') {
         return;
     }
-
     let validCurrentTierIndex = 0;
     if (typeof gameState.currentTierIndex === 'number' && gameState.currentTierIndex >= 0) {
         if (typeof tiers !== 'undefined' && Array.isArray(tiers) && gameState.currentTierIndex < tiers.length) {
@@ -207,12 +203,9 @@ function updateEquipmentButtonStates() {
             validCurrentTierIndex = 0;
         }
     }
-
-
     equipmentSlots.forEach(slot => {
         const item = gameState.equipment[slot];
         const upgradeButtons = equipmentContainer.querySelectorAll(`.equipment-level-button[data-slot="${slot}"]`);
-
         if (!item || typeof item.level === 'undefined') {
             upgradeButtons.forEach(btn => {
                 btn.disabled = true;
@@ -221,28 +214,21 @@ function updateEquipmentButtonStates() {
             });
             return;
         }
-
         upgradeButtons.forEach(button => {
             const amount = button.dataset.amount;
             let cost = 0;
             let canAfford = false;
             let isMaxLevel = item.level >= MAX_ITEM_LEVEL;
-
             const costSpan = button.querySelector('.cost-text');
-
             if (isMaxLevel) {
                 button.disabled = true;
-                if (amount === "1" && costSpan) {
-                    costSpan.textContent = '(MAX)';
-                }
+                if (amount === "1" && costSpan) costSpan.textContent = '(MAX)';
                 button.classList.remove('affordable');
                 return;
             }
-
             button.disabled = false;
             cost = calculateItemUpgradeCost(slot, item.level, validCurrentTierIndex);
             canAfford = gameState.gold >= cost;
-
             if (amount === "1" && costSpan) {
                 costSpan.textContent = `(${formatNumber(cost)} Z)`;
                 button.classList.toggle('affordable', canAfford);
@@ -263,27 +249,22 @@ function updateUI() {
     if (!goldDisplay || !passiveDamageDisplay || !companionEssenceDisplay) {
         return;
     }
-
     let passiveDamageFromTiersArtifactsTalentsUI = gameState.passivePercentFromTiers;
     let passiveDamageFromCompanionsUI = gameState.totalCompanionPassivePercent;
-
     if (typeof getResearchBonus === 'function') {
         passiveDamageFromCompanionsUI *= (1 + getResearchBonus('research_companion_damage_multiplier_percent'));
     }
-
     let totalBasePassivePercentUI = passiveDamageFromTiersArtifactsTalentsUI + passiveDamageFromCompanionsUI;
-
-    if (typeof talents !== 'undefined' && talents.passivePercentMultiplierTalent && talents.passivePercentMultiplierTalent.currentLevel > 0) {
-        totalBasePassivePercentUI *= (1 + talents.passivePercentMultiplierTalent.effectValue * talents.passivePercentMultiplierTalent.currentLevel);
+    if (typeof talents !== 'undefined' && talents.passivePercentMultiplierTalent && (talents.passivePercentMultiplierTalent.currentLevel || 0) > 0) {
+        totalBasePassivePercentUI *= (1 + talents.passivePercentMultiplierTalent.effectValue * (talents.passivePercentMultiplierTalent.currentLevel || 0));
     }
     if (typeof getEssenceBonus === 'function') {
         totalBasePassivePercentUI *= (1 + getEssenceBonus('essence_passive_dps_multiplier_percent'));
     }
     passiveDamageDisplay.textContent = formatNumber(totalBasePassivePercentUI * 100, 2) + "% HP/s";
-
     let goldMultiplier = gameState.echoPermanentGoldBonus;
-    if (typeof talents !== 'undefined' && talents.goldVeins && talents.goldVeins.currentLevel > 0) {
-        goldMultiplier *= (1 + talents.goldVeins.effectValue * talents.goldVeins.currentLevel);
+    if (typeof talents !== 'undefined' && talents.goldVeins && (talents.goldVeins.currentLevel || 0) > 0) {
+        goldMultiplier *= (1 + talents.goldVeins.effectValue * (talents.goldVeins.currentLevel || 0));
     }
     if (typeof getArtifactBonus === 'function') {
         let artifactGoldBonus = getArtifactBonus('gold_bonus_percent_additive') / 100;
@@ -295,7 +276,6 @@ function updateUI() {
     if (typeof getEssenceBonus === 'function') {
         goldMultiplier *= (1 + getEssenceBonus('essence_gold_multiplier_all_percent'));
     }
-
     goldDisplay.textContent = formatNumber(Math.floor(gameState.gold));
     clickDamageDisplay.textContent = formatNumber(gameState.effectiveClickDamage);
     enemyEffectiveLevelDisplay.textContent = gameState.enemy.effectiveLevel;
@@ -309,7 +289,6 @@ function updateUI() {
     talentPointsDisplay.textContent = formatNumber(gameState.talentPoints);
     playerXPBar.style.width = `${(gameState.playerXP / gameState.xpToNextLevel) * 100}%`;
     playerXPText.textContent = `XP: ${formatNumber(Math.floor(gameState.playerXP))} / ${formatNumber(gameState.xpToNextLevel)}`;
-
     if (enemyNameDisplay) enemyNameDisplay.textContent = gameState.enemy.name;
     if (enemyHealthTextDisplay) enemyHealthTextDisplay.textContent = `${formatNumber(Math.max(0, Math.ceil(gameState.enemy.currentHealth)))} / ${formatNumber(Math.ceil(gameState.enemy.maxHealth))}`;
     if (enemyHealthBar) enemyHealthBar.style.width = `${(Math.max(0, gameState.enemy.currentHealth) / gameState.enemy.maxHealth) * 100}%`;
@@ -321,7 +300,6 @@ function updateUI() {
         bossTimerDisplay.classList.toggle('hidden', !gameState.bossFightTimerActive);
         if(gameState.bossFightTimerActive) bossTimerDisplay.textContent = `Čas na bosse: ${gameState.bossFightTimeLeft.toFixed(1)}s`;
     }
-
     if (activeEffectsContainer) {
         activeEffectsContainer.innerHTML = '<h3 class="font-semibold text-gray-100">Aktivní efekty</h3>';
         let hasActiveEffects = false;
@@ -346,7 +324,6 @@ function updateUI() {
         }
         activeEffectsContainer.classList.toggle('hidden', !hasActiveEffects);
     }
-
     if (cleanseDebuffButton && cleanseCostDisplay) {
         cleanseDebuffButton.classList.toggle('hidden', !gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]);
         if(gameState.activeDebuffs[DEBUFF_TYPE_PARASITE]) {
@@ -354,7 +331,6 @@ function updateUI() {
             cleanseDebuffButton.disabled = gameState.gold < PARASITE_CLEANSE_COST;
         }
     }
-
     if (echoButton && echoShardsToGain && echoConditionDisplay) {
         const canEchoNow = gameState.currentTierIndex === tiers.length - 1 && equipmentSlots.every(slot => gameState.equipment[slot] && gameState.equipment[slot].level >= MAX_ITEM_LEVEL);
         echoButton.classList.toggle('hidden', !(canEchoNow && !gameState.bossFightTimerActive));
@@ -363,7 +339,6 @@ function updateUI() {
             echoConditionDisplay.textContent = "Připraveno!";
         }
     }
-
     if (upgradeEchoGoldButton && echoGoldBonusValueDisplay && echoGoldLevelDisplay && echoGoldCostDisplay) {
         echoGoldBonusValueDisplay.textContent = (echoGoldUpgradeValue * 100).toFixed(0);
         echoGoldLevelDisplay.textContent = `(Úr. ${gameState.echoGoldLevelCount})`;
@@ -376,11 +351,9 @@ function updateUI() {
         echoDamageCostDisplay.textContent = formatNumber(gameState.echoDamageUpgradeCost);
         upgradeEchoDamageButton.disabled = gameState.echoShards < gameState.echoDamageUpgradeCost;
     }
-
     if (typeof updateEquipmentButtonStates === 'function') updateEquipmentButtonStates();
     if (typeof updateCompanionButtonStates === 'function') updateCompanionButtonStates();
     if (typeof renderGameStatsUI === 'function') renderGameStatsUI();
-
     if (mocnyUderButton && mocnyUderCooldownDisplay) {
         mocnyUderButton.disabled = gameState.mocnyUderActive || gameState.mocnyUderCooldownTimeLeft > 0;
         mocnyUderCooldownDisplay.textContent = gameState.mocnyUderActive ? `Aktivní: ${gameState.mocnyUderDurationLeft.toFixed(1)}s` : (gameState.mocnyUderCooldownTimeLeft > 0 ? `Nabíjí se: ${Math.ceil(gameState.mocnyUderCooldownTimeLeft)}s` : "(Připraveno)");
@@ -411,7 +384,6 @@ function renderGameStatsUI() {
         { label: "Čas v tomto Echu", value: formatTime(gameState.currentRunPlayTimeSeconds || 0), id: "currentRunPlayTimeDisplay" },
         { label: "Nejrychlejší Boss Kill", value: gameState.lifetimeStats.fastestBossKillSeconds === Infinity ? "N/A" : formatTime(gameState.lifetimeStats.fastestBossKillSeconds), id: "fastestBossKillDisplay" }
     ];
-
     statsToShow.forEach(stat => {
         const statDiv = document.createElement('div');
         statDiv.classList.add('stat-item');
@@ -420,9 +392,29 @@ function renderGameStatsUI() {
     });
 }
 
+// Uložíme si referenci na aktuálně otevřený modál, abychom věděli, který zavřít
+let currentOpenModal = null;
+let currentBackdropClickHandler = null;
+
 function openModal(modalElement) {
     if (modalElement) {
+        // Pokud je již nějaký modál otevřený, nejdříve ho zavřeme (pro případ překrývání)
+        if (currentOpenModal && currentOpenModal !== modalElement) {
+            closeModal(currentOpenModal);
+        }
+
         modalElement.classList.remove('hidden');
+        currentOpenModal = modalElement;
+
+        // Definujeme handler pro tento konkrétní modál
+        currentBackdropClickHandler = function(event) {
+            if (event.target === modalElement) { // Kliknuto na pozadí (overlay)
+                closeModal(modalElement);
+            }
+        };
+        // Přidáme listener na pozadí modálu
+        modalElement.addEventListener('click', currentBackdropClickHandler);
+
         if (typeof soundManager !== 'undefined') soundManager.playSound('openModal');
     }
 }
@@ -430,9 +422,18 @@ function openModal(modalElement) {
 function closeModal(modalElement) {
     if (modalElement) {
         modalElement.classList.add('hidden');
+        // Pokud se zavírá aktuálně otevřený modál, odstraníme jeho listener
+        if (modalElement === currentOpenModal && currentBackdropClickHandler) {
+            modalElement.removeEventListener('click', currentBackdropClickHandler);
+            currentBackdropClickHandler = null;
+        }
+        if (modalElement === currentOpenModal) {
+            currentOpenModal = null; // Resetujeme referenci
+        }
         if (typeof soundManager !== 'undefined') soundManager.playSound('closeModal');
     }
 }
+
 
 function openTalentTreeModalUI() {
     if (typeof renderTalentTree === 'function') renderTalentTree();

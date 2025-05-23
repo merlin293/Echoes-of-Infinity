@@ -1,11 +1,5 @@
 // SOUBOR: expeditionController.js
 
-// --- DOM Elementy pro Modální Okno Expedic (budou definovány a inicializovány v uiController.js) ---
-// let expeditionsModal, expeditionsListContainer, closeExpeditionsModalButton,
-//     expeditionCompanionSelectModal, expeditionCompanionSelectList,
-//     confirmExpeditionStartButton, cancelExpeditionStartButton,
-//     expeditionSlotsDisplay;
-
 let currentExpeditionToStart = null;
 let selectedCompanionsForExpedition = [];
 
@@ -14,8 +8,7 @@ let selectedCompanionsForExpedition = [];
  */
 function openExpeditionsModalUI() {
     if (expeditionsModal && expeditionsListContainer && closeExpeditionsModalButton && expeditionSlotsDisplay) {
-        renderAvailableExpeditions();
-        expeditionSlotsDisplay.textContent = `${gameState.activeExpeditions.length} / ${gameState.expeditionSlots}`;
+        renderAvailableExpeditions(); // Tato funkce by měla aktualizovat i expeditionSlotsDisplay
         openModal(expeditionsModal);
     } else {
         console.error("DOM elementy pro modální okno expedic nebyly nalezeny/inicializovány.");
@@ -28,9 +21,16 @@ function openExpeditionsModalUI() {
 function renderAvailableExpeditions() {
     if (!expeditionsListContainer || !expeditionSlotsDisplay) return;
     expeditionsListContainer.innerHTML = '';
-    expeditionSlotsDisplay.textContent = `${gameState.activeExpeditions.length} / ${gameState.expeditionSlots}`;
+    // Aktualizace počtu slotů zohledňující talent
+    let currentExpeditionSlots = gameState.expeditionSlots; // Začínáme s hodnotou z gameState
+    // getTalentBonus by měla být funkce, která vrací hodnotu bonusu z talentu
+    // Pro jednoduchost zde předpokládáme, že talent 'expeditionSlotsTalent' přímo modifikuje gameState.expeditionSlots
+    // Pokud ne, museli byste zde přičíst bonus z talentu.
+    // Např. if (talents.expeditionSlotsTalent.currentLevel > 0) currentExpeditionSlots += talents.expeditionSlotsTalent.currentLevel * talents.expeditionSlotsTalent.effectValue;
 
-    // Zobrazení probíhajících expedic
+    expeditionSlotsDisplay.textContent = `${gameState.activeExpeditions.length} / ${currentExpeditionSlots}`;
+
+
     if (gameState.activeExpeditions.length > 0) {
         const runningTitle = document.createElement('h4');
         runningTitle.classList.add('expedition-category-title');
@@ -59,7 +59,6 @@ function renderAvailableExpeditions() {
         });
     }
 
-    // Zobrazení dostupných (i zamčených) expedic
     const availableTitle = document.createElement('h4');
     availableTitle.classList.add('expedition-category-title');
     availableTitle.textContent = "Dostupné Výpravy";
@@ -78,9 +77,18 @@ function renderAvailableExpeditions() {
                 expDiv.classList.add('locked');
             }
 
+            let costReductionPercent = 0;
+            if (talents.efficientLogistics && talents.efficientLogistics.currentLevel > 0) {
+                costReductionPercent = talents.efficientLogistics.currentLevel * talents.efficientLogistics.effectValue;
+            }
+
+            let currentGoldCost = expDef.cost.gold ? Math.max(0, Math.ceil(expDef.cost.gold * (1 - costReductionPercent))) : 0;
+            let currentShardCost = expDef.cost.echo_shards ? Math.max(0, Math.ceil(expDef.cost.echo_shards * (1 - costReductionPercent))) : 0;
+
             let costString = "";
-            if (expDef.cost.gold) costString += `${formatNumber(expDef.cost.gold)} Zlata `;
-            if (expDef.cost.echo_shards) costString += `${formatNumber(expDef.cost.echo_shards)} EÚ `;
+            if (expDef.cost.gold) costString += `${formatNumber(currentGoldCost)} Zlata `;
+            if (expDef.cost.echo_shards) costString += `${formatNumber(currentShardCost)} EÚ `;
+
 
             let buttonHTML = '';
             let unlockTextHTML = '';
@@ -100,9 +108,9 @@ function renderAvailableExpeditions() {
                     <h5 class="expedition-name">${expDef.name}</h5>
                 </div>
                 <p class="expedition-description">${expDef.description}</p>
-                <p class="expedition-details">Doba trvání: ${formatTime(expDef.durationSeconds)}</p>
+                <p class="expedition-details">Doba trvání: ${formatTime(expDef.durationSeconds * (1 - (talents.expeditionSpeed && talents.expeditionSpeed.currentLevel > 0 ? talents.expeditionSpeed.currentLevel * talents.expeditionSpeed.effectValue : 0)))}</p>
                 <p class="expedition-details">Požadováno společníků: ${expDef.requiredCompanions}</p>
-                <p class="expedition-details">Cena: ${costString.trim()}</p>
+                <p class="expedition-details">Cena: ${costString.trim() || 'Zdarma'}</p>
                 <p class="expedition-details">Odměny: ${formatPossibleRewards(expDef.possibleRewards)}</p>
                 ${unlockTextHTML}
                 ${buttonHTML}
@@ -129,7 +137,13 @@ function formatPossibleRewards(rewards) {
         else if (r.type === 'companion_essence') rewardText = `${r.baseAmountMin}-${r.baseAmountMax} Esencí Spol.`;
         else if (r.type === 'artifact_chance') rewardText = `Šance na Artefakt`;
         else rewardText = r.type;
-        return `${rewardText} (${(r.chance * 100).toFixed(0)}%)`;
+
+        let chance = r.chance;
+        // Zde by se mohl aplikovat talent 'lootFinder' na 'chance', pokud by to tak bylo navrženo
+        // Např. if (talents.lootFinder.currentLevel > 0) chance *= (1 + talents.lootFinder.currentLevel * talents.lootFinder.effectValue);
+        // Pro 'expedition_extra_reward_chance_percent' by logika byla jiná - šance na další hod.
+
+        return `${rewardText} (${(chance * 100).toFixed(0)}%)`;
     }).join(', ');
 }
 
@@ -149,17 +163,28 @@ function openCompanionSelectModalForExpedition(expeditionId) {
         if (typeof showMessageBox === 'function') showMessageBox("Tato výprava ještě není odemčená!", true);
         return;
     }
+    
+    let currentExpeditionSlots = gameState.expeditionSlots;
+    // Talent 'expeditionSlotsTalent' již modifikuje gameState.expeditionSlots při vylepšení/resetu
 
-    if (gameState.activeExpeditions.length >= gameState.expeditionSlots) {
+    if (gameState.activeExpeditions.length >= currentExpeditionSlots) {
         if (typeof showMessageBox === 'function') showMessageBox("Nemáš volné sloty pro další výpravu!", true);
         return;
     }
 
-    if (expDef.cost.gold && gameState.gold < expDef.cost.gold) {
+    let costReductionPercent = 0;
+    if (talents.efficientLogistics && talents.efficientLogistics.currentLevel > 0) {
+        costReductionPercent = talents.efficientLogistics.currentLevel * talents.efficientLogistics.effectValue;
+    }
+    const currentGoldCost = expDef.cost.gold ? Math.max(0, Math.ceil(expDef.cost.gold * (1 - costReductionPercent))) : 0;
+    const currentShardCost = expDef.cost.echo_shards ? Math.max(0, Math.ceil(expDef.cost.echo_shards * (1 - costReductionPercent))) : 0;
+
+
+    if (expDef.cost.gold && gameState.gold < currentGoldCost) {
         if (typeof showMessageBox === 'function') showMessageBox("Nedostatek zlata pro zahájení této výpravy!", true);
         return;
     }
-    if (expDef.cost.echo_shards && gameState.echoShards < expDef.cost.echo_shards) {
+    if (expDef.cost.echo_shards && gameState.echoShards < currentShardCost) {
         if (typeof showMessageBox === 'function') showMessageBox("Nedostatek Echo Úlomků pro zahájení této výpravy!", true);
         return;
     }
@@ -176,7 +201,6 @@ function openCompanionSelectModalForExpedition(expeditionId) {
             warningElement.textContent = "Upozornění: Společníci vyslaní na výpravu nebudou po dobu jejího trvání přispívat k pasivnímu poškození ani nebudou dostupní pro jiné akce (např. vylepšení).";
             warningElement.classList.remove('hidden');
         }
-
 
         for (const compId in gameState.ownedCompanions) {
             if (gameState.ownedCompanions.hasOwnProperty(compId) && gameState.ownedCompanions[compId].level > 0) {
@@ -198,7 +222,7 @@ function openCompanionSelectModalForExpedition(expeditionId) {
         if (availableCompanionsCount < expDef.requiredCompanions) {
             if (typeof showMessageBox === 'function') showMessageBox(`Potřebuješ alespoň ${expDef.requiredCompanions} volných společníků pro tuto výpravu! (Máš ${availableCompanionsCount})`, true);
             currentExpeditionToStart = null;
-            if (warningElement) warningElement.classList.add('hidden'); // Skryj varování, pokud se modál neotevře
+            if (warningElement) warningElement.classList.add('hidden');
             return;
         }
 
@@ -237,16 +261,30 @@ function startExpedition() {
         return;
     }
 
-    if (expDef.cost.gold) gameState.gold -= expDef.cost.gold;
-    if (expDef.cost.echo_shards) gameState.echoShards -= expDef.cost.echo_shards;
+    let costReductionPercent = 0;
+    if (talents.efficientLogistics && talents.efficientLogistics.currentLevel > 0) {
+        costReductionPercent = talents.efficientLogistics.currentLevel * talents.efficientLogistics.effectValue;
+    }
+    const currentGoldCost = expDef.cost.gold ? Math.max(0, Math.ceil(expDef.cost.gold * (1 - costReductionPercent))) : 0;
+    const currentShardCost = expDef.cost.echo_shards ? Math.max(0, Math.ceil(expDef.cost.echo_shards * (1 - costReductionPercent))) : 0;
+
+    if (expDef.cost.gold) gameState.gold -= currentGoldCost;
+    if (expDef.cost.echo_shards) gameState.echoShards -= currentShardCost;
+
+    let durationReductionPercent = 0;
+    if (talents.expeditionSpeed && talents.expeditionSpeed.currentLevel > 0) {
+        durationReductionPercent = talents.expeditionSpeed.currentLevel * talents.expeditionSpeed.effectValue;
+    }
+    const finalDurationSeconds = Math.max(1, Math.ceil(expDef.durationSeconds * (1 - durationReductionPercent))); // Minimální doba 1s
+
 
     const now = Date.now();
     const newActiveExpedition = {
         id: `exp_run_${now}_${Math.random().toString(36).substring(2, 7)}`,
         expeditionId: currentExpeditionToStart,
         startTime: now,
-        durationSeconds: expDef.durationSeconds,
-        completionTime: now + (expDef.durationSeconds * 1000),
+        durationSeconds: finalDurationSeconds,
+        completionTime: now + (finalDurationSeconds * 1000),
         assignedCompanionIds: [...selectedCompanionsForExpedition]
     };
     gameState.activeExpeditions.push(newActiveExpedition);
@@ -258,11 +296,10 @@ function startExpedition() {
     selectedCompanionsForExpedition = [];
     closeModal(expeditionCompanionSelectModal);
 
-    // Aktualizace stavu po zahájení výpravy
     if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState();
     if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats();
-    if (typeof renderCompanionsUI === 'function') renderCompanionsUI(); // Překreslí společníky (označí ty na výpravě)
-    renderAvailableExpeditions(); // Překreslí seznam výprav
+    if (typeof renderCompanionsUI === 'function') renderCompanionsUI();
+    renderAvailableExpeditions();
     if (typeof updateUI === 'function') updateUI();
 }
 
@@ -293,11 +330,11 @@ function checkCompletedExpeditions() {
         });
     }
 
-    if (expeditionsChanged) { // Aktualizuj jen pokud se něco změnilo
+    if (expeditionsChanged) {
         if (typeof updateTotalCompanionPassivePercentOnGameState === 'function') updateTotalCompanionPassivePercentOnGameState();
         if (typeof calculateEffectiveStats === 'function') calculateEffectiveStats();
         if (typeof renderCompanionsUI === 'function') renderCompanionsUI();
-        renderAvailableExpeditions(); // Vždy překresli seznam výprav, pokud se nějaká dokončila
+        renderAvailableExpeditions();
         if (typeof updateUI === 'function') updateUI();
     }
 }
@@ -314,56 +351,75 @@ function processCompletedExpedition(completedExp) {
     }
 
     let rewardSummary = [`Výprava "${expDef.name}" dokončena! Získal jsi:`];
-
-    expDef.possibleRewards.forEach(rewardDef => {
-        if (Math.random() < rewardDef.chance) {
-            let amount = 0;
-            if (rewardDef.type === 'gold') {
-                amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
-                gameState.gold += amount;
-                gameState.lifetimeStats.lifetimeGoldEarned += amount;
-                rewardSummary.push(`- ${formatNumber(amount)} Zlata`);
-            } else if (rewardDef.type === 'echo_shards') {
-                amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
-                gameState.echoShards += amount;
-                gameState.lifetimeStats.lifetimeEchoShardsEarned += amount;
-                rewardSummary.push(`- ${formatNumber(amount)} Echo Úlomků`);
-            } else if (rewardDef.type === 'companion_essence') {
-                amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
-                gainCompanionEssence(amount);
-                // Zpráva je již v gainCompanionEssence, ale můžeme ji zde zopakovat nebo upravit
-                // rewardSummary.push(`- ${formatNumber(amount)} Esencí Společníků`);
-            } else if (rewardDef.type === 'artifact_chance') {
-                const availableArtifactsToDrop = Object.values(allArtifacts).filter(art => art.source === rewardDef.artifactPool);
-                if (availableArtifactsToDrop.length > 0) {
-                    const droppedArtifactDefinition = availableArtifactsToDrop[Math.floor(Math.random() * availableArtifactsToDrop.length)];
-                    const droppedArtifactId = droppedArtifactDefinition.id;
-                    if (gameState.ownedArtifactsData[droppedArtifactId]) {
-                        const artifactInstance = gameState.ownedArtifactsData[droppedArtifactId];
-                        if (!droppedArtifactDefinition.maxLevel || artifactInstance.level < droppedArtifactDefinition.maxLevel) {
-                            artifactInstance.level++;
-                            rewardSummary.push(`- Artefakt ${droppedArtifactDefinition.name} vylepšen na úr. ${artifactInstance.level}!`);
-                        } else {
-                             rewardSummary.push(`- Artefakt ${droppedArtifactDefinition.name} (již max. úr.)`);
-                        }
-                    } else {
-                        gameState.ownedArtifactsData[droppedArtifactId] = { level: 1 };
-                        rewardSummary.push(`- Nový artefakt: ${droppedArtifactDefinition.name}!`);
-                    }
-                    if (typeof renderArtifactsUI === 'function') renderArtifactsUI();
-                } else {
-                    rewardSummary.push("- Žádný artefakt nenalezen tentokrát.");
-                }
+    let extraRewardRolls = 0;
+    if (talents.lootFinder && talents.lootFinder.currentLevel > 0) {
+        for (let i = 0; i < talents.lootFinder.currentLevel; i++) {
+            if (Math.random() < talents.lootFinder.effectValue) {
+                extraRewardRolls++;
             }
         }
-    });
+    }
+    if (extraRewardRolls > 0) {
+        rewardSummary.push(`Bonus od Hledače pokladů: ${extraRewardRolls}x extra šance na odměnu!`);
+    }
+
+
+    const giveRewards = () => {
+        expDef.possibleRewards.forEach(rewardDef => {
+            if (Math.random() < rewardDef.chance) {
+                let amount = 0;
+                if (rewardDef.type === 'gold') {
+                    amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
+                    gameState.gold += amount;
+                    gameState.lifetimeStats.lifetimeGoldEarned += amount;
+                    rewardSummary.push(`- ${formatNumber(amount)} Zlata`);
+                } else if (rewardDef.type === 'echo_shards') {
+                    amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
+                    gameState.echoShards += amount;
+                    gameState.lifetimeStats.lifetimeEchoShardsEarned += amount;
+                    rewardSummary.push(`- ${formatNumber(amount)} Echo Úlomků`);
+                } else if (rewardDef.type === 'companion_essence') {
+                    amount = Math.floor(Math.random() * (rewardDef.baseAmountMax - rewardDef.baseAmountMin + 1)) + rewardDef.baseAmountMin;
+                    gainCompanionEssence(amount);
+                    // Zpráva je již v gainCompanionEssence
+                } else if (rewardDef.type === 'artifact_chance') {
+                    const availableArtifactsToDrop = Object.values(allArtifacts).filter(art => art.source === rewardDef.artifactPool);
+                    if (availableArtifactsToDrop.length > 0) {
+                        const droppedArtifactDefinition = availableArtifactsToDrop[Math.floor(Math.random() * availableArtifactsToDrop.length)];
+                        const droppedArtifactId = droppedArtifactDefinition.id;
+                        if (gameState.ownedArtifactsData[droppedArtifactId]) {
+                            const artifactInstance = gameState.ownedArtifactsData[droppedArtifactId];
+                            if (!droppedArtifactDefinition.maxLevel || artifactInstance.level < droppedArtifactDefinition.maxLevel) {
+                                artifactInstance.level++;
+                                rewardSummary.push(`- Artefakt ${droppedArtifactDefinition.name} vylepšen na úr. ${artifactInstance.level}!`);
+                            } else {
+                                 rewardSummary.push(`- Artefakt ${droppedArtifactDefinition.name} (již max. úr.)`);
+                            }
+                        } else {
+                            gameState.ownedArtifactsData[droppedArtifactId] = { level: 1 };
+                            rewardSummary.push(`- Nový artefakt: ${droppedArtifactDefinition.name}!`);
+                        }
+                        if (typeof renderArtifactsUI === 'function') renderArtifactsUI();
+                    } else {
+                        rewardSummary.push("- Žádný artefakt nenalezen tentokrát.");
+                    }
+                }
+            }
+        });
+    };
+
+    giveRewards(); // Základní odměny
+    for (let i = 0; i < extraRewardRolls; i++) {
+        giveRewards(); // Dodatečné hody na odměny
+    }
+
 
     gameState.lifetimeStats.expeditionsCompletedTotal = (gameState.lifetimeStats.expeditionsCompletedTotal || 0) + 1;
     if (typeof checkMilestones === 'function') checkMilestones();
 
     if (typeof showMessageBox === 'function') {
-        if (rewardSummary.length > 1) {
-            showMessageBox(rewardSummary.join("\n"), false, 5000);
+        if (rewardSummary.length > 1 + (extraRewardRolls > 0 ? 1:0) ) { // Zkontrolujeme, zda byly nějaké skutečné odměny kromě zprávy o extra šanci
+            showMessageBox(rewardSummary.join("\n"), false, 5000 + (extraRewardRolls * 1000));
         } else {
             showMessageBox(`Výprava "${expDef.name}" dokončena, ale bohužel bez speciálních odměn.`, true, 3000);
         }
