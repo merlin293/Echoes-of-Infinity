@@ -50,7 +50,7 @@ function spawnNewEnemy() {
 
     if (enemyArtElement) { // enemyArtElement je DOM element z uiController.js
         if (enemyNames[baseNameIndex] === "Slizoun" || baseNameIndex === 0) { // Pokud je to první/defaultní nepřítel "Slizoun"
-            enemyArtElement.innerHTML = '<img src="/assets/slizoun_Normal.gif" alt="Slizoun" style="width:100%; height:100%; object-fit:contain;">';
+            enemyArtElement.innerHTML = '<img src="assets/slizoun_Normal.gif" alt="Slizoun" style="width:100%; height:100%; object-fit:contain;">';
         } else if (typeof enemySVGs !== 'undefined' && enemySVGs.length > 0) {
             enemyArtElement.innerHTML = enemySVGs[baseNameIndex % enemySVGs.length];
         } else {
